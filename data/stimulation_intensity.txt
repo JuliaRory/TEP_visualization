@@ -1,0 +1,10 @@
+n	name	RMT	suprathr	subthr	foam	noise	ground	protocol	comments
+01	Timofei	N/A	N/A	N/A	N/A	no	Fz–Fpz	NVX52: 1kHz- checkers, 5kHz - piu; NVX136: 10kHz - piu	-
+02	Andrey	N/A	N/A	N/A	N/A	no	Fz–Fpz	checkers, checkers-piu, piu, piu-piu, piu-sound; NVX52, NVX136	-
+03	Egor	36	N/A	N/A	N/A	no	Fz–Fpz	checkers, checkers-piu, piu, piu-piu, piu-sound; NVX136: 10 kHz	-
+04	Artem	36	39	N/A	41	no	right	checkers, checkers-piu, piu, piu-piu, piu-sound, piu_foam; NVX136: 10, 50, 100 kHz	-
+05	Darisy	50	54	N/A	56	yes	right	checkers, checkers-piu, piu, piu-piu, piu_foam, piu_noise; NVX136: 10kHz, 25kHz	checkers: without noise
+06	Evgeniy	55	58	52	N/A	yes	right	checkers, checkers-piu, piu, piu-piu, piu_vertex, gnd_hand, subthreshold, Spectr; NVX136: 10kHz, 25kHz	-
+07	Anatoly	N/A	N/A	N/A	N/A	no	right	checkers, piu; NVX136: 25kHz	SPEED tests
+08	Daniil	N/A	49	42	N/A	yes	right	checkers, checkers-piu, piu, piu-piu, AP, PA_MI, subthreshold	-
+09	Anatoly	N/A	52	43	N/A	no	right	MI: supra-, subthreshold	-

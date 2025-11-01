@@ -1,0 +1,27 @@
+[
+	{
+		"attributes": {
+			"activeStream": {
+				"connections": [],
+				"metaData": {}
+			},
+			"reconnect": true
+		},
+		"enabled": true,
+		"group": "default",
+		"index": 0,
+		"label": "epochs",
+		"name": "epochs",
+		"serialized": {
+			"desiredStream": {
+				"connections": [
+					"discover:///?stream=epochs&name=SPEED"
+				],
+				"metaData": {},
+				"name": "epochs",
+				"serializedType": "FwBBAAAAAAAAAACIs0A="
+			}
+		},
+		"type": "Resonance::Parameters::Stream"
+	}
+]

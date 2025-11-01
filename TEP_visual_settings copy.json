@@ -1,0 +1,52 @@
+{
+    "n_max_save": 1000,
+    "n_save": 2,
+    "save_all": true,
+    "aver_mode": true,
+    "n_aver": 100,
+    "aver_all": true,
+    "aver_methods": ["mean", "median", "trimmean"],
+    "CAR": true,
+    "bad_channels": ["FT9", "FT10", "TP9", "TP10"], 
+    "baseline": true,
+    "baseline_methods": ["mean", "median"],
+    "baseline_start": -75,
+    "baseline_end": -20,
+    "lowpass": true, 
+    "high_freq": 250,
+    "rereference": true,
+    "rereference_channel": ["Fz"],
+    "plot":
+        {
+            "xmin": -10, 
+            "xmax": 50, 
+            "ymin": -100,
+            "ymax": 100
+        },
+    "SPEED":
+        {
+            "window_start": -100,
+            "window_end": 300,
+            "artifact": true,
+            "artifact_start": -5, 
+            "artifact_end": 15, 
+            "notch_eeg": false, 
+            "notch_emg": false, 
+            "notch_fr": 50, 
+            "highpass_eeg": false, 
+            "highpass_emg": false, 
+            "low_freq_eeg": 1, 
+            "low_freq_emg": 1,
+            "filter_options": ["highpass", "median"], 
+            "lowpass_eeg": true,
+            "lowpass_emg": true, 
+            "high_freq_eeg": 2500,
+            "high_freq_emg": 2500, 
+            "resampling": true, 
+            "Fs_orig": 25000, 
+            "Fs": 5000
+        },
+    "SPEED_settings_path": "./SPEED_settings.json"
+
+  
+}
