@@ -30,11 +30,15 @@ class TEPsPlot(FigureCanvas):
         fig_w_px, fig_h_px = figsize[0] * dpi, figsize[1] * dpi    # размеры всего пространства в пикселях (для нормализации значений)
         width, height = single_w / fig_w_px, single_h / fig_h_px   # размеры для одного графика
 
+        self.n_xticks, self.n_yticks = 5, 4
+        self.ticks = []
+        
         self.lines = []       # список с линиями
         self.axes_lines = []  # список с псевдоосями
         self.texts = []       # список с надписями (названия графиков)
         self.affines = []     # список с преобразованиями для позиционирования
         self.transforms = []
+        
 
         # Создаём все линии, используя трансформации для позиционирования
         for i, (x_px, y_px) in enumerate(positions):
@@ -53,9 +57,22 @@ class TEPsPlot(FigureCanvas):
             self.lines.append(line)
 
             # псевдооси через (0, 0)
-            x_axis, = self.ax.plot([0, 1], [0.5, 0.5], lw=0.6, color='black', transform=tr, alpha=0.6)
-            y_axis, = self.ax.plot([0.5, 0.5], [0, 1], lw=0.6, color='black', transform=tr, alpha=0.6)
+            x_axis, = self.ax.plot([0,1], [0.5,0.5], lw=0.6, color='black', transform=tr, alpha=0.6)
+            y_axis, = self.ax.plot([0.5,0.5], [0,1], lw=0.6, color='black', transform=tr, alpha=0.6)
             self.axes_lines.append((x_axis, y_axis))
+
+            # ряски на псевдоосях
+            oneplot_xticks, oneplot_yticks = [], []
+            xticks = np.linspace(0.1, 0.9, self.n_xticks)       # ряски на оси абсцисс 
+            for x_t in xticks:
+                tick, = self.ax.plot([x_t, x_t], [0.48, 0.52], color='gray', lw=0.5, transform=tr)
+                oneplot_xticks.append(tick)
+
+            yticks = np.linspace(0.1, 0.9, self.n_yticks)       # ряски на оси ординат 
+            for y_t in yticks:
+                tick, = self.ax.plot([0.48, 0.52], [y_t, y_t], color='gray', lw=0.5, transform=tr)
+                oneplot_yticks.append(tick)
+            self.ticks.append([oneplot_xticks, oneplot_yticks])
             
             # подпись графика
             txt = self.ax.text(left + width / 2, bottom + height * 0.8,
@@ -64,7 +81,7 @@ class TEPsPlot(FigureCanvas):
             self.texts.append(txt)
 
         self.fig.canvas.draw()      # отрисовка
-        self.background = self.fig.canvas.copy_from_bbox(self.ax.bbox)      # сохранение фона
+        self.background = self.fig.canvas.copy_from_bbox(self.ax.bbox)      # сохранение фона чистого
 
         self._last_xlim = None  # границы по оси х не заданы
         self._last_ylim = None  # границы по оси y не заданы
@@ -85,41 +102,39 @@ class TEPsPlot(FigureCanvas):
         self._last_ylim = (ymin, ymax)
         
         if x_changed:
-            x_old = deepcopy(self._xdata)
             self._xdata = self._normalize(np.linspace(xmin, xmax, (xmax-xmin)), axis='x')  # новая ось абсцисс
 
         axis_pos = (np.abs(xmin)/(xmax-xmin), np.abs(ymin)/(ymax-ymin))   # новые отнормированные позиции
         xticks_limits = [axis_pos[0]-0.02, axis_pos[0]+0.02]
         yticks_limits = [axis_pos[1]-0.02, axis_pos[1]+0.02]
 
-        n_xticks=5
-        n_yticks=4
-
         self.fig.canvas.restore_region(self.background) # восстанавливаем чистый фон
 
         for i in range(len(self.axes_lines)):   # пробегаемся по каждому "графику"
             if x_changed or y_changed:          # если изменились пределы, то надо перерисовать линии
                 x_axis, y_axis = self.axes_lines[i]
-                
-                tr = self.transforms[i]
-
+                xticks, yticks = self.ticks[i]
                 if y_changed:       # если изменился масштаб по ординате
                     x_axis.set_ydata([axis_pos[1], axis_pos[1]])
-                    yticks = np.linspace(0.1, 0.9, n_yticks)
-                    for y_t in yticks:
-                        self.ax.plot(xticks_limits, [y_t, y_t], color='gray', lw=0.5, transform=tr)
+                    
+                    for x_t in xticks:
+                        x_t.set_ydata(yticks_limits)
 
                 if x_changed:       # если изменился масштаб по абсциссе
                     y_axis.set_data([axis_pos[0], axis_pos[0]], [0, 1])
-                    xticks = np.linspace(0.1, 0.9, n_xticks)
+                    for y_t in yticks:
+                        y_t.set_xdata(xticks_limits)
+                    xticks_new = self._normalize(np.linspace(0, xmax+1, self.n_xticks), axis='x')
+                    for i, x_t in enumerate(xticks):
+                        x_t.set_xdata([xticks_new[i], xticks_new[i]])
+
                     
-                    for x_t in xticks:
-                        self.ax.plot([x_t, x_t], yticks_limits, color='gray', lw=0.5, transform=tr)
+                    
         for line in self.lines:
             line.set_visible(False)
 
         self.fig.canvas.draw()
-        self.background = self.fig.canvas.copy_from_bbox(self.ax.bbox)  # сохраняем чистый фон без линий, только псевдооси
+        self.background_axes = self.fig.canvas.copy_from_bbox(self.ax.bbox)  # сохраняем чистый фон без линий, только псевдооси и тики
         
         for line in self.lines:
             line.set_visible(True)
@@ -135,7 +150,7 @@ class TEPsPlot(FigureCanvas):
         xmin, xmax = self._last_xlim
         ymin, ymax = self._last_ylim
 
-        self.fig.canvas.restore_region(self.background) # восстанавливаем чистый фон
+        self.fig.canvas.restore_region(self.background_axes) # восстанавливаем чистый фон
 
         for i, y_new in enumerate(data):
             y = deepcopy(y_new)
@@ -193,6 +208,7 @@ class TEPsPlot(FigureCanvas):
             return [x_px / fig_w, y_px / fig_h, w_px / fig_w, h_px / fig_h]
 
         for i, (x_px, y_px) in enumerate(positions):  # создаём оси по заданным пиксельным координатам
+
             self.axes[i].set_position(px_to_norm(x_px, y_px, single_w, single_h))
         
         self.fig.set_size_inches(w/dpi, h/dpi, forward=True)

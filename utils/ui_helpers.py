@@ -1,6 +1,6 @@
 from PyQt5.QtWidgets import QPushButton, QSpinBox, QDoubleSpinBox, QCheckBox, QComboBox, QShortcut
 from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QStandardItemModel, QStandardItem, QKeySequence
+from PyQt5.QtGui import QStandardItemModel, QStandardItem, QKeySequence, QFont, QFontMetrics
 from widgets.checkable_combo_box import CheckableComboBox
 
 def create_button(text, callback=None, checkable=False, parent=None):
@@ -71,3 +71,26 @@ def shortcut_scale(keyword, spin1, spin2, action, parent=None):
 #         box.setLayout(layout)
 
 #         return box
+
+def fit_font_to_width_spinbox(spinbox, padding_w=0, padding_h=0):
+        
+        width = spinbox.width() - padding_w
+        height = spinbox.height() - padding_h
+        if width <= 0 or height <= 0:
+            return
+
+        font = spinbox.font()
+        fs = font.pointSize()
+        if fs <= 0:
+            fs = 12
+
+        max_text = str(spinbox.maximum())
+        fm = QFontMetrics(font)
+
+        # уменьшаем, пока и ширина, и высота не влезают
+        while (fm.horizontalAdvance(max_text) > width or fm.height() > height) and fs > 1:
+            fs -= 1
+            font.setPointSize(fs)
+            fm = QFontMetrics(font)
+
+        spinbox.setFont(font)

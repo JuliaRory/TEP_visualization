@@ -443,6 +443,8 @@ class MainWindow(QWidget):
         super().showEvent(event)
         QTimer.singleShot(10, self.start_calc_signal.emit)
 
+
+    # --- неприкаянные функции ---
     def restart_plots(self):
         self.main_teps_panel.figure.refresh()
 
