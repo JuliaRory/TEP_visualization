@@ -72,25 +72,23 @@ def shortcut_scale(keyword, spin1, spin2, action, parent=None):
 
 #         return box
 
-def fit_font_to_width_spinbox(spinbox, padding_w=0, padding_h=0):
-        
-        width = spinbox.width() - padding_w
-        height = spinbox.height() - padding_h
-        if width <= 0 or height <= 0:
-            return
+def fit_font_to_width_spinbox(spinbox):
+        fs = 12
 
-        font = spinbox.font()
-        fs = font.pointSize()
-        if fs <= 0:
-            fs = 12
-
-        max_text = str(spinbox.maximum())
+        font = QFont()
+        font.setPointSize(fs)
         fm = QFontMetrics(font)
 
-        # уменьшаем, пока и ширина, и высота не влезают
-        while (fm.horizontalAdvance(max_text) > width or fm.height() > height) and fs > 1:
-            fs -= 1
+        text = spinbox.text()
+
+        width = spinbox.width() * (1-.4)
+        height = spinbox.height() * (1-.2)
+
+        while (fm.horizontalAdvance(text) > width or fm.height() > height) and fs > 1:
+            
+            fs -= 1 
             font.setPointSize(fs)
             fm = QFontMetrics(font)
-
-        spinbox.setFont(font)
+            print(fs, ':', fm.horizontalAdvance(text), fm.height())
+        
+        spinbox.lineEdit().setFont(font)
