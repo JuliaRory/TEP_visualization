@@ -14,11 +14,12 @@ os.environ['PATH'] += r';~qgis directoryqt\apps\qgis\bin;~qgis directory\apps\Qt
 
 # == Создание главный объект приложения Qt == 
 app = QApplication(sys.argv)    
-style = load_qss(r"styles/theme.qss", r"styles/palette.json")   # подгрузка стиля
+style = load_qss(r"styles/theme.qss", r"styles/palette.json")   # подгрузка с
+
 app.setStyleSheet(style)
 
 # == Магическое подключениен драйвера для получения потока с данными из резонанса == 
-
+                                                                                                         
 driver = Driver("TEP_visual")          
 dispatcher = CallDispatcher()                          # пустая функция-обработчик
 driver.inputDataStream("epochs", dispatcher)           # создание входного потока данных типа Stream

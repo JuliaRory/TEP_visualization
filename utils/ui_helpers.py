@@ -3,9 +3,11 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QStandardItemModel, QStandardItem, QKeySequence, QFont, QFontMetrics
 from widgets.checkable_combo_box import CheckableComboBox
 
-def create_button(text, callback=None, checkable=False, parent=None):
+def create_button(text, callback=None, checkable=False, parent=None, w=None):
     btn = QPushButton(text, parent)
     btn.setCheckable(checkable)
+    if w is not None:
+        btn.setFixedWidth(w)
     if callback:
         btn.clicked.connect(callback)
     return btn
@@ -19,8 +21,10 @@ def spin_box(min, max, value, data_type = 'int', step=1, decimals=4, parent=None
     spin_box.setRange(min, max)
     spin_box.setValue(value)
     spin_box.setSingleStep(step)
-    if w is not None and h is not None:
-        spin_box.resize(w, h)
+    if w is not None:
+        spin_box.setFixedWidth(w)
+    if h is not None:
+        spin_box.setFixedHeight(h)
     if function is not None:
         spin_box.valueChanged.connect(function)
     spin_box.setDisabled(disabled)
@@ -85,10 +89,8 @@ def fit_font_to_width_spinbox(spinbox):
         height = spinbox.height() * (1-.2)
 
         while (fm.horizontalAdvance(text) > width or fm.height() > height) and fs > 1:
-            
             fs -= 1 
             font.setPointSize(fs)
             fm = QFontMetrics(font)
-            print(fs, ':', fm.horizontalAdvance(text), fm.height())
         
         spinbox.lineEdit().setFont(font)

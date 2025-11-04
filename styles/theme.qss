@@ -18,25 +18,6 @@ QScrollBar::handle:vertical:hover {
     background: $panel_left_button_hover;
 }
 
-/* ===== Left Panel ===== */
-QFrame#settings_panel {
-    background-color: $panel_left_background;
-    color: $panel_left_text;
-    border-right: 1px solid $border;
-}
-
-/* ===== MAIN TEP Panel ===== */
-QFrame#tep_main_panel {
-    background-color: $tep_plot_background;
-    border-right: 1px solid $border;
-}
-
-/* ===== MEP Panel ===== */
-QFrame#mep_main_panel {
-    background-color: $mep_plot_background;
-    border-right: 1px solid $border;
-}
-
 /* ===== Buttons ===== */
 QPushButton {
     background-color: $panel_left_button;
@@ -56,7 +37,8 @@ QPushButton:pressed {
 
 
 QLabel {
-    color: $panel_left_text;
+    color: $text;
+    /* background-color: #4b5754; */
 }
 
 QSplitter {
@@ -67,4 +49,31 @@ QSplitter::handle {
     background-color: $splitter_border;   /* цвет полосы */
     width: 6px;                                 /* ширина разделителя */
 }
+
+
+/* ===== Left Panel ===== */
+QFrame#settings_panel {
+    background-color: $panel_left_background;
+    color: $panel_left_text;
+    border-right: 1px solid $border;
+}
+#settings_panel QLabel  {
+    color: $panel_left_text;
+}
+
+/* ===== MAIN TEP Panel ===== */
+QFrame#tep_main_panel {
+    background-color: $tep_plot_background;
+    border-right: 1px solid $border;
+}
+
+
+/* ===== MEP Panel ===== */
+QFrame#mep_main_panel {
+    background-color: $mep_plot_background;
+    border-right: 1px solid $border;
+}
+
+
+
 

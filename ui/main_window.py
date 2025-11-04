@@ -113,21 +113,25 @@ class MainWindow(QWidget):
     def _setup_ui(self):
         """Создаёт всю визуальную часть интерфейса."""
 
+        hor_ratio = self.params["layout"]["horizontal_ratios"]
+        cen_ratio = self.params["layout"]["center_ratio"]
+        rigth_ratio = self.params["layout"]["right_ratio"]
+
         self.settings_panel = SettingsPanel(parent=self,
                                             params=self.params,
                                             channels=CHANNELS)
         
         self.main_teps_panel = TEPsPanel(parent=self,
                                          params=self.params, 
-                                         init_size=[int(0.6 * WIDTH_SET), int(0.7*HEIGHT_SET)])
+                                         init_size=[int(hor_ratio[1] * WIDTH_SET), int(cen_ratio*HEIGHT_SET)])
         
         self.suppl_teps_panel = TEPsSupplPanel(parent=self,
                                          params=self.params, 
-                                         init_size=[int(0.6 * WIDTH_SET), int(0.3*HEIGHT_SET)])
+                                         init_size=[int(hor_ratio[2] * WIDTH_SET), int((rigth_ratio)*HEIGHT_SET)])
         
         self.meps_panel = MEPsPanel(parent=self,
-                                         params=self.params, 
-                                         init_size=[int(0.25 * WIDTH_SET), int(0.5*HEIGHT_SET)])
+                                    params=self.params["MEP_plot"], 
+                                    init_size=[int(hor_ratio[1] * WIDTH_SET), int((1-cen_ratio)*HEIGHT_SET)])
         
         self.topoplots_panel = TopoplotPanel()
         
@@ -148,23 +152,24 @@ class MainWindow(QWidget):
         # |       |                         |         |
         # +-------+-------------------------+---------+
 
+        ratio = self.params["layout"]["center_ratio"]
         splitter_center = QSplitter(Qt.Vertical, parent=self)        # позволяет изменять размер
         splitter_center.addWidget(self.main_teps_panel)
-        splitter_center.addWidget(self.suppl_teps_panel)
+        splitter_center.addWidget(self.meps_panel)
         splitter_center.setCollapsible(0, False)
         splitter_center.setOpaqueResize(False)
-        splitter_center.setSizes([int(0.7*HEIGHT_SET), int(0.3*HEIGHT_SET)])   # Можно задать начальные пропорции
+        splitter_center.setSizes([int(ratio*HEIGHT_SET), int((1-ratio)*HEIGHT_SET)])   # Можно задать начальные пропорции
         splitter_center.setStretchFactor(0, 7)
         splitter_center.setStretchFactor(1, 3) # растягивается в два раза сильнее
         splitter_center.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
 
-
+        ratio = self.params["layout"]["right_ratio"]
         splitter_right = QSplitter(Qt.Vertical, parent=self)        # позволяет изменять размер
-        splitter_right.addWidget(self.meps_panel)
         splitter_right.addWidget(self.topoplots_panel)
+        splitter_right.addWidget(self.suppl_teps_panel)
         splitter_right.setCollapsible(0, False)
         splitter_right.setOpaqueResize(False)
-        splitter_right.setSizes([int(0.5*HEIGHT_SET), int(0.5*HEIGHT_SET)])   # Можно задать начальные пропорции
+        splitter_right.setSizes([int(ratio*HEIGHT_SET), int((1-ratio)*HEIGHT_SET)])   # Можно задать начальные пропорции
         splitter_right.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
 
         self.splitter = QSplitter(Qt.Horizontal, parent=self)        # позволяет изменять размер
@@ -175,7 +180,8 @@ class MainWindow(QWidget):
         self.splitter.setCollapsible(0, False)
         self.splitter.setOpaqueResize(False)
         
-        self.splitter.setSizes([int(0.15 * WIDTH_SET), int(0.6 * WIDTH_SET), int(0.25 * WIDTH_SET)])   # Можно задать начальные пропорции
+        ratio = self.params["layout"]["horizontal_ratios"]
+        self.splitter.setSizes([int(ratio[0] * WIDTH_SET), int(ratio[1] * WIDTH_SET), int(ratio[2] * WIDTH_SET)])   # Можно задать начальные пропорции
         self.splitter.setStretchFactor(0, 2)
         self.splitter.setStretchFactor(1, 5) # растягивается в два раза сильнее
         self.splitter.setStretchFactor(2, 3)
@@ -238,9 +244,9 @@ class MainWindow(QWidget):
         t3 = time.perf_counter()  
 
         data = np.array(msg)[:, -1].T
-        x_min, x_max = self.ms_to_sample(-15), self.ms_to_sample(100)
-        self.EMG.append(data[self.time_shift+x_min:self.time_shift+x_max])
-        self.meps_panel.figure.update_emg(list(self.EMG), x_min)
+        x_min, x_max = self.ms_to_sample(self.params["MEP_plot"]["xmin_ms"]), self.ms_to_sample(self.params["MEP_plot"]["xmax_ms"])
+        emg = data[self.time_shift+x_min:self.time_shift+x_max]
+        self.meps_panel.figure.update_emg(emg)
 
         t4 = time.perf_counter()
 

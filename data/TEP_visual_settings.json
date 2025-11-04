@@ -23,6 +23,21 @@
             "ymin": -100,
             "ymax": 100
         },
+    "layout":
+        {
+            "horizontal_ratios": [0.15, 0.6, 0.25],
+            "center_ratio": 0.7, 
+            "right_ratio": 0.5
+        },
+    "MEP_plot":
+        {
+            "xmin_ms": -20, 
+            "xmax_ms": 60, 
+            "max_amp_mV": 1,
+            "Fs": 5000,
+            "n_plots": 5,
+            "set_plot_ratio": 0.15
+        },
     "SPEED":
         {
             "window_start": -100,

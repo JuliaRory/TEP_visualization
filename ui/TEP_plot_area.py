@@ -27,11 +27,15 @@ class TEPsPanel(QFrame):
         """Визуальная часть виджета"""
         self._setup_ui()
         self._setup_layout()
+
+        """Связи"""
         self._setup_connections()
 
         """Финализация"""
         self._post_init()
 
+
+    # --- Initialization ---
     def _init_state(self):
         
         self.setObjectName("tep_main_panel")    # для привязки стиля
@@ -54,6 +58,7 @@ class TEPsPanel(QFrame):
         self.scale_left, self.scale_bottom = int( self.df_pos['x'].min()+0.2*self.plot_width), int(self.df_pos['y'].max()+0.2*self.plot_height)                     #  позиция для пустых осей для задания масштаба
         self._positions = np.concatenate([self.df_pos[['x', 'y']].values, np.array([[self.scale_left, self.scale_bottom]])], axis=0)      #  добавляем к списку позиций основных графиков позицию пустых осей
     
+    # --- Widgets ---
     def _setup_ui(self):
         
         """Создаём спинбоксы (и shortcut) для масштабирования графиков"""

@@ -1,4 +1,5 @@
 from PyQt5.QtWidgets import QHBoxLayout, QVBoxLayout
+from PyQt5.QtCore import Qt
 
 def create_hbox(widgets, spacing=6, margins=(0, 0, 0, 0)):
     layout = QHBoxLayout()
@@ -6,6 +7,7 @@ def create_hbox(widgets, spacing=6, margins=(0, 0, 0, 0)):
     layout.setContentsMargins(*margins)
     for w in widgets:
         layout.addWidget(w)
+    layout.setAlignment(Qt.AlignLeft)
     return layout
 
 def create_vbox(widgets, spacing=6, margins=(0, 0, 0, 0)):
