@@ -15,8 +15,11 @@ viridisBig = cm.get_cmap('jet')
 newcmp = ListedColormap(viridisBig(np.linspace(0, 1, 15)))
 
 class TopoPlot(QFrame):
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, w=40, timestamp=20):
         super().__init__(parent)
+        self.resize(w, w)
+
+        self.timestamp = timestamp
 
         self._init_state()
         self._setup_ui()
@@ -49,8 +52,12 @@ class TopoPlot(QFrame):
         self.canvas = FigureCanvas(self.fig)
         
         self.ax = self.fig.add_subplot(111)
-        self.ax.plot([0, 1, 2, 3], [0, 2, 1, 3])
-        self.fig.tight_layout()
+        self.ax.set_axis_off()                      # полностью скрываем оси
+        self.ax.patch.set_visible(False)            # убираем фон осей
+        for spine in self.ax.spines.values():       # убираем рамку
+            spine.set_visible(False)
+
+        self.ax.set_title(f"{self.timestamp} ms", loc='right')
     
     def _setup_layout(self):
         layout = QVBoxLayout(self)
@@ -107,9 +114,10 @@ class TopoPlot(QFrame):
         # im, cn = mne.viz.plot_topomap(ERP[:, idx], ,  image_interp='cubic', ch_type='eeg', names =channels[inds],
         # size=5, show=False, contours=6, sphere=0.5, 
         # cmap=newcmp, extrapolate='head',  vlim=[-8, 8])
-        if self.time1:
-            plt.colorbar(im)
-            self.time1 = False 
+        plt.colorbar(im)
+        # if self.time1:
+        #     plt.colorbar(im)
+        #     self.time1 = False 
         # Перерисовать canvas
         self.canvas.draw()
 

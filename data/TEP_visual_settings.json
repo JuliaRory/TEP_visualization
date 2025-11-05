@@ -46,7 +46,8 @@
             "Fs": 5000,
             "topo_butt_ratio": 0.5,
             "n_channels": 64,
-            "n_plots": 5
+            "n_plots": 3, 
+            "timestamps_ms": [30, 55, 80]
         },
     "SPEED":
         {

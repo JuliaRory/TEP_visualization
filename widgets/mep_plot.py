@@ -68,7 +68,7 @@ class MEPPlot(FigureCanvas):
         # --- размеры в пикселях ---
         fig_w_px, fig_h_px = self.figsize[0] * self.dpi, self.figsize[1] * self.dpi  # px
         width_px, height_px = 0.7*fig_w_px/n, 0.7*fig_h_px                           # px 
-        d_width = (1-0.7-0.1) * fig_w_px / 5                                         # px : расстояние между графиками по горизонтали
+        d_width = (1-0.7-0.1) * fig_w_px / n                                         # px : расстояние между графиками по горизонтали
         left0_px, bottom_px = 0.1*fig_w_px, 0.1*fig_h_px                             # px : положение первого графика (лево, низ)
         
         # --- отнормированные размеры ---

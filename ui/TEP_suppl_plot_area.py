@@ -53,8 +53,10 @@ class TEPsSupplPanel(QFrame):
         self.figure = TEPsSupplPlot(self, w=self.width(), h=self._ratio*self.height(), params=self.params)
         self.figure.setAttribute(Qt.WA_TransparentForMouseEvents, True)
 
-        self.figure_topo = TopoPlot(self)
-        self.figure_topo.setGeometry(50, 50, 400, 300)
+        n = self.params['n_plots']
+        w_available = 0.8 * self.width()
+        w_topo = int(w_available // n)
+        self.figure_topo = [TopoPlot(self, w=w_topo, timestamp=self.params["timestamps_ms"][i]) for i in range(n)]
 
         label1 = QLabel("Макс:", self)
         label2 = QLabel(MICROVOLT, self)
@@ -73,7 +75,13 @@ class TEPsSupplPanel(QFrame):
         self._frame_settings = QFrame(self)
     
     def _setup_layout(self):
-        
+        n = self.params['n_plots']
+        d_width = (1-0.8-0.1) * self.width() / n
+        left = int(0.1 * self.width())
+        for i, topoplot in enumerate(self.figure_topo):
+            left_new = int(left+(topoplot.width() + d_width)*i)
+            topoplot.move(left_new, left)
+
         butt_pos = int(self._ratio*self.height()) - 150
         self.figure.move(0, butt_pos)
 

@@ -234,15 +234,19 @@ class MainWindow(QWidget):
                     avg_funcs[j].add(ch_data[j])
                 average_TEPs = np.array([f.calculate() for f in avg_funcs])  # усреднённые TEPs
                 data_aver.append(average_TEPs)
-            data = data_aver
+            data = np.array(data_aver)
         self.main_teps_panel.figure.update_data(data)      # отобразить  TEPs
 
         x_min, x_max = self.ms_to_sample(self.params["TEP_suppl_plot"]["xmin_ms"]), self.ms_to_sample(self.params["TEP_suppl_plot"]["xmax_ms"])
         data2plot = data[:, self.time_shift+x_min:self.time_shift+x_max]
         self.suppl_teps_panel.figure.update_plot(data2plot)
+
+        timestamps = self.params["TEP_suppl_plot"]["timestamps_ms"]
+        for i, t_ms in enumerate(timestamps):
+            t = self.ms_to_sample(t_ms)
+            self.suppl_teps_panel.figure_topo[i].plot_topomap(data[:, t], vmin=-15, vmax=15)
         # t2 = time.perf_counter()
-        
-        self.t = self.ms_to_sample(55)
+
         # self.topoplots_panel.topo.plot_topomap(data[:, self.t], vmin=-15, vmax=15)
         t3 = time.perf_counter()  
 
@@ -459,17 +463,18 @@ class MainWindow(QWidget):
             # преобразуем координаты
             global_pos = self.splitter.mapToGlobal(event.pos())
 
-            topoplots = self.suppl_teps_panel.figure_topo 
-            local_pos = topoplots.mapFromGlobal(global_pos)
+            topoplots = self.suppl_teps_panel.figure_topo
+            for topoplot in topoplots:
+                local_pos = topoplot.mapFromGlobal(global_pos)
 
-            if topoplots.geometry().contains(topoplots.mapFromGlobal(global_pos)):
-                # создаём новое событие для frame
-                new_event = QMouseEvent(
-                    event.type(), local_pos, global_pos,
-                    event.button(), event.buttons(), event.modifiers()
-                )
-                QApplication.sendEvent(topoplots, new_event)
-                return True  # блокируем обработку splitter'ом
+                if topoplot.geometry().contains(topoplot.mapFromGlobal(global_pos)):
+                    # создаём новое событие для frame
+                    new_event = QMouseEvent(
+                        event.type(), local_pos, global_pos,
+                        event.button(), event.buttons(), event.modifiers()
+                    )
+                    QApplication.sendEvent(topoplot, new_event)
+                    return True  # блокируем обработку splitter'ом
         return super().eventFilter(obj, event)
     
 
