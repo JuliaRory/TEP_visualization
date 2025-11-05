@@ -16,7 +16,7 @@ class MEPPlot(FigureCanvas):
         self.dpi = dpi
         self.params = params or {}
         
-        self.fig = Figure(figsize=self.figsize, dpi=100) 
+        self.fig = Figure(figsize=self.figsize, dpi=dpi) 
         
         self.fig.patch.set_alpha(0.0)                          # Делаем фон холста matplolib прозрачным
         
@@ -36,7 +36,6 @@ class MEPPlot(FigureCanvas):
         window_dur = self._xmax - self._xmin
 
         n = self.params["n_plots"]
-        first_time = True
 
         """создание оси"""
         self.ax = self.fig.add_axes([0, 0, 1, 1])   # создаём ось на всё пространство графика [left, bottom, width, height]
@@ -45,7 +44,6 @@ class MEPPlot(FigureCanvas):
         for spine in self.ax.spines.values():       # убираем рамку
             spine.set_visible(False)
 
-        """псевдоданные"""
         x = np.linspace(x_shift, window_dur+x_shift, window_dur)
         self._x = self._normalize(x, axis='x')
 

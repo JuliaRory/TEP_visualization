@@ -1,6 +1,6 @@
-from PyQt5.QtCore import Qt, QTimer, pyqtSignal
-from PyQt5.QtGui import QFont, QFontMetrics
-from PyQt5.QtWidgets import (QWidget, QGridLayout,QLabel, qApp, QFrame, QHBoxLayout, QSizePolicy, QSplitter)
+from PyQt5.QtCore import Qt, QTimer, pyqtSignal,  QEvent, QPoint
+from PyQt5.QtGui import QFont, QFontMetrics, QMouseEvent
+from PyQt5.QtWidgets import (QWidget, QGridLayout,QLabel, qApp, QFrame, QHBoxLayout, QSizePolicy, QSplitter, QApplication)
 import numpy as np
 import pandas as pd
 
@@ -126,14 +126,14 @@ class MainWindow(QWidget):
                                          init_size=[int(hor_ratio[1] * WIDTH_SET), int(cen_ratio*HEIGHT_SET)])
         
         self.suppl_teps_panel = TEPsSupplPanel(parent=self,
-                                         params=self.params, 
-                                         init_size=[int(hor_ratio[2] * WIDTH_SET), int((rigth_ratio)*HEIGHT_SET)])
+                                         params=self.params["TEP_suppl_plot"], 
+                                         init_size=[int(hor_ratio[2] * WIDTH_SET), HEIGHT_SET])
         
         self.meps_panel = MEPsPanel(parent=self,
                                     params=self.params["MEP_plot"], 
                                     init_size=[int(hor_ratio[1] * WIDTH_SET), int((1-cen_ratio)*HEIGHT_SET)])
         
-        self.topoplots_panel = TopoplotPanel()
+        # self.topoplots_panel = TopoplotPanel()
         
 
     # --- Layout ---
@@ -163,20 +163,20 @@ class MainWindow(QWidget):
         splitter_center.setStretchFactor(1, 3) # растягивается в два раза сильнее
         splitter_center.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
 
-        ratio = self.params["layout"]["right_ratio"]
-        splitter_right = QSplitter(Qt.Vertical, parent=self)        # позволяет изменять размер
-        splitter_right.addWidget(self.topoplots_panel)
-        splitter_right.addWidget(self.suppl_teps_panel)
-        splitter_right.setCollapsible(0, False)
-        splitter_right.setOpaqueResize(False)
-        splitter_right.setSizes([int(ratio*HEIGHT_SET), int((1-ratio)*HEIGHT_SET)])   # Можно задать начальные пропорции
-        splitter_right.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        # ratio = self.params["layout"]["right_ratio"]
+        # splitter_right = QSplitter(Qt.Vertical, parent=self)        # позволяет изменять размер
+        # splitter_right.addWidget(self.topoplots_panel)
+        # splitter_right.addWidget(self.suppl_teps_panel)
+        # splitter_right.setCollapsible(0, False)
+        # splitter_right.setOpaqueResize(False)
+        # splitter_right.setSizes([int(ratio*HEIGHT_SET), int((1-ratio)*HEIGHT_SET)])   # Можно задать начальные пропорции
+        # splitter_right.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
 
         self.splitter = QSplitter(Qt.Horizontal, parent=self)        # позволяет изменять размер
         # splitter.addWidget(self.settings_panel)
         self.splitter.addWidget(self.settings_panel.scroll)
         self.splitter.addWidget(splitter_center)
-        self.splitter.addWidget(splitter_right)
+        self.splitter.addWidget(self.suppl_teps_panel)
         self.splitter.setCollapsible(0, False)
         self.splitter.setOpaqueResize(False)
         
@@ -186,6 +186,9 @@ class MainWindow(QWidget):
         self.splitter.setStretchFactor(1, 5) # растягивается в два раза сильнее
         self.splitter.setStretchFactor(2, 3)
         self.splitter.setGeometry(0, 0, WIDTH_SET, HEIGHT_SET)  #  вручную задаём положение и размер
+
+        # фильтр событий на splitter
+        self.splitter.installEventFilter(self)
 
     # --- Сигналы ---
     def _setup_connections(self):
@@ -234,19 +237,19 @@ class MainWindow(QWidget):
             data = data_aver
         self.main_teps_panel.figure.update_data(data)      # отобразить  TEPs
 
-        # x_min, x_max = self.ms_to_sample(-10), self.ms_to_sample(100)
-        # data2plot = data[:, self.time_shift+x_min:self.time_shift+x_max]
-        # self.suppl_teps_panel.figure.update_plot(data2plot, x_min)
+        x_min, x_max = self.ms_to_sample(self.params["TEP_suppl_plot"]["xmin_ms"]), self.ms_to_sample(self.params["TEP_suppl_plot"]["xmax_ms"])
+        data2plot = data[:, self.time_shift+x_min:self.time_shift+x_max]
+        self.suppl_teps_panel.figure.update_plot(data2plot)
         # t2 = time.perf_counter()
         
         self.t = self.ms_to_sample(55)
         # self.topoplots_panel.topo.plot_topomap(data[:, self.t], vmin=-15, vmax=15)
         t3 = time.perf_counter()  
 
-        data = np.array(msg)[:, -1].T
+        emg = np.array(msg)[:, -1].T       # ЭМГ
         x_min, x_max = self.ms_to_sample(self.params["MEP_plot"]["xmin_ms"]), self.ms_to_sample(self.params["MEP_plot"]["xmax_ms"])
-        emg = data[self.time_shift+x_min:self.time_shift+x_max]
-        self.meps_panel.figure.update_emg(emg)
+        emg2plot = emg[self.time_shift+x_min:self.time_shift+x_max]
+        self.meps_panel.figure.update_emg(emg2plot)
 
         t4 = time.perf_counter()
 
@@ -449,6 +452,26 @@ class MainWindow(QWidget):
         super().showEvent(event)
         QTimer.singleShot(10, self.start_calc_signal.emit)
 
+    def eventFilter(self, obj, event):
+        if obj is self.splitter and event.type() in (
+            QEvent.MouseButtonPress, QEvent.MouseMove, QEvent.MouseButtonRelease):
+            
+            # преобразуем координаты
+            global_pos = self.splitter.mapToGlobal(event.pos())
+
+            topoplots = self.suppl_teps_panel.figure_topo 
+            local_pos = topoplots.mapFromGlobal(global_pos)
+
+            if topoplots.geometry().contains(topoplots.mapFromGlobal(global_pos)):
+                # создаём новое событие для frame
+                new_event = QMouseEvent(
+                    event.type(), local_pos, global_pos,
+                    event.button(), event.buttons(), event.modifiers()
+                )
+                QApplication.sendEvent(topoplots, new_event)
+                return True  # блокируем обработку splitter'ом
+        return super().eventFilter(obj, event)
+    
 
     # --- неприкаянные функции ---
     def restart_plots(self):
