@@ -4,6 +4,8 @@ from PyQt5.QtWidgets import (
 from PyQt5.QtGui import QFont, QFontMetrics
 from PyQt5.QtCore import Qt
 
+import matplotlib.pyplot as plt
+
 import numpy as np
 import pandas as pd
 
@@ -56,7 +58,9 @@ class TEPsSupplPanel(QFrame):
         n = self.params['n_plots']
         w_available = 0.8 * self.width()
         w_topo = int(w_available // n)
-        self.figure_topo = [TopoPlot(self, w=w_topo, timestamp=self.params["timestamps_ms"][i]) for i in range(n)]
+        self.figure_topo = [TopoPlot(self, w=w_topo, timestamp=self.params["timestamps_ms"][i], params=self.params["topoplot"]) for i in range(n)]
+
+        self.colorbar = plt.colorbar(self.figure_topo[0].im, fraction=0.046, pad=0.04)
 
         label1 = QLabel("Макс:", self)
         label2 = QLabel(MICROVOLT, self)

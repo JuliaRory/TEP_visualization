@@ -78,7 +78,6 @@ class TEPsSupplPlot(FigureCanvas):
         self.fig.canvas.restore_region(self.background) # восстанавливаем чистый фон
 
         for i in range(self.params["n_channels"]):
-            print(teps[i])
             self.lines[i].set_ydata(teps[i])
             self.ax.draw_artist(self.lines[i])
 

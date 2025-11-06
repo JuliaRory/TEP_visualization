@@ -47,7 +47,16 @@
             "topo_butt_ratio": 0.5,
             "n_channels": 64,
             "n_plots": 3, 
-            "timestamps_ms": [30, 55, 80]
+            "timestamps_ms": [30, 55, 80],
+            "topoplot":
+                {
+                    "vmin": -15, 
+                    "vmax": 15,
+                    "countours": 6,
+                    "image_interp": "nearest",
+                    "sensors": false,
+                    "sphere": 0.5
+                }
         },
     "SPEED":
         {

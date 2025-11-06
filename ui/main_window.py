@@ -13,7 +13,6 @@ from .settings_panel import SettingsPanel
 from .TEP_plot_area import TEPsPanel
 from .TEP_suppl_plot_area import TEPsSupplPanel
 from .MEP_plot_area import MEPsPanel
-from .topoplot_panel import TopoplotPanel
 
 from utils.averaging_math import RollingMean, RollingMedian, RollingTrimMean
 
@@ -244,7 +243,7 @@ class MainWindow(QWidget):
         timestamps = self.params["TEP_suppl_plot"]["timestamps_ms"]
         for i, t_ms in enumerate(timestamps):
             t = self.ms_to_sample(t_ms)
-            self.suppl_teps_panel.figure_topo[i].plot_topomap(data[:, t], vmin=-15, vmax=15)
+            self.suppl_teps_panel.figure_topo[i].plot_topomap(data[:, t])
         # t2 = time.perf_counter()
 
         # self.topoplots_panel.topo.plot_topomap(data[:, self.t], vmin=-15, vmax=15)
