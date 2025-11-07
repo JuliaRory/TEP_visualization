@@ -65,7 +65,7 @@ class TEPsSupplPanel(QFrame):
 
         label1 = QLabel("Макс:", self)
         label2 = QLabel(MICROVOLT, self)
-        self._spinbox_max_amp = spin_box(0, 1000, self.params["max_amp_mV"], parent=self, w=50, step=10)
+        self._spinbox_max_amp = spin_box(0, 10000, self.params["max_amp_mV"], parent=self, w=50, step=10)
         self._max_amp = create_hbox([label1, self._spinbox_max_amp, label2])
 
         label1 = QLabel("от:   ", self)

@@ -1,0 +1,32 @@
+[
+	{
+		"attributes": {
+			"activeStream": {
+				"connections": [
+					"tcp-ip://192.168.1.94:62502"
+				],
+				"metaData": {},
+				"name": "epochs",
+				"serializedType": "FwBCAAAAAAAAAABq2EA=",
+				"uid": "{975539d1-6dbd-4bff-b844-02c65ee8f31f}"
+			},
+			"reconnect": true
+		},
+		"enabled": true,
+		"group": "default",
+		"index": 0,
+		"label": "epochs",
+		"name": "epochs",
+		"serialized": {
+			"desiredStream": {
+				"connections": [
+					"discover:///?stream=epochs&name=SPEED"
+				],
+				"metaData": {},
+				"name": "epochs",
+				"serializedType": "FwBCAAAAAAAAAABq2EA="
+			}
+		},
+		"type": "Resonance::Parameters::Stream"
+	}
+]

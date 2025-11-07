@@ -54,6 +54,7 @@ class Driver:
             
         return sendMessage
     
+    
     def inputMessageStream(self, name, callback):
         cb = self._messageCallback(callback)
         self._callbacks.append(cb)

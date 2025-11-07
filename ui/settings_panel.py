@@ -95,6 +95,7 @@ class SettingsPanel(QFrame):
         self.button_car = create_button('Ок', checkable=True, parent=self)
         _label_car = QLabel("Использовать каналы:")
         self.combo_box_channels = checkable_combobox(self.channels, self.params['bad_channels'], parent=self)
+        self.combo_box_channels.setFixedWidth(70)
         self._car = create_hbox([self.combo_box_channels, self.button_car])
 
     def _setup_layout(self):

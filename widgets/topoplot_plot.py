@@ -187,7 +187,7 @@ class TopoPlot(QFrame):
                 sensors=self.params["sensors"],
                 image_interp=self.params["image_interp"]  
             )
-        
+        self.ax.set_title(f"{self.timestamp} ms", loc='right')
         # self.ax.draw_artist(im)
         # self.canvas.blit(self.ax.bbox)
         self.canvas.draw_idle()

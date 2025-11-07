@@ -206,6 +206,7 @@ class MainWindow(QWidget):
 
     # --- Логика ---
     def _get_data(self, msg, timestamp):
+        print('received')
         # если не стоит флаг "хранить все" и эпох больше допустимого: True -- обрезать, False -- сохранить все
         trim_last = (not self.save_all) & (self.n_epoch + 1 > self.settings_panel.spin_box_save_epoch.value())
 
@@ -217,13 +218,14 @@ class MainWindow(QWidget):
 
         # распаковать "сообщение" в формате {"TEPs": list of EEG data in microvolt} 
         # data = np.array(json.loads(msg)["TEPs"]).T  # [n_channels x n_samples]
-        data = np.array(msg)[:, :-1].T
+        data = np.array(msg)[:, :-2].T * 10**6
 
         self.st_TEPs.append(data)                   # добавить новый массив в список хранимых TEPs  [n_epoch x n_channels x n_samples]
 
         # нужные преобразования
+        
         data = self._transform(data)                    # [n_ch x n_samples] 
-
+        
         if self.aver_mode:
             data_aver = []
             for i, ch_data in enumerate(data):
@@ -234,12 +236,14 @@ class MainWindow(QWidget):
                 average_TEPs = np.array([f.calculate() for f in avg_funcs])  # усреднённые TEPs
                 data_aver.append(average_TEPs)
             data = np.array(data_aver)
+        
+        self._update_plots(data)
 
-        self. _update_plots(data)
+        emg = self.baseline(np.array(msg)[:, -2:].T)
+        emg = np.diff(emg, axis=0).flatten()      # ЭМГ
 
-        emg = np.array(msg)[:, -1].T       # ЭМГ
         x_min, x_max = self.ms_to_sample(self.params["MEP_plot"]["xmin_ms"]), self.ms_to_sample(self.params["MEP_plot"]["xmax_ms"])
-        emg2plot = emg[self.time_shift+x_min:self.time_shift+x_max]
+        emg2plot = emg[self.time_shift+x_min:self.time_shift+x_max] * 1E3
         self.meps_panel.figure.update_emg(emg2plot)
 
         t4 = time.perf_counter()
@@ -258,8 +262,9 @@ class MainWindow(QWidget):
         # self.restart_plots()
     
     def _on_show_epoch_button_click(self):
+        raise Warning("Кнопка пока не работает Т_Т")
         if self.specific_epoch: # если был режим показа отдельной эпохи - вернуться к стандартному отображению
-            self.update_plots()
+            self._update_plots()
             self.settings_panel.button_show_epoch.setText("Показать эпоху")
         else:                   # если не был включён режим показа отдельной эпохи - показать её
             n_show = self.settings_panel.spin_box_show_epoch.value()    # номер эпохи для просмотра
@@ -271,6 +276,7 @@ class MainWindow(QWidget):
         self.specific_epoch = not self.specific_epoch
 
     def _on_remove_epoch_button_click(self):  
+        raise Warning("Кнопка пока не работает Т_Т")
         self.n_epoch -= 1
         self.update_label_counter()
 

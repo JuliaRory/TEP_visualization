@@ -19,7 +19,7 @@
 				],
 				"metaData": {},
 				"name": "epochs",
-				"serializedType": "FwBBAAAAAAAAAACIs0A="
+				"serializedType": "FwBCAAAAAAAAAACIs0A="
 			}
 		},
 		"type": "Resonance::Parameters::Stream"
