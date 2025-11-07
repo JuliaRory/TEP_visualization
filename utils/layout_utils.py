@@ -8,6 +8,7 @@ def create_hbox(widgets, spacing=6, margins=(0, 0, 0, 0)):
     for w in widgets:
         layout.addWidget(w)
     layout.setAlignment(Qt.AlignLeft)
+    layout.addStretch()
     return layout
 
 def create_vbox(widgets, spacing=6, margins=(0, 0, 0, 0)):

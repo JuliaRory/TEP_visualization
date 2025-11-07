@@ -1,5 +1,5 @@
 from PyQt5.QtWidgets import (
-    QFrame, QGridLayout, QHBoxLayout, QLabel, QScrollArea, QWidget, QSplitter, QVBoxLayout
+    QFrame, QGridLayout, QHBoxLayout, QLabel, QScrollArea, QWidget, QSplitter, QVBoxLayout, QSizePolicy
 )
 from PyQt5.QtGui import QFont, QFontMetrics
 from PyQt5.QtCore import Qt
@@ -21,6 +21,9 @@ class MEPsPanel(QFrame):
         super().__init__(parent)
         """Внешний вид виджета"""
         self.resize(init_size[0], init_size[1])
+        
+        
+
         self.setMinimumHeight(50)
 
         """Параметры"""
@@ -90,6 +93,7 @@ class MEPsPanel(QFrame):
             layout_settings.addLayout(layout)
         layout_settings.addWidget(self._button_apply)
         
+
         self.splitter = QSplitter(Qt.Horizontal, parent=self)        # позволяет изменять размер
         self.splitter.addWidget(self._frame_settings)
         self.splitter.addWidget(self.figure)
@@ -100,6 +104,11 @@ class MEPsPanel(QFrame):
         self.splitter.setStretchFactor(0, 1)
         self.splitter.setStretchFactor(1, 4) # растягивается в два раза сильнее
         self.splitter.setGeometry(0, 0, self.width(),  self.height())  #  вручную задаём положение и размер
+        self.splitter.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+
+        for i in range(self.splitter.count() - 1):
+            handle = self.splitter.handle(i + 1)
+            handle.setEnabled(False)   # делает ручку недоступной
 
     # --- Сигналы ---
     def _setup_connections(self):

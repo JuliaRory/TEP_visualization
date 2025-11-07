@@ -60,6 +60,9 @@ QFrame#settings_panel {
 #settings_panel QLabel  {
     color: $panel_left_text;
 }
+#settings_panel QCheckBox  {
+    color: $panel_left_text;
+}
 
 /* ===== MAIN TEP Panel ===== */
 QFrame#tep_main_panel {

@@ -23,6 +23,8 @@ class MEPPlot(FigureCanvas):
         super().__init__(self.fig)
         self.setParent(parent)
 
+        self.setFixedSize(int(w), int(h))   # !!! временнные меры
+
         self.setStyleSheet("background-color:transparent;")    # делаем виджет прозрачнымs
 
         self._init_state()
@@ -31,6 +33,9 @@ class MEPPlot(FigureCanvas):
         self.ms_to_sample = lambda x: int(x / 1000 * self.params["Fs"])
         self._xmin, self._xmax = self.ms_to_sample(self.params["xmin_ms"]), self.ms_to_sample(self.params["xmax_ms"])
         self._ymax = self.params["max_amp_mV"]
+
+        self.start_amp = self.ms_to_sample(self.params["amp_start_ms"]) - self._xmin
+        self.end_amp = self.ms_to_sample(self.params["amp_end_ms"])  - self._xmin
 
         x_shift = self._xmin
         window_dur = self._xmax - self._xmin
@@ -58,11 +63,12 @@ class MEPPlot(FigureCanvas):
 
         fontsize_ticks = 10
         fontsize_axes = 12
-        fontsize_title = 12
+        fontsize_title = 10
 
         self.lines = []                             # здесь будут накапливаться до n графиков миограммы
         self.amps = [None for _ in range(n)]
         self.lats = [None for _ in range(n)]
+        self.titles = []
 
         """расположение графиков"""
         # --- размеры в пикселях ---
@@ -120,9 +126,10 @@ class MEPPlot(FigureCanvas):
                 self.ax.text(1.05, -.05, "ms", transform=tr, fontsize=fontsize_axes, color='darkgray')
             
             # --- надпись над графиком ---
-            title = f"#{i+1}" if self.amps[i] is None else f"#{i+1} : amp={self.amps[i]} mV, lat={self.lats[i]} ms"
+            title = f"#{i+1}"
             color = 'black' if i == 0 else 'darkgray'
-            self.ax.text(0, 1.1, title, transform=tr, fontsize=fontsize_title, color=color)
+            text_title = self.ax.text(-0.1, 1.1, title, transform=tr, fontsize=fontsize_title, color=color)
+            self.titles.append(text_title)
 
             # --- копилка для сигнала ---
             line = Line2D(self._x, np.full(len(self._x), np.nan), lw=1.5, color="blue", transform=tr, zorder=2)
@@ -135,15 +142,41 @@ class MEPPlot(FigureCanvas):
     def update_emg(self, emg):
         self.fig.canvas.restore_region(self.background) # восстанавливаем чистый фон
 
+        self._calcalate_MEP(emg)
+
         for i in reversed(range(1, self.params["n_plots"])):
             line = self.lines[i]
             y = self.lines[i-1].get_ydata()
             line.set_ydata(y)
             self.ax.draw_artist(line)
+
         self.lines[0].set_ydata(self._normalize(emg, axis='y'))
         self.ax.draw_artist(self.lines[0])
-        self.fig.canvas.blit()
+        
+        self.fig.canvas.blit(self.ax.bbox)
     
     def _normalize(self, x, axis='x'):
         xmin, xmax = (self._xmin, self._xmax) if axis == 'x' else (-self._ymax, self._ymax)
         return (x - xmin) / (xmax - xmin)
+
+    def _calcalate_MEP(self, data):
+        self.amps = np.roll(self.amps, 1)
+        self.lats = np.roll(self.lats, 1)
+
+        x = data[self.start_amp:self.end_amp]
+        
+        # Индексы глобального минимума/максимума 
+        min_ind = int(np.argmin(x))
+        max_ind = int(np.argmax(x))
+
+        self.amps[0] = round(float(x[max_ind] - x[min_ind]), 2)
+        self.lats[0] = round(((max_ind - self._xmin) * 1000/self.params["Fs"]))
+
+        for i in range(self.params["n_plots"]):
+            title = f"#{i+1}" if self.amps[i] is None else f"#{i+1} : {self.amps[i]} mV, {self.lats[i]} ms"
+            self.titles[i].set_text(title)
+            self.ax.draw_artist(self.titles[i])
+
+
+        
+    

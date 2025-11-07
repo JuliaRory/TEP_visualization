@@ -13,7 +13,7 @@ from utils.ui_helpers import shortcut_scale, spin_box, create_button
 from utils.layout_utils import create_hbox, create_vbox
 
 from widgets.teps_suppl_plot import TEPsSupplPlot
-from widgets.topoplot_plot import TopoPlot
+from widgets.topoplot_plot import TopoPlot, ColorBar
 
 MICROVOLT = "\u03BC"+"V"
 
@@ -55,36 +55,40 @@ class TEPsSupplPanel(QFrame):
         self.figure = TEPsSupplPlot(self, w=self.width(), h=self._ratio*self.height(), params=self.params)
         self.figure.setAttribute(Qt.WA_TransparentForMouseEvents, True)
 
-        n = self.params['n_plots']
-        w_available = 0.8 * self.width()
-        w_topo = int(w_available // n)
-        self.figure_topo = [TopoPlot(self, w=w_topo, timestamp=self.params["timestamps_ms"][i], params=self.params["topoplot"]) for i in range(n)]
-
-        self.colorbar = plt.colorbar(self.figure_topo[0].im, fraction=0.046, pad=0.04)
+        if self.params["topoplot"]["draw"]:
+            n = self.params['n_plots']
+            w_available = 0.8 * self.width()
+            w_topo = int(w_available // n)
+            self.figure_topo = [TopoPlot(self, w=w_topo, timestamp=self.params["timestamps_ms"][i], params=self.params["topoplot"]) for i in range(n)]
+            
+            self.colorbar = ColorBar(self, image=self.figure_topo[0].im)
 
         label1 = QLabel("Макс:", self)
         label2 = QLabel(MICROVOLT, self)
-        self._spinbox_max_amp = spin_box(0, 1000, self.params["max_amp_mV"], parent=self, w=50)
+        self._spinbox_max_amp = spin_box(0, 1000, self.params["max_amp_mV"], parent=self, w=50, step=10)
         self._max_amp = create_hbox([label1, self._spinbox_max_amp, label2])
 
         label1 = QLabel("от:   ", self)
         label2 = QLabel("до:   ", self)
         label3 = QLabel("мс", self)
-        self._spinbox_min_time = spin_box(-300, 0, self.params["xmin_ms"], parent=self, w=50)
-        self._spinbox_max_time = spin_box(0, 500, self.params["xmax_ms"], parent=self, w=50)
+        self._spinbox_min_time = spin_box(-300, 0, self.params["xmin_ms"], parent=self, w=50, step=5)
+        self._spinbox_max_time = spin_box(0, 500, self.params["xmax_ms"], parent=self, w=50, step=5)
         self._time_range = create_hbox([label1, self._spinbox_min_time, label2, self._spinbox_max_time, label3])
 
-        self._button_apply = create_button('Применить', checkable=True, parent=self, w=150)
+        # self._button_apply = create_button('Применить', checkable=True, parent=self, w=150)
 
         self._frame_settings = QFrame(self)
     
     def _setup_layout(self):
-        n = self.params['n_plots']
-        d_width = (1-0.8-0.1) * self.width() / n
-        left = int(0.1 * self.width())
-        for i, topoplot in enumerate(self.figure_topo):
-            left_new = int(left+(topoplot.width() + d_width)*i)
-            topoplot.move(left_new, left)
+        if self.params["topoplot"]["draw"]:
+            n = self.params['n_plots']
+            d_width = (1-0.8-0.1) * self.width() / n
+            left = int(0.1 * self.width())
+            for i, topoplot in enumerate(self.figure_topo):
+                left_new = int(left+(topoplot.width() + d_width)*i)
+                topoplot.move(left_new, left)
+            
+            self.colorbar.move(0, 0)
 
         butt_pos = int(self._ratio*self.height()) - 150
         self.figure.move(0, butt_pos)
@@ -92,16 +96,30 @@ class TEPsSupplPanel(QFrame):
         layout_settings = QVBoxLayout(self._frame_settings)
         for layout in [self._max_amp,self._time_range]:
             layout_settings.addLayout(layout)
-        layout_settings.addWidget(self._button_apply)
+        # layout_settings.addWidget(self._button_apply)
 
         self._frame_settings.move(0, butt_pos + self.figure.height())
 
     # --- Сигналы ---
     def _setup_connections(self):
-        if False:
-            print('skip')
+        self._spinbox_min_time.valueChanged.connect(self._on_update_scale)
+        self._spinbox_max_time.valueChanged.connect(self._on_update_scale)
+        self._spinbox_max_amp.valueChanged.connect(self._on_update_scale)
     
+    # --- Логика ---
+    def _on_update_scale(self):
+        xmax = self._spinbox_max_time.value()
+        xmin = self._spinbox_min_time.value()
+        ymax = self._spinbox_max_amp.value()
+        self.figure.update_limits(xmax, xmin, ymax)
+
     # --- Финализация ---
     def _post_init(self):
         if False:
             print('skip')
+
+    # --- События ---
+    def resizeEvent(self, event):
+        super().resizeEvent(event)
+        self.figure.resize(self.width(), int(self._ratio*self.height()))
+    

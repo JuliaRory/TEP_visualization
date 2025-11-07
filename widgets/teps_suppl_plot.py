@@ -23,23 +23,28 @@ class TEPsSupplPlot(FigureCanvas):
         
     def _init_state(self):
         self.ms_to_sample = lambda x: int(x / 1000 * self.params["Fs"])
-        self._xmin, self._xmax = self.ms_to_sample(self.params["xmin_ms"]), self.ms_to_sample(self.params["xmax_ms"])
-        self._ymax = self.params["max_amp_mV"]
+        # self._xmin, self._xmax = self.ms_to_sample(self.params["xmin_ms"]), self.ms_to_sample(self.params["xmax_ms"])
+        # self._ymax = self.params["max_amp_mV"]
 
-        x_shift = self._xmin
-        window_dur = self._xmax - self._xmin
+        self._mean = lambda x: np.mean(x[self.params["channels_nearest_n"]], axis=0)
+
+        x_shift = self.ms_to_sample(self.params["xmin_ms"])
+        window_dur = self.ms_to_sample(self.params["xmax_ms"]) - self.ms_to_sample(self.params["xmin_ms"])
 
         self._x = np.linspace(x_shift, window_dur+x_shift, window_dur)    # горизонтальная ось    
 
-        x_step = 20 # ms
-        y_ticks = 20 # uV
-        n_xticks = (self.params["xmax_ms"] - self.params["xmin_ms"]) // x_step + 1
-        n_yticks = 2 * self._ymax // y_ticks + 1
+        self.x_step = 20 # ms
+        self.y_ticks = 20 # uV
 
-        x_ticks_orig = np.linspace(self.params["xmin_ms"], self.params["xmax_ms"], n_xticks).astype(int)
-        y_ticks_orig = np.linspace(-self._ymax, self._ymax, n_yticks).astype(int)
+        
+        
+        # n_xticks = (self.params["xmax_ms"] - self.params["xmin_ms"]) // x_step + 1
+        # n_yticks = 2 * self._ymax // y_ticks + 1
 
-        x_ticks = np.linspace(self._xmin, self._xmax, n_xticks)
+        # x_ticks_orig = np.linspace(self.params["xmin_ms"], self.params["xmax_ms"], n_xticks).astype(int)
+        # y_ticks_orig = np.linspace(-self._ymax, self._ymax, n_yticks).astype(int)
+
+        # x_ticks = np.linspace(self._xmin, self._xmax, n_xticks)
 
         fontsize_ticks = 10
         fontsize_axes = 10
@@ -47,39 +52,63 @@ class TEPsSupplPlot(FigureCanvas):
 
         """создание оси"""
         self.ax = self.fig.add_axes([0.15, 0.1, 0.75, 0.8])   # создаём ось на всё пространство графика [left, bottom, width, height]
-        self.ax.set_xlim(self._xmin, self._xmax)
-        self.ax.set_ylim(-self._ymax, self._ymax)
+        # self.ax.set_xlim(self._xmin, self._xmax)
+        # self.ax.set_ylim(-self._ymax, self._ymax)
 
-        self.ax.set_xticks(x_ticks, x_ticks_orig)
-        self.ax.set_yticks(y_ticks_orig)
+        # self.ax.set_xticks(x_ticks, x_ticks_orig)
+        # self.ax.set_yticks(y_ticks_orig)
         
+        self.update_limits(self.params["xmax_ms"], self.params["xmin_ms"], self.params["max_amp_mV"] )
+
         self.ax.text(-.15, 1, f"[{MICROVOLT}]", fontsize=fontsize_axes, color='black', transform=self.ax.transAxes)
         self.ax.text(1.05, -.05, "[ms]", fontsize=fontsize_axes, color='black', transform=self.ax.transAxes)
 
         self.ax.grid(True)
 
-        # self.ax.set_axis_off()                      # полностью скрываем оси
-        # self.ax.patch.set_visible(False)            # убираем фон осей
-        # for spine in self.ax.spines.values():       # убираем рамку
-            # spine.set_visible(False)
-
         # --- копилка для сигнала ---
         self.lines = []
         y_empty = np.full(len(self._x), np.nan)
-        for _ in range(self.params["n_channels"]):
-            line = Line2D(self._x, y_empty, lw=1.5, color="blue")
-            self.ax.draw_artist(line)
+        n = self.params["n_channels"] + 1
+        for i in range(n):
+            (color, lw) = ("gray", 0.5) if i < n-1 else ("black", 1.5)
+            line = Line2D(self._x, y_empty, lw=lw, color=color)
+            self.ax.add_line(line)
             self.lines.append(line)
 
         self.fig.canvas.draw()
         self.background = self.fig.canvas.copy_from_bbox(self.ax.bbox)
 
     def update_plot(self, teps):
-        self.fig.canvas.restore_region(self.background) # восстанавливаем чистый фон
-
-        for i in range(self.params["n_channels"]):
+        self.fig.canvas.restore_region(self.background)  # восстанавливаем чистый фон
+        
+        for i in range(teps.shape[0]):          # для каждого канала
             self.lines[i].set_ydata(teps[i])
             self.ax.draw_artist(self.lines[i])
 
-        self.fig.canvas.blit()
+        self.lines[i+1].set_ydata(self._mean(teps))     # усреднённые каналы вокруг С3
+        self.ax.draw_artist(self.lines[i+1])
+
+        self.fig.canvas.blit(self.ax.bbox)
+    
+    def update_limits(self, xmax_ms=100, xmin_ms=-20, ymax=100):
+    
+        xmin, xmax = self.ms_to_sample(xmin_ms), self.ms_to_sample(xmax_ms)
+
+        self.ax.set_xlim(xmin, xmax)
+        self.ax.set_ylim(-ymax, ymax)
+
+        n_xticks = (xmax_ms - xmin_ms) // self.x_step + 1
+        n_yticks = 2 * ymax // self.y_ticks + 1
+
+        x_ticks_orig = np.linspace(xmin_ms, xmax_ms, n_xticks).astype(int)
+        y_ticks_orig = np.linspace(-ymax, ymax, n_yticks).astype(int)
+
+        x_ticks = np.linspace(xmin, xmax, n_xticks)
+
+        self.ax.set_xticks(x_ticks, x_ticks_orig)
+        self.ax.set_yticks(y_ticks_orig)
+
+        self.fig.canvas.draw_idle()
+
+        
     

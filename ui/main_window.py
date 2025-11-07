@@ -100,6 +100,7 @@ class MainWindow(QWidget):
             "median": lambda x, y, z: RollingMedian(x, y, z), 
             "trimmean": lambda x, y, z: RollingTrimMean(x, y, z)
         }
+        self._transform = lambda x: x
 
         self.specific_epoch = False                         # флаг для отслеживания режима показа определенной эпохи или стандартного
 
@@ -217,12 +218,11 @@ class MainWindow(QWidget):
         # распаковать "сообщение" в формате {"TEPs": list of EEG data in microvolt} 
         # data = np.array(json.loads(msg)["TEPs"]).T  # [n_channels x n_samples]
         data = np.array(msg)[:, :-1].T
-        # print(f'input data shape: {data.shape}')
+
         self.st_TEPs.append(data)                   # добавить новый массив в список хранимых TEPs  [n_epoch x n_channels x n_samples]
 
-
         # нужные преобразования
-        data = self.referef(self.CAR(self.baseline(self.lowpass_filter(data))))                    # [n_ch x n_samples] 
+        data = self._transform(data)                    # [n_ch x n_samples] 
 
         if self.aver_mode:
             data_aver = []
@@ -234,20 +234,8 @@ class MainWindow(QWidget):
                 average_TEPs = np.array([f.calculate() for f in avg_funcs])  # усреднённые TEPs
                 data_aver.append(average_TEPs)
             data = np.array(data_aver)
-        self.main_teps_panel.figure.update_data(data)      # отобразить  TEPs
 
-        x_min, x_max = self.ms_to_sample(self.params["TEP_suppl_plot"]["xmin_ms"]), self.ms_to_sample(self.params["TEP_suppl_plot"]["xmax_ms"])
-        data2plot = data[:, self.time_shift+x_min:self.time_shift+x_max]
-        self.suppl_teps_panel.figure.update_plot(data2plot)
-
-        timestamps = self.params["TEP_suppl_plot"]["timestamps_ms"]
-        for i, t_ms in enumerate(timestamps):
-            t = self.ms_to_sample(t_ms)
-            self.suppl_teps_panel.figure_topo[i].plot_topomap(data[:, t])
-        # t2 = time.perf_counter()
-
-        # self.topoplots_panel.topo.plot_topomap(data[:, self.t], vmin=-15, vmax=15)
-        t3 = time.perf_counter()  
+        self. _update_plots(data)
 
         emg = np.array(msg)[:, -1].T       # ЭМГ
         x_min, x_max = self.ms_to_sample(self.params["MEP_plot"]["xmin_ms"]), self.ms_to_sample(self.params["MEP_plot"]["xmax_ms"])
@@ -256,11 +244,7 @@ class MainWindow(QWidget):
 
         t4 = time.perf_counter()
 
-        # print(f"update plots (new epoch): {t1 - t0:.6f} сек")
-        # print(f"update suppl_teps_panel (new epoch): {t2 - t1:.6f} сек")
-        # print(f"update topoplots_panel (new epoch): {t3 - t2:.6f} сек")
-        # print(f"update meps_panel (new epoch): {t4 - t3:.6f} сек")
-        # print(f"update whole (new epoch): {t4 - t0:.6f} сек")
+        
 
     def _on_restart_button_click(self):
         raise Warning("Кнопка пока не работает Т_Т")
@@ -323,7 +307,7 @@ class MainWindow(QWidget):
             self._create_average_functions()
 
         if self.n_epoch > 0:        # если есть накопленные эпохи - нарисовать
-            self._update_plots()
+            self._update_data()
 
     def _on_update_baseline_button_click(self):
         self.apply_baseline = self.settings_panel.check_box_baseline.isChecked()   # вычитать ли бейзлайн
@@ -337,7 +321,7 @@ class MainWindow(QWidget):
         if self.aver_mode and self.n_epoch > 0:  # если усреднять - создать новые функции
             self._create_average_functions()
         if self.n_epoch > 0:
-            self._update_plots()
+            self._update_data()
     
     def _on_update_lowpass_button_click(self):
         
@@ -348,7 +332,7 @@ class MainWindow(QWidget):
         if self.aver_mode and self.n_epoch > 0:  # если усреднять - создать новые функции
             self._create_average_functions()
         if self.n_epoch > 0:
-            self._update_plots()
+            self._update_data()
 
     def _on_update_rereference_button_click(self):
         self.apply_reref = self.settings_panel.check_box_rereference.isChecked()
@@ -365,7 +349,7 @@ class MainWindow(QWidget):
         if self.aver_mode and self.n_epoch > 0:  # если усреднять - создать новые функции
             self._create_average_functions()
         if self.n_epoch > 0:
-            self._update_plots()
+            self._update_data()
 
     def _on_update_CAR_button_click(self):
         self.apply_CAR= self.settings_panel.check_box_car.isChecked()   # применять ли CAR
@@ -381,64 +365,90 @@ class MainWindow(QWidget):
         if self.aver_mode and self.n_epoch > 0:  # если усреднять - создать новые функции
             self._create_average_functions()
         if self.n_epoch > 0:
-            self._update_plots()
+            self._update_data()
+
+    def _create_full_transform(self):
+        self._transform = lambda x: self.referef(
+            self.CAR(
+                self.baseline(
+                    self.lowpass_filter(
+                        x
+                        )
+                    )
+                )
+            )
 
     def _create_average_functions(self):
         function = self.aver_empty_func[self.aver_method]
         if self.n_epoch != 0:
             d = self.n_epoch - self.n_aver_max if not self.aver_all else 0
-            data = np.array([self.referef(self.CAR(self.baseline(self.lowpass_filter(np.array(TEPs, dtype=float))))) for TEPs in self.st_TEPs[d:]])
-        self.average_functions = []
-        for i in range(len(CHANNELS)):
-            if self.n_epoch == 0:
-                self.average_functions.append([function([], self.n_aver_max, self.aver_all) for _ in range(self.n_samples)])
-            else:
-                self.average_functions.append([function(data[:, i, j], self.n_aver_max, self.aver_all) for j in range(self.n_samples)])
+            data = np.array([self._transform(np.array(TEPs, dtype=float)) for TEPs in self.st_TEPs[d:]])
 
-    def _update_plots(self):
-        t0 = time.perf_counter()
+            self.average_functions = [
+                [function(data[:, i, j], self.n_aver_max, self.aver_all)
+                for j in range(self.n_samples)]
+                for i in range(len(CHANNELS))
+            ]
+        else:
+            self.average_functions = [
+                [function([], self.n_aver_max, self.aver_all)
+                for _ in range(self.n_samples)]
+                for _ in range(len(CHANNELS))
+            ]
+
+    def _update_data(self):
         if not self.aver_mode:
-            data = self.referef(self.CAR(self.baseline(self.lowpass_filter(self.st_TEPs[-1]))))
+            data = self._transform(self.st_TEPs[-1])
         else:
             data_aver = []
             for i in range(len(CHANNELS)):
                 average_TEPs = np.array([f.calculate() for f in self.average_functions[i]])  # усреднённые TEPs
                 data_aver.append(average_TEPs)
-            data = data_aver
+            data = np.array(data_aver)
+
+        self._update_plots(data)
+
+
+    def _update_plots(self, data):
+        t0 = time.perf_counter()
+        
         self.main_teps_panel.figure.update_data(data)      # отобразить  TEPs
         
-        # x_min, x_max = self.ms_to_sample(-10), self.ms_to_sample(100)
-        # data2plot = data[:, self.time_shift+x_min:self.time_shift+x_max]
-        # self.suppl_teps_panel.figure.update_plot(data2plot, x_min)
-
-        #self.topoplots_panel.topo.plot_topomap(data[:, self.t], vmin=-15, vmax=15)
         t1 = time.perf_counter()
-        # print(f"update plots (redraw): {t1 - t0:.6f} сек")
+
+        x_min, x_max = self.ms_to_sample(self.params["TEP_suppl_plot"]["xmin_ms"]), self.ms_to_sample(self.params["TEP_suppl_plot"]["xmax_ms"])
+        data2plot = data[:, self.time_shift+x_min:self.time_shift+x_max]
+        self.suppl_teps_panel.figure.update_plot(data2plot)
+
+        t2 = time.perf_counter()
+
+        if self.params["TEP_suppl_plot"]["topoplot"]["draw"]:
+            timestamps = self.params["TEP_suppl_plot"]["timestamps_ms"]
+            for i, t_ms in enumerate(timestamps):
+                t = self.ms_to_sample(t_ms)
+                self.suppl_teps_panel.figure_topo[i].plot_topomap(data[:, t])
+        t3 = time.perf_counter()
+        
+        print(f"update main tep plots: {t1 - t0:.6f} сек")
+        print(f"update suppl_teps_panel (new epoch): {t2 - t1:.6f} сек")
+        print(f"update topoplots_panel (new epoch): {t3 - t2:.6f} сек")
+        # print(f"update meps_panel (new epoch): {t4 - t3:.6f} сек")
+        # print(f"update whole (new epoch): {t4 - t0:.6f} сек")
     
     def _initial_calculations(self):
         t0 = time.perf_counter()
 
         self._on_update_CAR_button_click()
-        t1 = time.perf_counter()
-
         self._on_update_baseline_button_click()
-        t2 = time.perf_counter()
-
         self._on_update_lowpass_button_click()
-        t3 = time.perf_counter()
-
         self._on_update_rereference_button_click()
-        t4 = time.perf_counter()
-
         self._on_update_averaging_button_click()
-        t5 = time.perf_counter()
 
-        print(f"все рассчёты: {t5 - t0:.6f} сек")
-        print(f"CAR: {t1 - t0:.6f} сек")
-        print(f"baseline: {t2 - t1:.6f} сек")
-        print(f"lowpass filter: {t3 - t2:.6f} сек")
-        print(f"rereference: {t4 - t3:.6f} сек")
-        print(f"averaging: {t5 - t4:.6f} сек")
+        self._create_full_transform()
+
+        t5 = time.perf_counter()
+        print(f"все предварительные рассчёты: {t5 - t0:.6f} сек")
+ 
 
     # --- Финализация ---
     def _post_init(self):

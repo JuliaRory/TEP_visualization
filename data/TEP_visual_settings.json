@@ -2,7 +2,7 @@
     "n_max_save": 1000,
     "n_save": 2,
     "save_all": true,
-    "aver_mode": true,
+    "aver_mode": false,
     "n_aver": 100,
     "aver_all": true,
     "aver_methods": ["mean", "median", "trimmean"],
@@ -14,7 +14,7 @@
     "baseline_end": -20,
     "lowpass": true, 
     "high_freq": 250,
-    "rereference": true,
+    "rereference": false,
     "rereference_channel": ["Fz"],
     "plot":
         {
@@ -36,7 +36,9 @@
             "max_amp_mV": 1,
             "Fs": 5000,
             "n_plots": 5,
-            "set_plot_ratio": 0.15
+            "set_plot_ratio": 0.15,
+            "amp_start_ms": 10, 
+            "amp_end_ms": 40
         },
     "TEP_suppl_plot":
         {
@@ -48,13 +50,16 @@
             "n_channels": 64,
             "n_plots": 3, 
             "timestamps_ms": [30, 55, 80],
+            "channels_nearest": ["C3", "C5", "C1", "CP3", "FC3"],
+            "channels_nearest_n": [9, 36, 42, 38, 37],
             "topoplot":
                 {
+                    "draw": true,
                     "vmin": -15, 
                     "vmax": 15,
                     "countours": 6,
-                    "image_interp": "nearest",
-                    "sensors": false,
+                    "image_interp": "cubic",
+                    "sensors": true,
                     "sphere": 0.5
                 }
         },
