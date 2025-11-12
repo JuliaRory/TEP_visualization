@@ -75,6 +75,14 @@ class TEPsPanel(QFrame):
         self._label_scale_y = QLabel(MICROVOLT, parent=self) 
         self._label_scale_x = QLabel('ms', parent=self) 
 
+        self.label_n_epoch = QLabel("Количество эпох: 0.", parent=self)
+        font = QFont('Helvetica', 16)
+        font.setBold(True)
+        self.label_n_epoch.setFont(font)
+        text_width = QFontMetrics(font).horizontalAdvance('Количество эпох: 1000')  # ширина текста в пикселях
+        text_height = QFontMetrics(font).height()
+        self.label_n_epoch.setFixedSize(text_width, text_height)        # чтобы помещался текст с разным количеством эпох
+
         """Создаём полотно для графиков"""
         self.figure = TEPsPlot(self, self._positions, single_w=self.plot_width, single_h=self.plot_height, w=self.width(), h=self.height(), channels=self.channels)
         
@@ -84,6 +92,8 @@ class TEPsPanel(QFrame):
     def _setup_layout(self):
         self.figure.move(0, 0)  # помещаем график
                                 # масштабирующие спинбоксы размещаем во время resize_event
+        
+        
 
     # --- Сигналы ---
     def _setup_connections(self):
@@ -180,6 +190,8 @@ class TEPsPanel(QFrame):
         f_label.setPixelSize(int(height * 0.8))
         self._label_scale_y.setFont(f_label)
         self._label_scale_x.setFont(f_label)
+        
+        self.label_n_epoch.move(self.spin_box_scale_xmax.x()+width*2, self.top_pad//2)
 
     # --- Финализация ---
     def _post_init(self):

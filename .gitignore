@@ -17,3 +17,5 @@ Thumbs.db
 
 # Игнорировать тестовые файлы
 data/tests/
+data/autosave/
+data/exports/

@@ -45,9 +45,13 @@ def checkable_combobox(channels, bad_channels, status=False, parent=None):
         combobox.addItem(item, checked)
     return combobox
 
-def combo_box(items, parent=None):
+def combo_box(items, curr_item=None, curr_item_idx=None, parent=None):
     combo_box = QComboBox(parent)
     combo_box.addItems(items)
+    if curr_item is not None:
+        combo_box.setCurrentText(curr_item)
+    if curr_item_idx is not None:
+        combo_box.setCurrentIndex(curr_item_idx)
     return combo_box
 
 def shortcut_button(keyword, function, enabled=True, parent=None):

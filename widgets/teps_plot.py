@@ -2,6 +2,8 @@ from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
 import matplotlib.pyplot as plt
 from matplotlib import transforms
+from matplotlib import colormaps as cm
+from matplotlib.colors import ListedColormap
 import numpy as np
 import time
 from copy import deepcopy
@@ -89,6 +91,8 @@ class TEPsPlot(FigureCanvas):
         self._xdata = []
         self._ydata = None
 
+        self._viridisBig = cm.get_cmap('jet')
+
     def set_x_shift(self, x_shift, window_dur):
         self._x = np.linspace(x_shift, window_dur+x_shift, window_dur)
 
@@ -175,6 +179,39 @@ class TEPsPlot(FigureCanvas):
         self.fig.canvas.blit(self.ax.bbox)
 
         self._ydata = data
+    
+    def compare_data(self, data_all, labels):
+        # data_all : list of np.arrays [n_channels, n_samples]
+
+        self.fig.canvas.restore_region(self.background_axes) # восстанавливаем чистый фон
+        
+        colors = ListedColormap(self._viridisBig(np.linspace(0, 1, len(data_all))))
+
+        colors = ["green", "orange", "darkred", "pink"]
+        xmin, xmax = self._last_xlim
+        ymin, ymax = self._last_ylim
+
+        for i in range(64):    # для каждого канала
+            for k, data in enumerate(data_all):
+                y = deepcopy(data[i])
+                y = y[np.where((self._x > xmin) & (self._x < xmax))].tolist()
+
+                if self._x[0] > xmin:
+                    y = [np.nan] * (self._x[0] - xmin) + y
+                if self._x[-1] < xmax:
+                    y = y + [np.nan] * (xmax - self._x[-1])
+
+                y = np.array(y)
+                y[np.where((y < ymin) | (y > ymax))] = np.nan
+
+                y = self._normalize(y, axis='y')
+                line, = self.ax.plot(self._xdata, y, lw=0.8, transform=self.transforms[i], color=colors[k])
+                self.ax.draw_artist(line)
+
+        self.fig.canvas.blit(self.ax.bbox)
+
+        for i, label in enumerate(labels):
+            print(f">> {label} : {colors[i]}")
         
     def update_image(self):
         """Быстрое обновление всех данных"""

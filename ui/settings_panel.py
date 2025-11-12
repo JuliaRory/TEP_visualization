@@ -38,6 +38,25 @@ class SettingsPanel(QFrame):
 
     def _setup_frame(self):
         
+        # --- Режим: усреднение или одиночные пробы ---
+        self._label_mode = QLabel("РЕЖИМ", self)
+        self.combo_box_mode = combo_box(items=["Усреднение", "Одиночные пробы"], 
+                                        curr_item_idx=self.params["curr_mode_idx"], parent=self)
+        self.combo_box_mode_data = combo_box(items=["Новые данные", "Сравнение"], 
+                                        curr_item_idx=self.params["curr_mode_data_idx"], parent=self)
+        self._mode = create_vbox([self.combo_box_mode_data, self.combo_box_mode])
+
+        # --- Участок с управлением данными (сохранение, загрузка и тд) ---
+        self._manager_frame = QFrame(self)
+
+        self.combo_box_to_save = checkable_combobox([], [], status=True, parent=self)
+        self.button_save = create_button(text='Сохранить', checkable=False, parent=self)
+        self._save = create_hbox([self.combo_box_to_save, self.button_save])
+
+        # self.check_box_new_window = check_box(True, 'Новое окно', parent=self)
+        self.button_load = create_button(text='Загрузить', checkable=True, parent=self)
+        # self._load = create_hbox([self.check_box_new_window, self.button_load])
+
         self.button_restart = create_button(text='Начать заново', checkable=False, parent=self)
         # self.shortcut_restart = self.create_shortcut_button("Delete", self.restart, False)
         
@@ -49,6 +68,52 @@ class SettingsPanel(QFrame):
         self.spin_box_remove_epoch =spin_box(0, 0, 0, parent=self)
         self._remove_epoch = create_hbox([self.button_remove_epoch, self.spin_box_remove_epoch])
 
+        # --- Обработка эпох в приложении ---
+        self._processing_frame = QFrame(self)
+        self._label_aver_main = QLabel("Усреднение", self)
+        self._label_aver = QLabel("Метод:", self)
+        self.combo_box_aver = combo_box(self.params['aver_methods'], parent=self)
+        self.button_aver = create_button('Ок', checkable=True, parent=self)
+        self._aver_mode = create_hbox([self._label_aver, self.combo_box_aver, self.button_aver])
+
+        self._label_lowpass_main = QLabel("Фильтр низких частот", self)
+        self.check_box_lowpass = check_box(self.params["lowpass"], 'Исп?', parent=self)
+        self.spin_box_lowpass = spin_box(min=1, max=2500, value=self.params["high_freq"], parent=self)
+        _label_hz = QLabel("Гц", self)
+        self.button_update_lowpass = create_button('Ок', checkable=True, parent=self)
+        self._lowpass = create_hbox([self.check_box_lowpass, self.spin_box_lowpass, _label_hz, self.button_update_lowpass])
+        
+        self._label_reref_main = QLabel("Ре-референтация", self)
+        self.check_box_rereference = check_box(self.params["rereference"], 'Исп?', parent=self)
+        self.combo_box_rereference = checkable_combobox(self.channels, self.params['rereference_channel'], status=True, parent=self)
+        self.button_update_rereference = create_button('Ок', checkable=True, parent=self)
+        self._rereference = create_hbox([self.check_box_rereference, self.combo_box_rereference, self.button_update_rereference])
+
+        self._label_baseline_main = QLabel("Вычетание бейзлайна", self)
+        self.check_box_baseline = check_box(self.params['baseline'], 'Исп?', parent=self)
+        self.spin_box_baseline_start = spin_box(-1000, self.params['baseline_end'], self.params['baseline_start'], step=10, parent=self)
+        self.spin_box_baseline_end = spin_box(self.params['baseline_start'], 0, self.params['baseline_end'], step=10, parent=self)
+        _label_start = QLabel("от", self)
+        _label_end = QLabel("до", self)
+        _label_ms = QLabel("мс", self)
+        self._baseline_range = create_hbox([self.check_box_baseline,
+                                            _label_start, self.spin_box_baseline_start, 
+                                            _label_end, self.spin_box_baseline_end, _label_ms])
+
+        label = QLabel("Метод:", self)
+        self.combo_box_baseline = combo_box(self.params['baseline_methods'], parent=self)
+        self.button_update_baseline = create_button('Ок', checkable=True, parent=self)
+        self._baseline_mode = create_hbox([label, self.combo_box_baseline, self.button_update_baseline])
+
+        self._label_CAR_main = QLabel("Common Average Reference", self)
+        self.check_box_car = check_box(self.params['CAR'], 'Исп?', parent=self)
+        self.button_car = create_button('Ок', checkable=True, parent=self)
+        _label_car = QLabel("Каналы:")
+        self.combo_box_channels = checkable_combobox(self.channels, self.params['bad_channels'], parent=self)
+        self.combo_box_channels.setFixedWidth(70)
+        self._car = create_hbox([_label_car, self.combo_box_channels, self.button_car])
+
+        # delete!!!
         _label3 = QLabel("Хранить", self)
         self.spin_box_save_epoch = spin_box(0, self.params['n_max_save'], self.params['n_save'], parent=self, disabled=self.params['save_all'])
         _label4 = QLabel("эпох.", self)
@@ -63,70 +128,49 @@ class SettingsPanel(QFrame):
                         function=lambda: self.spin_box_aver_epoch.setEnabled(not self.spin_box_aver_epoch.isEnabled()))
         self._aver_epoch = create_hbox([self.spin_box_aver_epoch, _label6, self.check_box_aver_epoch])
 
-        self._label7 = QLabel("Метод усреднения:", self)
-        self.combo_box_aver = combo_box(self.params['aver_methods'], parent=self)
-        self.button_aver = create_button('Ок', checkable=True, parent=self)
-        self._aver_mode = create_hbox([self.combo_box_aver, self.button_aver])
-
-        self.check_box_lowpass = check_box(self.params["lowpass"], 'lowpass', parent=self)
-        self.spin_box_lowpass = spin_box(min=1, max=2500, value=self.params["high_freq"], parent=self)
-        _label_hz = QLabel("Гц", self)
-        self.button_update_lowpass = create_button('Ок', checkable=True, parent=self)
-        self._lowpass = create_hbox([self.spin_box_lowpass, _label_hz, self.button_update_lowpass])
-        
-        self.check_box_rereference = check_box(self.params["rereference"], 're-reference', parent=self)
-        self.combo_box_rereference = checkable_combobox(self.channels, self.params['rereference_channel'], status=True, parent=self)
-        self.button_update_rereference = create_button('Ок', checkable=True, parent=self)
-        self._rereference = create_hbox([self.combo_box_rereference, self.button_update_rereference])
-
-        self.check_box_baseline = check_box(self.params['baseline'], 'Бейзлайн', parent=self)
-        self.combo_box_baseline = combo_box(self.params['baseline_methods'], parent=self)
-        self.button_update_baseline = create_button('Ок', checkable=True, parent=self)
-        self._baseline_mode = create_hbox([self.combo_box_baseline, self.button_update_baseline])
-
-        self.spin_box_baseline_start = spin_box(-1000, self.params['baseline_end'], self.params['baseline_start'], step=10, parent=self)
-        self.spin_box_baseline_end = spin_box(self.params['baseline_start'], 0, self.params['baseline_end'], step=10, parent=self)
-        _label_start = QLabel("от", self)
-        _label_end = QLabel("до", self)
-        _label_ms = QLabel("мс", self)
-        self._baseline_range = create_hbox([_label_start, self.spin_box_baseline_start, _label_end, self.spin_box_baseline_end, _label_ms])
-
-        self.check_box_car = check_box(self.params['CAR'], 'Common Average Reference', parent=self)
-        self.button_car = create_button('Ок', checkable=True, parent=self)
-        _label_car = QLabel("Использовать каналы:")
-        self.combo_box_channels = checkable_combobox(self.channels, self.params['bad_channels'], parent=self)
-        self.combo_box_channels.setFixedWidth(70)
-        self._car = create_hbox([self.combo_box_channels, self.button_car])
 
     def _setup_layout(self):
+        self._setup_manager_frame()
+        self._setup_processing_frame()
+
         layout = QVBoxLayout(self)
 
+        layout.addWidget(self._manager_frame)
+        layout.addWidget(self._processing_frame)
+ 
+
+        self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+
+
+    def _setup_manager_frame(self):
+        layout = QVBoxLayout(self._manager_frame)
+
+        layout.addWidget(self._label_mode)
+        layout.addLayout(self._mode)
+        layout.addWidget(self.button_load)
+        layout.addLayout(self._save)
         layout.addWidget(self.button_restart)
         layout.addLayout(self._show_epoch)
         layout.addLayout(self._remove_epoch)
-        layout.addLayout(self._save_epoch)
 
-        layout.addWidget(self.check_box_aver_mode)
-        layout.addLayout(self._aver_epoch)
+    def _setup_processing_frame(self):
+        layout = QVBoxLayout(self._processing_frame)
 
-        layout.addWidget(self._label7)
+        layout.addWidget(self._label_aver_main)
         layout.addLayout(self._aver_mode)
-        
 
-        layout.addWidget(self.check_box_lowpass)
+        layout.addWidget(self._label_lowpass_main)
         layout.addLayout(self._lowpass)
-        
-        layout.addWidget(self.check_box_rereference)
+
+        layout.addWidget(self._label_reref_main)
         layout.addLayout(self._rereference)
 
-        layout.addWidget(self.check_box_baseline)
-        layout.addLayout(self._baseline_range)
-        layout.addLayout(self._baseline_mode)
-        
-        layout.addWidget(self.check_box_car)
+        layout.addWidget(self._label_CAR_main)
         layout.addLayout(self._car)
 
-        self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        layout.addWidget(self._label_baseline_main)
+        layout.addLayout(self._baseline_range)
+        layout.addLayout(self._baseline_mode)
 
     def _connect_signals(self):
         print("hi")
@@ -172,3 +216,5 @@ class SettingsPanel(QFrame):
         layout.addWidget(btn_save, 1, 0, 1, 2)
 
         return box
+
+

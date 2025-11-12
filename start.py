@@ -24,8 +24,8 @@ app.setStyleSheet(style)
 driver = Driver("TEP_visual")          
 dispatcher = CallDispatcher()                          # пустая функция-обработчик
 driver.inputDataStream("epochs", dispatcher)           # создание входного потока данных типа Stream
-# driver.loadConfig(r'resonance_settings.json')          # вгрузить настройки с потоком в резонансе
-driver.loadConfig(r'resonance_settings_main.json')          # вгрузить настройки с потоком в резонансе
+driver.loadConfig(r'resonance_settings.json')          # вгрузить настройки с потоком в резонансе
+# driver.loadConfig(r'resonance_settings_main.json')          # вгрузить настройки с потоком в резонансе
 
 # == Запуск приложения ==
 filename_params = r'data/TEP_visual_settings.json'     # файл с настройками приложения
