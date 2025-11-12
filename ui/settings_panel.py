@@ -111,22 +111,22 @@ class SettingsPanel(QFrame):
         _label_car = QLabel("Каналы:")
         self.combo_box_channels = checkable_combobox(self.channels, self.params['bad_channels'], parent=self)
         self.combo_box_channels.setFixedWidth(70)
-        self._car = create_hbox([_label_car, self.combo_box_channels, self.button_car])
+        self._car = create_hbox([self.check_box_car, _label_car, self.combo_box_channels, self.button_car])
 
         # delete!!!
-        _label3 = QLabel("Хранить", self)
-        self.spin_box_save_epoch = spin_box(0, self.params['n_max_save'], self.params['n_save'], parent=self, disabled=self.params['save_all'])
-        _label4 = QLabel("эпох.", self)
-        self.check_box_save_epoch = check_box(self.params['save_all'], 'все', parent=self, 
-                        function=lambda: self.spin_box_save_epoch.setEnabled(not self.spin_box_save_epoch.isEnabled()))
-        self._save_epoch = create_hbox([_label3, self.spin_box_save_epoch, _label4, self.check_box_save_epoch])
+        # _label3 = QLabel("Хранить", self)
+        # self.spin_box_save_epoch = spin_box(0, self.params['n_max_save'], self.params['n_save'], parent=self, disabled=self.params['save_all'])
+        # _label4 = QLabel("эпох.", self)
+        # self.check_box_save_epoch = check_box(self.params['save_all'], 'все', parent=self, 
+        #                 function=lambda: self.spin_box_save_epoch.setEnabled(not self.spin_box_save_epoch.isEnabled()))
+        # self._save_epoch = create_hbox([_label3, self.spin_box_save_epoch, _label4, self.check_box_save_epoch])
 
-        self.check_box_aver_mode = check_box(self.params['aver_mode'], 'Усреднять по ', parent=self)
-        self.spin_box_aver_epoch = spin_box(0, 1000, self.params['n_aver'], parent=self, disabled=self.params['aver_all'])
-        _label6 = QLabel("эпохам.", self)
-        self.check_box_aver_epoch = check_box(self.params['aver_all'], 'всем', parent=self,
-                        function=lambda: self.spin_box_aver_epoch.setEnabled(not self.spin_box_aver_epoch.isEnabled()))
-        self._aver_epoch = create_hbox([self.spin_box_aver_epoch, _label6, self.check_box_aver_epoch])
+        # self.check_box_aver_mode = check_box(self.params['aver_mode'], 'Усреднять по ', parent=self)
+        # self.spin_box_aver_epoch = spin_box(0, 1000, self.params['n_aver'], parent=self, disabled=self.params['aver_all'])
+        # _label6 = QLabel("эпохам.", self)
+        # self.check_box_aver_epoch = check_box(self.params['aver_all'], 'всем', parent=self,
+        #                 function=lambda: self.spin_box_aver_epoch.setEnabled(not self.spin_box_aver_epoch.isEnabled()))
+        # self._aver_epoch = create_hbox([self.spin_box_aver_epoch, _label6, self.check_box_aver_epoch])
 
 
     def _setup_layout(self):

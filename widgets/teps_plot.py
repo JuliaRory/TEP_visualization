@@ -224,13 +224,7 @@ class TEPsPlot(FigureCanvas):
         self.fig.canvas.blit(self.ax.bbox)
                 
     def refresh_plot(self):
-        self.axes.clear()                       # если уже что-то было - удалить
-        #self.axes.set_position([0.1, 0.1, 0.8, 0.8])
-        self.axes.margins(0.05)
-        self.axes.patch.set_alpha(0.0)
-        self.center_axes() 
-
-        self.update_axes(self)
+        self.fig.canvas.restore_region(self.background) # восстанавливаем чистый фон
 
 
     def _normalize(self, x, axis='x'):

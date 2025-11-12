@@ -235,14 +235,14 @@ class MainWindow(QWidget):
         self._save_data(msg, timestamp) 
 
         # если не стоит флаг "хранить все" и эпох больше допустимого: True -- обрезать, False -- сохранить все
-        trim_last = (not self.save_all) & (self.n_epoch + 1 > self.settings_panel.spin_box_save_epoch.value())
+        # trim_last = (not self.save_all) & (self.n_epoch + 1 > self.settings_panel.spin_box_save_epoch.value())
 
-        if not trim_last:          # если не обрезать, то обновить счётчик количества эпох
-            self.n_epoch += 1
-            self._update_label_counter(self.n_epoch)
-        else:                       # если обрезать
-            self.st_TEPs = self.st_TEPS[1:]                     # удалить первую эпоху
-            self.ts = self.ts[1:]
+        # if not trim_last:          # если не обрезать, то обновить счётчик количества эпох
+        #     self.n_epoch += 1
+        #     self._update_label_counter(self.n_epoch)
+        # else:                       # если обрезать
+        #     self.st_TEPs = self.st_TEPS[1:]                     # удалить первую эпоху
+        #     self.ts = self.ts[1:]
 
         # распаковать "сообщение" в формате {"TEPs": list of EEG data in microvolt} 
         # data = np.array(json.loads(msg)["TEPs"]).T  # [n_channels x n_samples]
@@ -266,7 +266,7 @@ class MainWindow(QWidget):
                 data_aver.append(average_TEPs)
             data = np.array(data_aver)
         
-        self._update_plots([data])
+        self._update_plots(data)
 
         emg = self.baseline(np.array(msg)[:, -2:].T)
         emg = np.diff(emg, axis=0).flatten()      # ЭМГ
@@ -348,63 +348,59 @@ class MainWindow(QWidget):
         self._update_data()
 
     def _on_restart_button_click(self):
-        raise Warning("Кнопка пока не работает Т_Т")
-        # self.n_epoch = 0
-        # self.update_label_counter()
+        self.n_epoch = 0
+        self._update_label_counter(self.n_epoch)
 
-        # self.st_TEPs = []
-        # self.average_functions = []
-        # self.update_averaging()
+        self.st_TEPs = []
+        self.average_functions = []
+        self._create_average_functions()
 
-        # self.restart_plots()
+        self._restart_plots()
     
     def _on_show_epoch_button_click(self):
-        raise Warning("Кнопка пока не работает Т_Т")
         if self.specific_epoch: # если был режим показа отдельной эпохи - вернуться к стандартному отображению
             self._update_plots()
             self.settings_panel.button_show_epoch.setText("Показать эпоху")
         else:                   # если не был включён режим показа отдельной эпохи - показать её
             n_show = self.settings_panel.spin_box_show_epoch.value()    # номер эпохи для просмотра
-            data = self.CAR(self.baseline(self.st_TEPs[n_show-1]))
-            for i in range(len(CHANNELS)):
-                self.main_teps_panel.figure.update_data(i, data[i], self.time_shift)
+            data = self._transform(self.st_TEPs[n_show-1])
+            self._update_plots(data)
             self.settings_panel.button_show_epoch.setText("Стандартный режим")
-            self.main_teps_panel.figure.update_image()
+            
         self.specific_epoch = not self.specific_epoch
 
     def _on_remove_epoch_button_click(self):  
-        raise Warning("Кнопка пока не работает Т_Т")
         self.n_epoch -= 1
-        self.update_label_counter()
+        self._update_label_counter(self.n_epoch)
 
         n_delete = self.settings_panel.spin_box_remove_epoch.value()    # номер эпохи для удаления 
 
         del self.st_TEPs[n_delete-1]                     # минус один для учёта нумерации с нуля
 
         if self._average_data:
-            self.create_average_functions()
+            self._create_average_functions()
         if self.n_epoch > 0:
-            self.update_plots()
+            self._update_data()
         else:
-            self.restart_plots()
+            self._restart_plots()
 
     def _on_update_averaging_button_click(self):
         """применение настроек для усреднения эпох"""
         
         ## обновить количество сохранённых эпох
-        self.save_all = self.settings_panel.check_box_save_epoch.isChecked()   # флаг нужно ли хранить все эпохи
-        max_value = self.settings_panel.spin_box_save_epoch.value()            # максимальное значение эпох на сохранение
-        if (not self.save_all) & (self.n_epoch > max_value):    # если нужно обрезать 
-            d = self.n_epoch - max_value                        # сколько лишних
-            self.st_TEPs = self.st_TEPs[d:]                     # обрезать list с хранимыми TEPs
-            self.n_epoch = max_value                            # обновить счётчик эпох
-            self.update_label_counter()                         
+        # self.save_all = self.settings_panel.check_box_save_epoch.isChecked()   # флаг нужно ли хранить все эпохи
+        # max_value = self.settings_panel.spin_box_save_epoch.value()            # максимальное значение эпох на сохранение
+        # if (not self.save_all) & (self.n_epoch > max_value):    # если нужно обрезать 
+        #     d = self.n_epoch - max_value                        # сколько лишних
+        #     self.st_TEPs = self.st_TEPs[d:]                     # обрезать list с хранимыми TEPs
+        #     self.n_epoch = max_value                            # обновить счётчик эпох
+        #     self._update_label_counter()                         
 
-        ## обновить отображение усреднённых или сингл-трайл графиков
-        self.aver_mode = self.settings_panel.check_box_aver_mode.isChecked()   # флаг усреднять (True) или single-trial (False)
-        self.aver_all = self.settings_panel.check_box_aver_epoch.isChecked()   # флаг нужно ли усреднять все эпохи
-        self.aver_method = self.settings_panel.combo_box_aver.currentText()    # текущий выбранный метод усреднения
-        self.n_aver_max = self.settings_panel.spin_box_aver_epoch.value()      # количество эпох на усреднение
+        # ## обновить отображение усреднённых или сингл-трайл графиков
+        # self.aver_mode = self.settings_panel.check_box_aver_mode.isChecked()   # флаг усреднять (True) или single-trial (False)
+        # self.aver_all = self.settings_panel.check_box_aver_epoch.isChecked()   # флаг нужно ли усреднять все эпохи
+        # self.aver_method = self.settings_panel.combo_box_aver.currentText()    # текущий выбранный метод усреднения
+        # self.n_aver_max = self.settings_panel.spin_box_aver_epoch.value()      # количество эпох на усреднение
         
         if self._average_data:  # если усреднять - создать новые функции
             self._create_average_functions()
@@ -500,8 +496,10 @@ class MainWindow(QWidget):
             ]
 
     def _update_data(self):
-
+         
         if self._process_new_data:  
+            if len(self.st_TEPs) == 0:
+                return None
             if not self._average_data:
                 data2plot = self._transform(self.st_TEPs[-1])
             else:
@@ -514,6 +512,8 @@ class MainWindow(QWidget):
         else:
             function = self.aver_empty_func[self.aver_method]
             data2plot = []
+            if len(self._data_loaded) == 0:
+                return None
             for data_raw in self._data_loaded:
                 if not self._average_data:
                     data2plot.append(self._transform(data_raw[-1]))     # последняя эпоха
@@ -528,7 +528,6 @@ class MainWindow(QWidget):
                         average_TEPs = np.array([f.calculate() for f in average_functions])  # усреднённые TEPs
                         data_aver.append(average_TEPs)
                     data2plot.append(np.array(data_aver))
-        
         self._update_plots(data2plot)
 
     def _update_plots(self, data):
@@ -564,11 +563,15 @@ class MainWindow(QWidget):
     
     def _on_change_mode(self, idx):
         self._average_data = True if idx == 0 else False      # из  ["Усреднение", "Одиночные пробы"]
+        self._update_data()
+        print('chnge mode: ', self._average_data)
         
-    def _on_change_mode_data(self, idx):
-        print(idx)
+    def _on_change_mode_data(self, idx):        
         self._process_new_data = True if idx == 0 else False  # из ["Новые данные", "Сравнение"]
+        self._update_data()
 
+    def _restart_plots(self):
+        self.main_teps_panel.figure.refresh_plot()
 
     def _initial_calculations(self):
         t0 = time.perf_counter()
@@ -583,7 +586,23 @@ class MainWindow(QWidget):
 
         t5 = time.perf_counter()
         print(f"все предварительные рассчёты: {t5 - t0:.6f} сек")
- 
+    
+    def _update_label_counter(self, n_epoch):
+        self.main_teps_panel.label_n_epoch.setText('Количество эпох: {}'.format(n_epoch))
+        qApp.processEvents()    # для обновления отображения в Qt-приложении
+
+        # если эпохи есть, то разрешить их очистку из памяти по нажатию кнопки 
+        active_status = True if self.n_epoch > 0 else False      
+        self.settings_panel.button_restart.setEnabled(active_status)
+        # self.settings_panel.shortcut_restart.setEnabled(active_status)
+        self.settings_panel.button_remove_epoch.setEnabled(active_status)
+        #self.shortcut_remove_epoch.setEnabled(True)
+        self.settings_panel.button_show_epoch.setEnabled(active_status)
+
+        self.settings_panel.spin_box_show_epoch.setMaximum(self.n_epoch)
+        self.settings_panel.spin_box_show_epoch.setValue(self.n_epoch)
+        self.settings_panel.spin_box_remove_epoch.setMaximum(self.n_epoch)
+        self.settings_panel.spin_box_remove_epoch.setValue(self.n_epoch)
 
     # --- Финализация ---
     def _post_init(self):
@@ -636,8 +655,7 @@ class MainWindow(QWidget):
 
 
     # --- неприкаянные функции ---
-    def restart_plots(self):
-        self.main_teps_panel.figure.refresh()
+    
 
     
     def launch_speed(self):
@@ -668,22 +686,7 @@ class MainWindow(QWidget):
         with open(self.params["SPEED_settings_path"], 'w') as f:
             json.dump(self.SPEED, f)
     
-    def _update_label_counter(self, n_epoch):
-        self.main_teps_panel.label_n_epoch.setText('Количество эпох: {}'.format(n_epoch))
-        qApp.processEvents()    # для обновления отображения в Qt-приложении
-
-        # если эпохи есть, то разрешить их очистку из памяти по нажатию кнопки 
-        # active_status = True if self.n_epoch > 0 else False      
-        # self.settings_panel.button_restart.setEnabled(active_status)
-        # self.settings_panel.shortcut_restart.setEnabled(active_status)
-        # self.settings_panel.button_remove_epoch.setEnabled(active_status)
-        # #self.shortcut_remove_epoch.setEnabled(True)
-        # self.settings_panel.button_show_epoch.setEnabled(active_status)
-
-        # self.settings_panel.spin_box_show_epoch.setMaximum(self.n_epoch)
-        # self.settings_panel.spin_box_show_epoch.setValue(self.n_epoch)
-        # self.settings_panel.spin_box_remove_epoch.setMaximum(self.n_epoch)
-        # self.settings_panel.spin_box_remove_epoch.setValue(self.n_epoch)
+    
 
 
     def create_box_settings(self):
