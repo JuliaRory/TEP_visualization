@@ -2,8 +2,13 @@
 	{
 		"attributes": {
 			"activeStream": {
-				"connections": [],
-				"metaData": {}
+				"connections": [
+					"tcp-ip://192.168.1.94:62355"
+				],
+				"metaData": {},
+				"name": "epochs",
+				"serializedType": "FwBCAAAAAAAAAACIs0A=",
+				"uid": "{27dc1d3e-5da2-4501-9109-83e8fb5e303c}"
 			},
 			"reconnect": true
 		},

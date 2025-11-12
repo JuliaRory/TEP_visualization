@@ -225,57 +225,63 @@ class MainWindow(QWidget):
         self.settings_panel.combo_box_mode.currentIndexChanged[int].connect(self._on_change_mode)
         self.settings_panel.combo_box_mode_data.currentIndexChanged[int].connect(self._on_change_mode_data)
 
+        for spin_box in self.suppl_teps_panel.spinbox_ts:
+            spin_box.valueChanged.connect(self._update_topoplots)
+        
+
     # --- Логика ---
     def _get_data(self, msg, timestamp):
-        if not self._process_new_data:
-            print("---> Включён режим загрузки старых данных. Новые данные не приняты.")
-            return None
-        
-        # сохранить новые данные
-        self._save_data(msg, timestamp) 
+        if self._process_new_data:
 
-        # если не стоит флаг "хранить все" и эпох больше допустимого: True -- обрезать, False -- сохранить все
-        # trim_last = (not self.save_all) & (self.n_epoch + 1 > self.settings_panel.spin_box_save_epoch.value())
+            # сохранить новые данные
+            self._save_data(msg, timestamp) 
+            
+            self.n_epoch += 1
+            self._update_label_counter(self.n_epoch)
+            # если не стоит флаг "хранить все" и эпох больше допустимого: True -- обрезать, False -- сохранить все
+            # trim_last = (not self.save_all) & (self.n_epoch + 1 > self.settings_panel.spin_box_save_epoch.value())
 
-        # if not trim_last:          # если не обрезать, то обновить счётчик количества эпох
-        #     self.n_epoch += 1
-        #     self._update_label_counter(self.n_epoch)
-        # else:                       # если обрезать
-        #     self.st_TEPs = self.st_TEPS[1:]                     # удалить первую эпоху
-        #     self.ts = self.ts[1:]
+            # if not trim_last:          # если не обрезать, то обновить счётчик количества эпох
+            #     self.n_epoch += 1
+            #     self._update_label_counter(self.n_epoch)
+            # else:                       # если обрезать
+            #     self.st_TEPs = self.st_TEPS[1:]                     # удалить первую эпоху
+            #     self.ts = self.ts[1:]
 
-        # распаковать "сообщение" в формате {"TEPs": list of EEG data in microvolt} 
-        # data = np.array(json.loads(msg)["TEPs"]).T  # [n_channels x n_samples]
-        data = np.array(msg)[:, :-2].T * 10**6
+            # распаковать "сообщение" в формате {"TEPs": list of EEG data in microvolt} 
+            # data = np.array(json.loads(msg)["TEPs"]).T  # [n_channels x n_samples]
+            
+            data = np.array(msg).T 
 
-        self.st_TEPs.append(data)                   # добавить новый массив в список хранимых TEPs  [n_epoch x n_channels x n_samples]
-        self.ts.append(timestamp)
+            self.st_TEPs.append(data)                   # добавить новый массив в список хранимых TEPs  [n_epoch x n_channels x n_samples]
+            self.ts.append(timestamp)
 
-        # нужные преобразования
-        
-        data = self._transform(data)                    # [n_ch x n_samples] 
-        
-        if self._average_data:
-            data_aver = []
-            for i, ch_data in enumerate(data):
-                avg_funcs = self.average_functions[i]
-                n = len(avg_funcs)
-                for j in range(n): # обновить сохранённые функции
-                    avg_funcs[j].add(ch_data[j])
-                average_TEPs = np.array([f.calculate() for f in avg_funcs])  # усреднённые TEPs
-                data_aver.append(average_TEPs)
-            data = np.array(data_aver)
-        
-        self._update_plots(data)
+            data = np.array(msg)[:, :-2].T * 10**6
 
-        emg = self.baseline(np.array(msg)[:, -2:].T)
-        emg = np.diff(emg, axis=0).flatten()      # ЭМГ
+            # нужные преобразования
+            
+            data2plot = self._transform(data)                    # [n_ch x n_samples] 
+            
+            if self._average_data:
+                data_aver = []
+                for i, ch_data in enumerate(data2plot):
+                    avg_funcs = self.average_functions[i]
+                    n = len(avg_funcs)
+                    for j in range(n): # обновить сохранённые функции
+                        avg_funcs[j].add(ch_data[j])
+                    average_TEPs = np.array([f.calculate() for f in avg_funcs])  # усреднённые TEPs
+                    data_aver.append(average_TEPs)
+                data2plot = np.array(data_aver)
+            
+            emg = self.baseline(np.array(msg)[:, -2:].T)
+            emg = np.diff(emg, axis=0).flatten()      # ЭМГ
 
-        x_min, x_max = self.ms_to_sample(self.params["MEP_plot"]["xmin_ms"]), self.ms_to_sample(self.params["MEP_plot"]["xmax_ms"])
-        emg2plot = emg[self.time_shift+x_min:self.time_shift+x_max] * 1E3
-        self.meps_panel.figure.update_emg(emg2plot)
+            x_min, x_max = self.ms_to_sample(self.params["MEP_plot"]["xmin_ms"]), self.ms_to_sample(self.params["MEP_plot"]["xmax_ms"])
+            emg2plot = emg[self.time_shift+x_min:self.time_shift+x_max] * 1E3
 
-        t4 = time.perf_counter()
+            self._update_plots(data2plot, emg2plot)
+
+            t4 = time.perf_counter()
 
     def _save_data(self, epoch, ts):
         n = self.dset.shape[0]
@@ -299,7 +305,7 @@ class MainWindow(QWidget):
             print("---> Сохранение отменено")
             return None 
         
-        data2save = np.array(self.st_TEPs[:]).transpose(0, 2, 1).reshape(-1, 64)      # (n_samples, n_channels)
+        data2save = np.array(self.st_TEPs[:]).transpose(0, 2, 1).reshape(-1, 66)      # (n_samples, n_channels)
         ts2save = np.array(self.ts)
         # если выбран файл
         with h5py.File(file_path, "w") as h5f:
@@ -342,7 +348,7 @@ class MainWindow(QWidget):
                 name = os.path.splitext(os.path.basename(file_path))[0] # имя файла без разрешения
                 self._data_loaded_labels.append(name)
 
-                print(f">> {name} : n_epoch = {n_epochs}")
+                print(f"> {name} : n_epoch = {n_epochs} <")
         
         # self._update_label_counter(self.n_epoch)
         self._update_data()
@@ -359,11 +365,11 @@ class MainWindow(QWidget):
     
     def _on_show_epoch_button_click(self):
         if self.specific_epoch: # если был режим показа отдельной эпохи - вернуться к стандартному отображению
-            self._update_plots()
+            self._update_data()
             self.settings_panel.button_show_epoch.setText("Показать эпоху")
         else:                   # если не был включён режим показа отдельной эпохи - показать её
             n_show = self.settings_panel.spin_box_show_epoch.value()    # номер эпохи для просмотра
-            data = self._transform(self.st_TEPs[n_show-1])
+            data = self._transform(np.array(self.st_TEPs[n_show-1])[:-2, :])
             self._update_plots(data)
             self.settings_panel.button_show_epoch.setText("Стандартный режим")
             
@@ -481,7 +487,7 @@ class MainWindow(QWidget):
         function = self.aver_empty_func[self.aver_method]
         if self.n_epoch != 0:
             d = self.n_epoch - self.n_aver_max if not self.aver_all else 0
-            data = np.array([self._transform(np.array(TEPs, dtype=float)) for TEPs in self.st_TEPs[d:]])
+            data = np.array([self._transform(np.array(TEPs[:-2, :], dtype=float)) for TEPs in self.st_TEPs[d:]])
 
             self.average_functions = [
                 [function(data[:, i, j], self.n_aver_max, self.aver_all)
@@ -496,12 +502,11 @@ class MainWindow(QWidget):
             ]
 
     def _update_data(self):
-         
+        plot = False
         if self._process_new_data:  
-            if len(self.st_TEPs) == 0:
-                return None
+            plot = (len(self.st_TEPs) != 0)
             if not self._average_data:
-                data2plot = self._transform(self.st_TEPs[-1])
+                data2plot = self._transform(self.st_TEPs[-1, :-2]*10**6)
             else:
                 data_aver = []
                 for i in range(len(CHANNELS)):
@@ -512,13 +517,12 @@ class MainWindow(QWidget):
         else:
             function = self.aver_empty_func[self.aver_method]
             data2plot = []
-            if len(self._data_loaded) == 0:
-                return None
+            plot = (len(self._data_loaded) != 0)
             for data_raw in self._data_loaded:
                 if not self._average_data:
-                    data2plot.append(self._transform(data_raw[-1]))     # последняя эпоха
+                    data2plot.append(self._transform(data_raw[-1, :-2]*10**6))     # последняя эпоха
                 else:
-                    data = np.array([self._transform(np.array(TEPs, dtype=float)) for TEPs in data_raw])
+                    data = np.array([self._transform(np.array(TEPs[:-2, :]*10**6, dtype=float)) for TEPs in data_raw])
                     data_aver = []
 
                     for i in range(len(CHANNELS)):
@@ -528,23 +532,25 @@ class MainWindow(QWidget):
                         average_TEPs = np.array([f.calculate() for f in average_functions])  # усреднённые TEPs
                         data_aver.append(average_TEPs)
                     data2plot.append(np.array(data_aver))
-        self._update_plots(data2plot)
+        if plot:
+            self._update_plots(data2plot)
 
-    def _update_plots(self, data):
+    def _update_plots(self, data, emg2plot=None):
         t0 = time.perf_counter()
         
         if self._process_new_data:
             self.main_teps_panel.figure.update_data(data)      # отобразить  TEPs в режиме реального времени
-        else:
-            self.main_teps_panel.figure.compare_data(data, self._data_loaded_labels)     # отобразить TEPs в режме сравнения
-        
-        t1 = time.perf_counter()
 
-        if len(data) == 1:  # если загружен только один датасет
-            data = data[0]
+            t1 = time.perf_counter()
+
             x_min, x_max = self.ms_to_sample(self.params["TEP_suppl_plot"]["xmin_ms"]), self.ms_to_sample(self.params["TEP_suppl_plot"]["xmax_ms"])
             data2plot = data[:, self.time_shift+x_min:self.time_shift+x_max]
-            self.suppl_teps_panel.figure.update_plot(data2plot)
+            self.suppl_teps_panel.figure_TEP.update_plot(data2plot)
+
+            emg_epochs = np.array(self.st_TEPs)[:, -2:] * 10**3
+            emg = np.mean(np.array([np.diff(self.baseline(emg), axis=0).flatten() for emg in emg_epochs]), axis=0)
+            emg = emg[self.time_shift+x_min:self.time_shift+x_max]      # ЭМГ
+            self.suppl_teps_panel.figure_MEP.update_plot(emg)
 
             t2 = time.perf_counter()
 
@@ -555,16 +561,49 @@ class MainWindow(QWidget):
                     self.suppl_teps_panel.figure_topo[i].plot_topomap(data[:, t])
             t3 = time.perf_counter()
             
-            print(f"update main tep plots: {t1 - t0:.6f} сек")
-            print(f"update suppl_teps_panel (new epoch): {t2 - t1:.6f} сек")
-            print(f"update topoplots_panel (new epoch): {t3 - t2:.6f} сек")
+            if emg2plot is not None:
+                self.meps_panel.figure.update_emg(emg2plot)
+
+            # print(f"update main tep plots: {t1 - t0:.6f} сек")
+            # print(f"update suppl_teps_panel (new epoch): {t2 - t1:.6f} сек")
+            # print(f"update topoplots_panel (new epoch): {t3 - t2:.6f} сек")
             # print(f"update meps_panel (new epoch): {t4 - t3:.6f} сек")
             # print(f"update whole (new epoch): {t4 - t0:.6f} сек")
+        else:
+            self.main_teps_panel.figure.compare_data(data, self._data_loaded_labels)     # отобразить TEPs в режиме сравнения
+            if len(data) == 1:
+                data = data[0]
+                x_min, x_max = self.ms_to_sample(self.params["TEP_suppl_plot"]["xmin_ms"]), self.ms_to_sample(self.params["TEP_suppl_plot"]["xmax_ms"])
+                data2plot = data[:, self.time_shift+x_min:self.time_shift+x_max]
+                self.suppl_teps_panel.figure_TEP.update_plot(data2plot)
+
+                emg_epochs = np.array(self._data_loaded[0])[:, -2:] * 10**3
+                emg = np.mean(np.array([np.diff(self.baseline(emg), axis=0).flatten() for emg in emg_epochs]), axis=0)
+                emg = emg[self.time_shift+x_min:self.time_shift+x_max]      # ЭМГ
+                self.suppl_teps_panel.figure_MEP.update_plot(emg)
+
+                if self.params["TEP_suppl_plot"]["topoplot"]["draw"]:
+                    timestamps = self.params["TEP_suppl_plot"]["timestamps_ms"]
+                    for i, t_ms in enumerate(timestamps):
+                        t = self.ms_to_sample(t_ms)
+                        self.suppl_teps_panel.figure_topo[i].plot_topomap(data[:, t])
+            else:
+                data = np.array(data)
+                x_min, x_max = self.ms_to_sample(self.params["TEP_suppl_plot"]["xmin_ms"]), self.ms_to_sample(self.params["TEP_suppl_plot"]["xmax_ms"])
+                data2plot = data[:, :, self.time_shift+x_min:self.time_shift+x_max]
+                self.suppl_teps_panel.figure_TEP.compare_plot(data2plot)
+
+                emg_all = []
+                for k in range(len(self._data_loaded)):
+                    emg_file = np.array(self._data_loaded[k])[:, -2:, self.time_shift+x_min:self.time_shift+x_max]  * 10**3         # [n_epoch, n_channels, n_samples]
+                    emg = np.mean(np.array([np.diff(self.baseline(emg), axis=0).flatten() for emg in emg_file]), axis=0)
+                    emg_all.append(emg)
+                emg_all = np.array(emg_all)
+                self.suppl_teps_panel.figure_MEP.compare_plot(emg_all)
     
     def _on_change_mode(self, idx):
         self._average_data = True if idx == 0 else False      # из  ["Усреднение", "Одиночные пробы"]
         self._update_data()
-        print('chnge mode: ', self._average_data)
         
     def _on_change_mode_data(self, idx):        
         self._process_new_data = True if idx == 0 else False  # из ["Новые данные", "Сравнение"]
@@ -592,6 +631,7 @@ class MainWindow(QWidget):
         qApp.processEvents()    # для обновления отображения в Qt-приложении
 
         # если эпохи есть, то разрешить их очистку из памяти по нажатию кнопки 
+        
         active_status = True if self.n_epoch > 0 else False      
         self.settings_panel.button_restart.setEnabled(active_status)
         # self.settings_panel.shortcut_restart.setEnabled(active_status)
@@ -603,6 +643,46 @@ class MainWindow(QWidget):
         self.settings_panel.spin_box_show_epoch.setValue(self.n_epoch)
         self.settings_panel.spin_box_remove_epoch.setMaximum(self.n_epoch)
         self.settings_panel.spin_box_remove_epoch.setValue(self.n_epoch)
+
+    def _update_topoplots(self):
+        plot = False
+        if self.params["TEP_suppl_plot"]["topoplot"]["draw"]:
+            if self._process_new_data:
+                plot = (len(self.st_TEPs) != 0)
+                if not self._average_data:
+                    data2plot = self._transform(self.st_TEPs[-1, :-2]*10**6)
+                else:
+                    data_aver = []
+                    for i in range(len(CHANNELS)):
+                        average_TEPs = np.array([f.calculate() for f in self.average_functions[i]])  # усреднённые TEPs
+                        data_aver.append(average_TEPs)
+                    data2plot = np.array(data_aver)
+            else:
+                
+                function = self.aver_empty_func[self.aver_method]
+                data2plot = []
+                plot = (len(self._data_loaded) != 0)
+                for data_raw in self._data_loaded:
+                    if not self._average_data:
+                        data2plot.append(self._transform(data_raw[-1, :-2]*10**6))     # последняя эпоха
+                    else:
+                        data = np.array([self._transform(np.array(TEPs[:-2, :]*10**6, dtype=float)) for TEPs in data_raw])
+                        data_aver = []
+
+                        for i in range(len(CHANNELS)):
+                            average_functions = [function(data[:, i, j], self.n_aver_max, self.aver_all)
+                                for j in range(self.n_samples)
+                            ]
+                            average_TEPs = np.array([f.calculate() for f in average_functions])  # усреднённые TEPs
+                            data_aver.append(average_TEPs)
+                        data2plot.append(np.array(data_aver))
+        if plot:
+            for i in range(3):
+                ts = self.suppl_teps_panel.spinbox_ts[i].value()
+                t = self.ms_to_sample(ts)
+                print(t, ts)
+                
+                self.suppl_teps_panel.figure_topo[i].plot_topomap(data2plot[0][:, t])
 
     # --- Финализация ---
     def _post_init(self):

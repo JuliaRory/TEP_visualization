@@ -13,6 +13,7 @@ from utils.ui_helpers import shortcut_scale, spin_box, create_button
 from utils.layout_utils import create_hbox, create_vbox
 
 from widgets.teps_suppl_plot import TEPsSupplPlot
+from widgets.meps_suppl_plot import MEPsSupplPlot
 from widgets.topoplot_plot import TopoPlot, ColorBar
 
 MICROVOLT = "\u03BC"+"V"
@@ -52,8 +53,11 @@ class TEPsSupplPanel(QFrame):
         
     def _setup_ui(self):
         
-        self.figure = TEPsSupplPlot(self, w=self.width(), h=self._ratio*self.height(), params=self.params)
-        self.figure.setAttribute(Qt.WA_TransparentForMouseEvents, True)
+        self.figure_TEP = TEPsSupplPlot(self, w=self.width(), h=(1-self._ratio)*self.height()//2, params=self.params)
+        self.figure_TEP.setAttribute(Qt.WA_TransparentForMouseEvents, True)
+
+        self.figure_MEP = MEPsSupplPlot(self, w=self.width(), h=(1-self._ratio)*self.height()//2, params=self.params)
+        self.figure_MEP.setAttribute(Qt.WA_TransparentForMouseEvents, True)
 
         if self.params["topoplot"]["draw"]:
             n = self.params['n_plots']
@@ -75,6 +79,13 @@ class TEPsSupplPanel(QFrame):
         self._spinbox_max_time = spin_box(0, 500, self.params["xmax_ms"], parent=self, w=50, step=5)
         self._time_range = create_hbox([label1, self._spinbox_min_time, label2, self._spinbox_max_time, label3])
 
+        ts = self.params["timestamps_ms"]
+        
+        self.spinbox_ts_1 = spin_box(-20, 1000, ts[0], parent=self, w=50, step=1)
+        self.spinbox_ts_2 = spin_box(-20, 1000, ts[1], parent=self, w=50, step=1)
+        self.spinbox_ts_3 = spin_box(-20, 1000, ts[2], parent=self, w=50, step=1)
+        self.spinbox_ts = [self.spinbox_ts_1, self.spinbox_ts_2, self.spinbox_ts_3]
+
         # self._button_apply = create_button('Применить', checkable=True, parent=self, w=150)
 
         self._frame_settings = QFrame(self)
@@ -87,18 +98,20 @@ class TEPsSupplPanel(QFrame):
             for i, topoplot in enumerate(self.figure_topo):
                 left_new = int(left+(topoplot.width() + d_width)*i)
                 topoplot.move(left_new, left)
+                self.spinbox_ts[i].move(left_new + topoplot.width()//2-25, left-30)
             
             self.colorbar.move(0, 0)
 
-        butt_pos = int(self._ratio*self.height()) - 150
-        self.figure.move(0, butt_pos)
+        butt_pos = int((1-self._ratio)*self.height()) - self.figure_TEP.height()
+        self.figure_TEP.move(0, butt_pos)
+        self.figure_MEP.move(0, butt_pos + self.figure_TEP.height() + 10)
 
         layout_settings = QVBoxLayout(self._frame_settings)
         for layout in [self._max_amp,self._time_range]:
             layout_settings.addLayout(layout)
         # layout_settings.addWidget(self._button_apply)
 
-        self._frame_settings.move(0, butt_pos + self.figure.height())
+        self._frame_settings.move(0, butt_pos + self.figure_TEP.height() * 2 + 20)
 
     # --- Сигналы ---
     def _setup_connections(self):
@@ -111,7 +124,8 @@ class TEPsSupplPanel(QFrame):
         xmax = self._spinbox_max_time.value()
         xmin = self._spinbox_min_time.value()
         ymax = self._spinbox_max_amp.value()
-        self.figure.update_limits(xmax, xmin, ymax)
+        self.figure_TEP.update_limits(xmax, xmin, ymax)
+        self.figure_MEP.update_limits(xmax, xmin, self.params["max_amp_emg_mV"])
 
     # --- Финализация ---
     def _post_init(self):
@@ -121,5 +135,6 @@ class TEPsSupplPanel(QFrame):
     # --- События ---
     def resizeEvent(self, event):
         super().resizeEvent(event)
-        self.figure.resize(self.width(), int(self._ratio*self.height()))
+        self.figure_TEP.resize(self.width(), int((1 - self._ratio)*self.height()//2))
+        self.figure_MEP.resize(self.width(), int((1 - self._ratio)*self.height()//2))
     

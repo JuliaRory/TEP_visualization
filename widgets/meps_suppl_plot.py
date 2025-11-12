@@ -1,13 +1,11 @@
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
 from matplotlib.lines import Line2D
-from matplotlib import colormaps as cm
-from matplotlib.colors import ListedColormap
 import numpy as np
 
 MICROVOLT = "\u03BC"+"V"
 
-class TEPsSupplPlot(FigureCanvas):
+class MEPsSupplPlot(FigureCanvas):
     def __init__(self, parent=None, w=1000, h=700, params=None, dpi=100):
         self.figsize = (w/dpi, h/dpi)
         self.dpi = dpi
@@ -38,8 +36,6 @@ class TEPsSupplPlot(FigureCanvas):
         self.x_step = 20 # ms
         self.y_ticks = 20 # uV
 
-        self._viridisBig = cm.get_cmap('jet')
-        
         # n_xticks = (self.params["xmax_ms"] - self.params["xmin_ms"]) // x_step + 1
         # n_yticks = 2 * self._ymax // y_ticks + 1
 
@@ -60,43 +56,37 @@ class TEPsSupplPlot(FigureCanvas):
         # self.ax.set_xticks(x_ticks, x_ticks_orig)
         # self.ax.set_yticks(y_ticks_orig)
         
-        self.update_limits(self.params["xmax_ms"], self.params["xmin_ms"], self.params["max_amp_mV"] )
+        self.update_limits(self.params["xmax_ms"], self.params["xmin_ms"], self.params["max_amp_emg_mV"] )
 
-        self.ax.text(-.15, 1, f"[{MICROVOLT}]", fontsize=fontsize_axes, color='black', transform=self.ax.transAxes)
+        self.ax.text(-.15, 1, f"[mV]", fontsize=fontsize_axes, color='black', transform=self.ax.transAxes)
         self.ax.text(1.05, -.05, "[ms]", fontsize=fontsize_axes, color='black', transform=self.ax.transAxes)
 
-        self.ax.set_title("Averaged TEP")
+        self.ax.set_title("Averaged MEP")
 
         self.ax.grid(True)
 
         # --- копилка для сигнала ---
-        self.lines = []
+        # self.lines = []
         y_empty = np.full(len(self._x), np.nan)
-        n = self.params["n_channels"] + 1
-        for i in range(n):
-            (color, lw) = ("gray", 0.5) if i < n-1 else ("black", 1.5)
-            line = Line2D(self._x, y_empty, lw=lw, color=color)
-            self.ax.add_line(line)
-            self.lines.append(line)
+        (color, lw) = ("black", 1.5)
+        # (color, lw) = ("gray", 0.5) if i < n-1 else ("black", 1.5)
+        line = Line2D(self._x, y_empty, lw=lw, color=color)
+        self.ax.add_line(line)
+        self.line = line
 
         self.fig.canvas.draw()
         self.background = self.fig.canvas.copy_from_bbox(self.ax.bbox)
 
     def update_plot(self, teps):
         self.fig.canvas.restore_region(self.background)  # восстанавливаем чистый фон
-        
-        for i in range(teps.shape[0]):          # для каждого канала
-            self.lines[i].set_ydata(teps[i])
-            self.ax.draw_artist(self.lines[i])
-
-        self.lines[i+1].set_ydata(self._mean(teps))     # усреднённые каналы вокруг С3
-        self.ax.draw_artist(self.lines[i+1])
+        self.line.set_ydata(teps)
+        self.ax.draw_artist(self.line)
 
         self.fig.canvas.blit(self.ax.bbox)
     
     def compare_plot(self, teps):
         self.fig.canvas.restore_region(self.background)  # восстанавливаем чистый фон
-        colors = ListedColormap(self._viridisBig(np.linspace(0, 1, len(teps))))
+        # colors = ListedColormap(self._viridisBig(np.linspace(0, 1, len(teps))))
         colors = ["green", "orange", "darkred", "pink"]
         # for i in range(teps.shape[0]):          # для каждого канала
         #     self.lines[i].set_ydata(teps[i])
@@ -106,7 +96,11 @@ class TEPsSupplPlot(FigureCanvas):
         # self.ax.draw_artist(self.lines[-1])
         (color, lw) = ("black", 1.5)
         for i in range(len(teps)):
-            y = self._mean(teps[i])
+            
+            y = teps[i]
+            # print(y)
+            # print(y.shape)
+            # print(self._x.shape)
             line, = self.ax.plot(self._x, y, lw=lw, color=colors[i])
             self.ax.draw_artist(line)
 
@@ -120,10 +114,10 @@ class TEPsSupplPlot(FigureCanvas):
         self.ax.set_ylim(-ymax, ymax)
 
         n_xticks = (xmax_ms - xmin_ms) // self.x_step + 1
-        n_yticks = 2 * ymax // self.y_ticks + 1
+        n_yticks = 5#2 * ymax / self.y_ticks + 1
 
         x_ticks_orig = np.linspace(xmin_ms, xmax_ms, n_xticks).astype(int)
-        y_ticks_orig = np.linspace(-ymax, ymax, n_yticks).astype(int)
+        y_ticks_orig = np.linspace(-ymax, ymax, n_yticks).round(2)
 
         x_ticks = np.linspace(xmin, xmax, n_xticks)
 
