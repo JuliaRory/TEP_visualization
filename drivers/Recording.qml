@@ -14,8 +14,8 @@ DSM.StateMachine {
 	property bool use_nvx: false
 	property bool use_speed: false
 
-    property string service_name: "signalGenerator"
-    property string stream_name: "generated"
+    property string service_name: "nvx136" //"signalGenerator"
+    property string stream_name: "eeg" //"generated"
 
     property alias runningRecord: stRECORD_running.active // идёт запись ээг, если находится в состоянии stRECORD_running
 
@@ -61,11 +61,11 @@ DSM.StateMachine {
                 id: stRECORD_add_streams
 
                 onEntered: {
-                    if (root.use_nvx) {recorder.addStream(
-                        "discover:///?stream=" + stream_name + "&name=" + service_name,
-                        stream_name
-                    )}
-                    if (root.use_speed) {recorder.addStream('discover:///?stream=naive_probability&name=SPEED')}
+                    //if (root.use_nvx) {recorder.addStream(
+                    //    "discover:///?stream=" + stream_name + "&name=" + service_name,
+                    //    stream_name                    )}
+                    recorder.addStream('discover:///?stream=eeg&name=nvx136', 'eeg')
+                    //if (root.use_speed) {recorder.addStream('discover:///?stream=naive_probability&name=SPEED')}
 					
 					root.eegRecordCounter += 1 // ЗАЧЕМ ЭТОТ СЧЁТЧИК???
                 }
