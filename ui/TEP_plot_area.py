@@ -2,7 +2,7 @@ from PyQt5.QtWidgets import (
     QFrame, QGridLayout, QHBoxLayout, QLabel, QScrollArea, QWidget
 )
 from PyQt5.QtGui import QFont, QFontMetrics
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, pyqtSignal
 
 import numpy as np
 import pandas as pd
@@ -13,6 +13,8 @@ from widgets.teps_plot import TEPsPlot
 MICROVOLT = "\u03BC"+"V"
 
 class TEPsPanel(QFrame):
+    scale_changed = pyqtSignal()  
+
     def __init__(self, parent=None, params=None, init_size=(600, 800)):
         super().__init__(parent)
 
@@ -57,7 +59,7 @@ class TEPsPanel(QFrame):
         self._calculate_positions() # --> create self.df_pos
         self.scale_left, self.scale_bottom = int( self.df_pos['x'].min()+0.2*self.plot_width), int(self.df_pos['y'].max()+0.2*self.plot_height)                     #  позиция для пустых осей для задания масштаба
         self._positions = np.concatenate([self.df_pos[['x', 'y']].values, np.array([[self.scale_left, self.scale_bottom]])], axis=0)      #  добавляем к списку позиций основных графиков позицию пустых осей
-    
+
     # --- Widgets ---
     def _setup_ui(self):
         
@@ -100,6 +102,7 @@ class TEPsPanel(QFrame):
         for spin_box in [self.spin_box_scale_ymin, self.spin_box_scale_ymax, self.spin_box_scale_xmin, self.spin_box_scale_xmax]:
             spin_box.valueChanged.connect(self._update_scale)
         
+        
     # --- Логика ---
     def _update_scale(self):
         xmax = self.ms_to_sample(self.spin_box_scale_xmax.value())
@@ -109,6 +112,8 @@ class TEPsPanel(QFrame):
         ymin = self.spin_box_scale_ymin.value()
 
         self.figure.update_axes([xmin, xmax, ymin, ymax])
+
+        self.scale_changed.emit()
 
     def _calculate_positions(self):
         df = self.df_orig.copy()
@@ -196,7 +201,7 @@ class TEPsPanel(QFrame):
     # --- Финализация ---
     def _post_init(self):
         self.figure.update_axes([self.ms_to_sample(self.xmin), self.ms_to_sample(self.xmax), self.ymin, self.ymax])                       #  задаём оси с правильным масштабом
-        self.figure.set_x_shift(-self.x_shift, self.n_samples)                                                                            #  задаём размеры эпохи и смещение относительно 0 по оси абсцисс
+        self.figure.set_x_shift(-self.x_shift, self.n_samples)        #  задаём размеры эпохи и смещение относительно 0 по оси абсцисс
 
     # --- События ---
     def resizeEvent(self, event):

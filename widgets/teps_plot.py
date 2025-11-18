@@ -8,6 +8,8 @@ import numpy as np
 import time
 from copy import deepcopy
 
+from utils.helpers import get_time_ticks, get_voltage_ticks
+
 class TEPsPlot(FigureCanvas):
     """Класс для отрисовки графиков"""
     def __init__(self, parent=None, positions=None, single_w=300, single_h=200, w=1000, h=700, dpi=100, channels=None):
@@ -32,7 +34,8 @@ class TEPsPlot(FigureCanvas):
         fig_w_px, fig_h_px = figsize[0] * dpi, figsize[1] * dpi    # размеры всего пространства в пикселях (для нормализации значений)
         width, height = single_w / fig_w_px, single_h / fig_h_px   # размеры для одного графика
 
-        self.n_xticks, self.n_yticks = 5, 4
+        self.n_xticks = 5
+        self.n_yticks = 4
         self.ticks = []
         
         self.lines = []       # список с линиями
@@ -41,8 +44,7 @@ class TEPsPlot(FigureCanvas):
         self.affines = []     # список с преобразованиями для позиционирования
         self.transforms = []
         
-
-        # Создаём все линии, используя трансформации для позиционирования
+        # Создаём все линии, используя трансформации для позиционирования 
         for i, (x_px, y_px) in enumerate(positions):
             # нормализуем координаты
             left = x_px / fig_w_px
@@ -132,8 +134,6 @@ class TEPsPlot(FigureCanvas):
                     for i, x_t in enumerate(xticks):
                         x_t.set_xdata([xticks_new[i], xticks_new[i]])
 
-                    
-                    
         for line in self.lines:
             line.set_visible(False)
 
@@ -180,7 +180,7 @@ class TEPsPlot(FigureCanvas):
 
         self._ydata = data
     
-    def compare_data(self, data_all, labels):
+    def draw_loaded_TEPs(self, data_all, labels):
         # data_all : list of np.arrays [n_channels, n_samples]
 
         self.fig.canvas.restore_region(self.background_axes) # восстанавливаем чистый фон
@@ -224,8 +224,8 @@ class TEPsPlot(FigureCanvas):
         self.fig.canvas.blit(self.ax.bbox)
                 
     def refresh_plot(self):
-        self.fig.canvas.restore_region(self.background) # восстанавливаем чистый фон
-
+        self.fig.canvas.restore_region(self.background_axes) # восстанавливаем чистый фон
+        self.fig.canvas.blit(self.ax.bbox)
 
     def _normalize(self, x, axis='x'):
         assert hasattr(self, "_last_xlim"), f"Границы графика ещё не заданы -> невозможно нормализовать данные по оси {axis}."

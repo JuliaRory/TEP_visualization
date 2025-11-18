@@ -5,21 +5,21 @@
 				"connections": [],
 				"metaData": {}
 			},
-			"reconnect": true
+			"reconnect": false
 		},
 		"enabled": true,
 		"group": "default",
-		"index": 0,
-		"label": "epochs",
-		"name": "epochs",
+		"index": 10,
+		"label": "controlSignal",
+		"name": "controlSignal",
 		"serialized": {
 			"desiredStream": {
 				"connections": [
-					"discover:///?stream=epochs&name=SPEED"
+					"discover:///?stream=controlSignal&name=TEP_visual"
 				],
 				"metaData": {},
-				"name": "epochs",
-				"serializedType": "FwBCAAAAAAAAAACIs0A="
+				"name": "controlSignal",
+				"serializedType": "DgA="
 			}
 		},
 		"type": "Resonance::Parameters::Stream"

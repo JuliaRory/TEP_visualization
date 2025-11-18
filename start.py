@@ -4,6 +4,7 @@ import sys
 import time
 
 from utils.theme_loader import load_qss
+from utils.resonance_control import ResonanceAppProxy
 
 from utils.dispatcher import CallDispatcher
 from drivers.resonance_foreign_driver import Driver
@@ -21,14 +22,19 @@ app.setStyleSheet(style)
 
 # == Магическое подключениен драйвера для получения потока с данными из резонанса == 
                                                                                                          
-driver = Driver("TEP_visual")          
-dispatcher = CallDispatcher()                          # пустая функция-обработчик
-driver.inputDataStream("epochs", dispatcher)           # создание входного потока данных типа Stream
-# driver.loadConfig(r'resonance_settings.json')          # вгрузить настройки с потоком в резонансе
-driver.loadConfig(r'resonance_settings_main.json')          # вгрузить настройки с потоком в резонансе
+driver = Driver("TEP_visual")
+
+dispatcher = CallDispatcher()                                            # пустая функция-обработчик
+driver.inputDataStream("epochs", dispatcher)                             # создание входного потока данных типа Stream
+
+output_stream = driver.outputMessageStream("controlSignal")           # создание выходного потока данных типа Stream
+resonance = ResonanceAppProxy(output_stream)                             # Создаем прокси резонанса
+
+driver.loadConfig(r'resonance_settings.json')          # вгрузить настройки с потоком в резонансе
+# driver.loadConfig(r'resonance_settings_main.json')   # вгрузить настройки с потоком в резонансе
 
 # == Запуск приложения ==
 filename_params = r'data/TEP_visual_settings.json'     # файл с настройками приложения
-main = MainWindow(dispatcher, filename_params)         # открыть Qt-окно приложения
+main = MainWindow(dispatcher, resonance, filename_params)         # открыть Qt-окно приложения
 
 sys.exit(app.exec_())

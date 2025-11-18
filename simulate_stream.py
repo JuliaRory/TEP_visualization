@@ -35,9 +35,9 @@ class MainWindow(QWidget):
         self.setWindowTitle("simulator")
         self.resize(W, H)
 
-        self._load_file()
+        # self._load_file()
 
-        self._setup_ui()
+        # self._setup_ui()
         self.show()
     
     def _setup_ui(self):
@@ -70,7 +70,6 @@ class MainWindow(QWidget):
             self.blocks = h5f['eeg/blocks'][:]["samples"]
             self.data = h5f['eeg/data'][:]
         self._max_ind = self.blocks.shape[0]
-
 
 
 app = QApplication(sys.argv) 

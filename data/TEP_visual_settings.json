@@ -18,6 +18,19 @@
     "high_freq": 250,
     "rereference": false,
     "rereference_channel": ["Fz"],
+    "bat_file": "C:/Users/hodor/Documents/lab-MSU/Works/2025.10_TMS/dist_2024_11_13_imp/control.bat",
+    "activate_bat": false,
+    "service_name": "signalGenerator",
+    "records_folder": "C:/Users/hodor/Documents/lab-MSU/Works/2025.10_TMS/TEP_visualization/data/records",
+    "stimuli":
+        {
+            "intro_video": "countdown.mkv",
+            "stimuli_video": "triple_black_white.mkv",
+            "countdown_second": 1,
+            "start_fragment_s": 1,
+            "end_fragment_s": 7,
+            "n_stimuli": 2
+        },
     "plot":
         {
             "xmin": -10, 
@@ -44,17 +57,30 @@
         },
     "TEP_suppl_plot":
         {
-            "xmin_ms": -20, 
-            "xmax_ms": 100, 
-            "max_amp_mV": 100,
-            "max_amp_emg_mV": 1,
+            "xmin_ms": -10, 
+            "xmax_ms": 50, 
+            "TEP":
+                {
+                    "amp": 100,
+                    "units": "uV", 
+                    "title": "Averaged TEP",
+                    "round": 0, 
+                    "channels_nearest_n": [9, 36, 42, 38, 37],
+                    "n_channels": 64
+                },
+            "MEP":
+                {
+                    "amp": 1,
+                    "units": "mV",
+                    "title": "Averaged MEP",
+                    "round": 1
+                    
+                },
             "Fs": 5000,
             "topo_butt_ratio": 0.4,
-            "n_channels": 64,
             "n_plots": 3, 
             "timestamps_ms": [30, 55, 80],
             "channels_nearest": ["C3", "C5", "C1", "CP3", "FC3"],
-            "channels_nearest_n": [9, 36, 42, 38, 37],
             "topoplot":
                 {
                     "draw": true,

@@ -12,8 +12,8 @@ import pandas as pd
 from utils.ui_helpers import shortcut_scale, spin_box, create_button
 from utils.layout_utils import create_hbox, create_vbox
 
-from widgets.teps_suppl_plot import TEPsSupplPlot
-from widgets.meps_suppl_plot import MEPsSupplPlot
+from widgets.teps_suppl_plot import supplPlot
+# from widgets.meps_suppl_plot import MEPsSupplPlot
 from widgets.topoplot_plot import TopoPlot, ColorBar
 
 MICROVOLT = "\u03BC"+"V"
@@ -53,10 +53,16 @@ class TEPsSupplPanel(QFrame):
         
     def _setup_ui(self):
         
-        self.figure_TEP = TEPsSupplPlot(self, w=self.width(), h=(1-self._ratio)*self.height()//2, params=self.params)
+        self.figure_TEP = supplPlot(self, 
+                                        w=self.width(), h=(1-self._ratio)*self.height()//2, 
+                                        params=self.params["TEP"],
+                                        Fs=self.params["Fs"])
         self.figure_TEP.setAttribute(Qt.WA_TransparentForMouseEvents, True)
 
-        self.figure_MEP = MEPsSupplPlot(self, w=self.width(), h=(1-self._ratio)*self.height()//2, params=self.params)
+        self.figure_MEP = supplPlot(self, 
+                                    w=self.width(), h=(1-self._ratio)*self.height()//2, 
+                                    params=self.params["MEP"],
+                                        Fs=self.params["Fs"])
         self.figure_MEP.setAttribute(Qt.WA_TransparentForMouseEvents, True)
 
         if self.params["topoplot"]["draw"]:
@@ -69,7 +75,7 @@ class TEPsSupplPanel(QFrame):
 
         label1 = QLabel("Макс:", self)
         label2 = QLabel(MICROVOLT, self)
-        self._spinbox_max_amp = spin_box(0, 10000, self.params["max_amp_mV"], parent=self, w=50, step=10)
+        self._spinbox_max_amp = spin_box(0, 10000, self.params["TEP"]["amp"], parent=self, w=50, step=10)
         self._max_amp = create_hbox([label1, self._spinbox_max_amp, label2])
 
         label1 = QLabel("от:   ", self)
@@ -79,6 +85,7 @@ class TEPsSupplPanel(QFrame):
         self._spinbox_max_time = spin_box(0, 500, self.params["xmax_ms"], parent=self, w=50, step=5)
         self._time_range = create_hbox([label1, self._spinbox_min_time, label2, self._spinbox_max_time, label3])
 
+        """Для топоплотов"""
         ts = self.params["timestamps_ms"]
         
         self.spinbox_ts_1 = spin_box(-20, 1000, ts[0], parent=self, w=50, step=1)
@@ -115,22 +122,22 @@ class TEPsSupplPanel(QFrame):
 
     # --- Сигналы ---
     def _setup_connections(self):
-        self._spinbox_min_time.valueChanged.connect(self._on_update_scale)
-        self._spinbox_max_time.valueChanged.connect(self._on_update_scale)
-        self._spinbox_max_amp.valueChanged.connect(self._on_update_scale)
+        for spin_box in [self._spinbox_min_time, self._spinbox_max_time, self._spinbox_max_amp]:
+            spin_box.valueChanged.connect(self._update_scale)
     
     # --- Логика ---
-    def _on_update_scale(self):
+    def _update_scale(self):
         xmax = self._spinbox_max_time.value()
         xmin = self._spinbox_min_time.value()
         ymax = self._spinbox_max_amp.value()
-        self.figure_TEP.update_limits(xmax, xmin, ymax)
-        self.figure_MEP.update_limits(xmax, xmin, self.params["max_amp_emg_mV"])
+
+        self.figure_TEP.update_axes(xmax, xmin, ymax)
+        self.figure_MEP.update_axes(xmax, xmin, self.params["MEP"]["amp"])
 
     # --- Финализация ---
     def _post_init(self):
-        if False:
-            print('skip')
+        self._update_scale()
+        
 
     # --- События ---
     def resizeEvent(self, event):

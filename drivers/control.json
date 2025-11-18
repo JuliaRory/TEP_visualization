@@ -1,0 +1,20 @@
+[
+    {
+        "enabled": true,
+        "group": "default",
+        "index": 10,
+        "label": "signalGenerator",
+        "name": "signalGenerator",
+        "serialized": {
+            "desiredStream": {
+                "connections": [
+                    "discover:///?stream=signalGenerator&name=generated"
+                ],
+                "metaData": {}
+            },
+            "name": "signalGenerator",
+            "channels": 4
+        },
+        "type": "Resonance::Parameters::Stream"
+    }
+]

@@ -57,7 +57,13 @@ class SettingsPanel(QFrame):
         self.button_load = create_button(text='Загрузить', checkable=True, parent=self)
         # self._load = create_hbox([self.check_box_new_window, self.button_load])
 
-        self.button_restart = create_button(text='Начать заново', checkable=False, parent=self)
+        self.button_restart = create_button(text='Очистить память', checkable=False, parent=self)
+        # self.shortcut_restart = self.create_shortcut_button("Delete", self.restart, False)
+
+        self.button_nvx_record = create_button(text='Начать запись', checkable=False, parent=self)
+        # self.shortcut_restart = self.create_shortcut_button("Delete", self.restart, False)
+
+        self.button_stimuli = create_button(text='Начать стимулы', checkable=False, parent=self)
         # self.shortcut_restart = self.create_shortcut_button("Delete", self.restart, False)
         
         self.button_show_epoch = create_button('Показать эпоху', checkable=False, parent=self)
@@ -150,6 +156,8 @@ class SettingsPanel(QFrame):
         layout.addWidget(self.button_load)
         layout.addLayout(self._save)
         layout.addWidget(self.button_restart)
+        layout.addWidget(self.button_nvx_record)
+        layout.addWidget(self.button_stimuli)
         layout.addLayout(self._show_epoch)
         layout.addLayout(self._remove_epoch)
 
