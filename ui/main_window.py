@@ -21,6 +21,7 @@ from .MEP_plot_area import MEPsPanel
 from .video_player import StimuliPresentation
 
 from utils.averaging_math import RollingMean, RollingMedian, RollingTrimMean
+from utils.concat_videos import concat_videos_by_order
 
 WIDTH_SET, HEIGHT_SET = 1850, 900  # параметры изначального окна интерфейса
 MICROVOLT = "\u03BC"+"V"
@@ -127,6 +128,13 @@ class MainWindow(QWidget):
 
         self.specific_epoch = False                         # флаг для отслеживания режима показа определенной эпохи или стандартного
 
+        params = self.params["stimuli"]
+        self._stimuli_filename = os.path.join(r"resources/stimuli_set", 
+                                    f'n{params["n_stimuli"]}_'+
+                                    f'i{params["countdown_s"]}_'+
+                                    f'b{params["before_s"]}_'+
+                                    f'a{params["after_s"]}.mp4')
+        
         self.SPEED = self.params["SPEED"]
         self.ms_to_sample = lambda x: int(x / 1000 * self.SPEED["Fs"])                                  # функция для пересчёта мс в сэмплы
         self.n_samples = self.ms_to_sample(self.SPEED["window_end"] - self.SPEED["window_start"])       # длина эпохи в сэмплах
@@ -227,6 +235,7 @@ class MainWindow(QWidget):
         self.settings_panel.button_load.clicked.connect(self._on_button_load_click)
         self.settings_panel.button_restart.clicked.connect(self._on_restart_button_click)
         self.settings_panel.button_nvx_record.clicked.connect(self._on_record_button_click)
+        self.settings_panel.button_create_stimuli.clicked.connect(self._on_create_stimuli_button_click)
         self.settings_panel.button_stimuli.clicked.connect(self._on_stimuli_button_click)
         self.settings_panel.button_show_epoch.clicked.connect(self._on_show_epoch_button_click)
         self.settings_panel.button_remove_epoch.clicked.connect(self._on_remove_epoch_button_click)
@@ -457,17 +466,39 @@ class MainWindow(QWidget):
 
             self.settings_panel.button_nvx_record.setText("Начать запись")
 
+    def _on_create_stimuli_button_click(self):
+        params = self.params["stimuli"]
+        intro_video_fl = params["intro_video"] + f"_{params['countdown_s']}.mp4"
+        video_files = [intro_video_fl, params["cross_video"], params["stimuli_video"]]
+        video_files = [os.path.join(params["video_folder"], video) for video in video_files]
+
+        idx_list =  [1 for _ in range(params["before_s"])] +\
+                    [2] +\
+                    [1 for _ in range(params["after_s"])]
+        
+        order = [0] + idx_list * params["n_stimuli"] + [1]
+
+        self._stimuli_filename = os.path.join(r"resources/stimuli_set", 
+                                    f'n{params["n_stimuli"]}_'+
+                                    f'i{params["countdown_s"]}_'+
+                                    f'b{params["before_s"]}_'+
+                                    f'a{params["after_s"]}.mp4')
+
+        concat_videos_by_order(video_files, order, self._stimuli_filename)
+
     def _on_stimuli_button_click(self):
         # начать запись
         # self._on_record_button_click()
 
+        if not os.path.exists(self._stimuli_filename):
+            self._on_create_stimuli_button_click()
+            
         # открыть окно с плеером
-        self._player_window = StimuliPresentation(self.params["stimuli"])
+        self._player_window = StimuliPresentation(self._stimuli_filename)
+
         self._player_window.show()
         self._player_window.raise_()
         self._player_window.activateWindow()
-
-
 
 
     def _on_show_epoch_button_click(self):

@@ -62,6 +62,8 @@ class SettingsPanel(QFrame):
 
         self.button_nvx_record = create_button(text='Начать запись', checkable=False, parent=self)
         # self.shortcut_restart = self.create_shortcut_button("Delete", self.restart, False)
+        
+        self.button_create_stimuli = create_button(text='Создать стимулы', checkable=False, parent=self)
 
         self.button_stimuli = create_button(text='Начать стимулы', checkable=False, parent=self)
         # self.shortcut_restart = self.create_shortcut_button("Delete", self.restart, False)
@@ -157,6 +159,7 @@ class SettingsPanel(QFrame):
         layout.addLayout(self._save)
         layout.addWidget(self.button_restart)
         layout.addWidget(self.button_nvx_record)
+        layout.addWidget(self.button_create_stimuli)
         layout.addWidget(self.button_stimuli)
         layout.addLayout(self._show_epoch)
         layout.addLayout(self._remove_epoch)

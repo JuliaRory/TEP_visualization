@@ -19,16 +19,18 @@
     "rereference": false,
     "rereference_channel": ["Fz"],
     "bat_file": "D:/Resonance/distro-dual/msvc/control.bat",
-    "activate_bat": true,
+    "activate_bat": false,
     "service_name": "nvx136",
     "records_folder": "C:/Users/hodor/Documents/lab-MSU/Works/2025.10_TMS/TEP_visualization/data/records",
     "stimuli":
-        {
-            "intro_video": "countdown.mkv",
-            "stimuli_video": "triple_black_white.mkv",
-            "countdown_second": 1,
-            "start_fragment_s": 1,
-            "end_fragment_s": 7,
+        {   
+            "video_folder": "resources/videoSamples", 
+            "intro_video": "countdown",
+            "cross_video": "cross_1.mp4",
+            "stimuli_video": "triple_white_black_0.65.mp4",
+            "countdown_s": 3,
+            "before_s": 3,
+            "after_s": 0,
             "n_stimuli": 2
         },
     "plot":

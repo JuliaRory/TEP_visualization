@@ -6,12 +6,61 @@ from PyQt5.QtWidgets import (
 )
 from PyQt5.QtCore import Qt, QUrl
 from PyQt5.QtGui import QKeyEvent
-from PyQt5.QtMultimedia import QMediaPlayer, QMediaContent
+from PyQt5.QtMultimedia import QMediaPlayer, QMediaContent, QMediaPlaylist
 from PyQt5.QtMultimediaWidgets import QVideoWidget
 
 import time
 
 class StimuliPresentation(QWidget):
+    def __init__(self, filename):
+        super().__init__()
+        monitor_index=0
+
+        self.setWindowTitle("PyQt5 Video Player")
+        
+        screens = QApplication.instance().screens()
+        screen = screens[monitor_index]
+        target_monitor = screen.geometry()
+        self.setGeometry(target_monitor)             # Переносим окно на нужный монитор
+        self.showFullScreen()                   
+
+        self._fl = filename
+        self._init()
+
+    def _init(self):
+        
+        self._videoWidget = QVideoWidget()   # виджет видео
+        self._videoWidget.setFullScreen(True)  # включаем полноэкранный режим
+        self._videoWidget.setAspectRatioMode(Qt.IgnoreAspectRatio)
+        # # --- основной layout ---
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(0, 0, 0, 0)  # убираем внутренние отступы
+        layout.setSpacing(0)                   # убираем расстояние между элементами
+
+        layout.addWidget(self._videoWidget)
+
+        self._mediaPlayer = QMediaPlayer(None, QMediaPlayer.VideoSurface)   # медиаплеер
+        self._mediaPlayer.setVideoOutput(self._videoWidget)
+
+        video = QMediaContent(QUrl.fromLocalFile(self._fl))
+        self._mediaPlayer.setMedia(video)
+
+        self._mediaPlayer.mediaStatusChanged.connect(self._on_media_status_changed)
+
+        self._mediaPlayer.play()
+    
+    def _on_media_status_changed(self, status):
+        if status == QMediaPlayer.EndOfMedia:
+            self.close()  # закрываем окно, когда видео закончилось
+
+    
+    def keyPressEvent(self, event: QKeyEvent):
+        if event.key() == Qt.Key_Escape:
+            self.close()  # Закрываем окно
+        else:
+            super().keyPressEvent(event)
+
+class StimuliPresentation_from_pieces(QWidget):
     def __init__(self, params):
         super().__init__()
         monitor_index=0
@@ -22,82 +71,79 @@ class StimuliPresentation(QWidget):
         screen = screens[monitor_index]
         target_monitor = screen.geometry()
         self.setGeometry(target_monitor)             # Переносим окно на нужный монитор
-        self.showFullScreen()
+        self.showFullScreen()                   
 
-        # --- основной layout ---
-        layout = QVBoxLayout(self)
-
-        # виджет видео
-        self.videoWidget = QVideoWidget()
-        layout.addWidget(self.videoWidget)
-
-        # медиаплеер
-        self.mediaPlayer = QMediaPlayer(None, QMediaPlayer.VideoSurface)
-        self.mediaPlayer.setVideoOutput(self.videoWidget)
-
-
-        # # сигналы позиции и длительности
-        # self.mediaPlayer.durationChanged.connect(self.update_duration)
-        self.mediaPlayer.positionChanged.connect(self.update_position)
-        # self.mediaPlayer.mediaStatusChanged.connect(self._handle_status) # когда видео заканчивается
-        self.mediaPlayer.stateChanged.connect(self._handle_status) # когда видео заканчивается
-        self.mediaPlayer.mediaStatusChanged.connect(self._on_loaded)
-
-        self._start_ms = 0
-        self._stop_ms = 0
-        # self.show()
         self._params = params
-        self._counter = 0
-        self._status = None
-        self.has_started = False  # новый флаг для первого видео
+    
         self._init()
+        self._setup_ui()
+        self._setup_layout()
+        self._setup_connections()
+        self._finalization()
 
     def _init(self):
-        self._play_intro()
-
-        path = os.path.join(r"resources/videoSamples", self._params["stimuli_video"])
-        self._stimuli_video = QMediaContent(QUrl.fromLocalFile(path))
-            
-    def _play_intro(self):
-        path = os.path.join(r"resources/videoSamples", self._params["intro_video"])
-        self.mediaPlayer.setMedia(QMediaContent(QUrl.fromLocalFile(path)))
-        self._stop_ms = self._params["countdown_second"] * 1000
-        self._status = "intro"
+        idx_list =  [1 for _ in range(self._params["before_s"])] +\
+                    [2] +\
+                    [1 for _ in range(self._params["after_s"])]
         
-        self.mediaPlayer.play()
+        self._idx_list = [0] + idx_list * self._params["n_stimuli"] + [1]
+        self._idx = 0
+
+        intro_video_fl = self._params["intro_video"] + f"_{self._params['countdown_s']}.mp4"
+        self._videos = [intro_video_fl, self._params["cross_video"], self._params["stimuli_video"]]
+    
+    def _setup_ui(self):
+        self._videoWidget = QVideoWidget()   # виджет видео
+        # --- основной layout ---
+        layout = QVBoxLayout(self)
+        layout.addWidget(self._videoWidget)
+
+        self._mediaPlayer = QMediaPlayer(None, QMediaPlayer.VideoSurface)   # медиаплеер
+        self._mediaPlayer.setVideoOutput(self._videoWidget)
         
-    def _handle_status(self, status):
-        if status == 1:
-            self.has_started = True
+        # создаём плейлист с тремя видео
+        self._playlist = QMediaPlaylist()
+        for video_name in self._videos:
+            self._playlist.addMedia(self._load_video(video_name))
+        self._playlist.setPlaybackMode(QMediaPlaylist.Sequential)
 
-        print(status)
-        # QMediaPlayer.EndOfMedia = 7
-        # QMediaPlayer.LoadedMedia = 2
-        # QMediaPlayer.StoppedState = 6
-        if status == 2 and self.has_started:
-            if self._status == "intro":
-                print('intro')
-                self._status = "stimuli"
-                self._start_ms = self._params["start_fragment_s"] * 1000
-                self._stop_ms = self._params["end_fragment_s"] * 1000
+        self._mediaPlayer.setPlaylist(self._playlist)
+    
+    def _setup_layout(self):
+        
+        if False:
+            print('hi')
+    
+    def _setup_connections(self):
+        self._playlist.currentIndexChanged.connect(self._on_index_changed)
+        # self.mediaPlayer.durationChanged.connect(self.update_duration)
+        # self._mediaPlayer.positionChanged.connect(self.update_position)
+        # self.mediaPlayer.mediaStatusChanged.connect(self._handle_status) # когда видео заканчивается
+        # self._mediaPlayer.stateChanged.connect(self._handle_status) # когда видео заканчивается
+        # self._mediaPlayer.mediaStatusChanged.connect(self._on_loaded)    # чтобы запускать следующее видео тогда, когда оно подгружено
 
-            if self._status == "stimuli" and self._counter <= self._params["n_stimuli"]:
-                print('stimuli')
-                self.mediaPlayer.setMedia(self._stimuli_video)
-                self.mediaPlayer.setPosition(self._start_ms)
-                # self.mediaPlayer.play()
-                self._counter += 1
-            
-            else:
-                self.close()
+    def _load_video(self, filename):
+        path = os.path.join(self._params["video_folder"], filename)
+        print(path, os.path.exists(path))
+        return QMediaContent(QUrl.fromLocalFile(path))
 
-    def _on_loaded(self, status):
-        if status == 2: #QMediaPlayer.LoadedMedia:
-            self.mediaPlayer.play()
+    def _set_next_video(self):
+        if self._idx >= len(self._idx_list):
+            print("Все видео проиграны")
+            return
+        idx = self._idx_list[self._idx]
+        self._playlist.setCurrentIndex(idx)
+        self._idx += 1
 
-      
+    def _on_index_changed(self, index):
+        # если закончили блок video2->video3
+        if self._idx < len(self._idx_list):
+            self._set_next_video()
+    
+    def _finalization(self):
+        self._mediaPlayer.play()
 
-    # -----------------------------
+          # -----------------------------
     # Открытие файла
     # -----------------------------
     def open_file(self):

@@ -30,8 +30,8 @@ driver.inputDataStream("epochs", dispatcher)                             # со�
 output_stream = driver.outputMessageStream("controlSignal")           # создание выходного потока данных типа Stream
 resonance = ResonanceAppProxy(output_stream)                             # Создаем прокси резонанса
 
-# driver.loadConfig(r'resonance_settings.json')          # вгрузить настройки с потоком в резонансе
-driver.loadConfig(r'resonance_settings_main.json')   # вгрузить настройки с потоком в резонансе
+driver.loadConfig(r'resonance_settings.json')          # вгрузить настройки с потоком в резонансе
+# driver.loadConfig(r'resonance_settings_main.json')   # вгрузить настройки с потоком в резонансе
 
 # == Запуск приложения ==
 filename_params = r'data/TEP_visual_settings.json'     # файл с настройками приложения
