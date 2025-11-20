@@ -21,14 +21,14 @@
     "record":
         {
             "bat_file": "D:/Resonance/distro-dual/msvc/control.bat",
-            "activate_bat": false,
+            "activate_bat": true,
             "service_name": "nvx136",
             "records_folder": "C:/Users/hodor/Documents/lab-MSU/Works/2025.10_TMS/TEP_visualization/data/records"
         },
     "stimuli":
         {   
             "monitor": 3, 
-            "stimuli_with_record": false,
+            "stimuli_with_record": true,
             "video_folder": "resources/videoSamples", 
             "intro_video": "countdown",
             "cross_video": "cross_1.mp4",

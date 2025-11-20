@@ -142,9 +142,11 @@ class TEPsSupplPanel(QFrame):
         self.figure_MEP.update_axes(xmax, xmin, self.params["MEP"]["amp"])
 
     def _on_interactive_plot_button_clicked(self):
-        self.inter_plot = PlotWindow()
+        if False:
+            print('skip')
+    #     self.inter_plot = PlotWindow()
         
-        self.inter_plot.show()
+    #     self.inter_plot.show()
 
     # --- Финализация ---
     def _post_init(self):

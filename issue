@@ -1,0 +1,20 @@
+[Proxy] Sent to nvx136: command=start
+[0000022fbb4ad0a0] wasapi generic error: cannot initialize audio client (error 0xd000012d)
+[0000022fbb4ad0a0] directsound generic error: cannot open directx audio device
+[0000022f9ec69080] main audio output error: module not functional
+[0000022fbba17e70] main decoder error: failed to create audio output
+[0000022f9ec12940] direct3d11 vout display error: Could not Create the D3D11 device. (hr=0x8007000E)
+[0000022f9ec12940] direct3d11 vout display error: Direct3D11 could not be opened
+[0000022f9ec12940] direct3d11 vout display error: SetThumbNailClip failed: 0x800706f4
+[0000022f9ec12940] direct3d9 vout display error: Could not read adapter capabilities. (hr=0x8876086a)
+[0000022f9ec12940] direct3d9 vout display error: Direct3D9 could not be opened
+[0000022f9ec12940] direct3d9 vout display error: SetThumbNailClip failed: 0x800706f4
+[0000022f9ec12940] wingdi vout display error: SetThumbNailClip failed: 0x80004005
+[0000022f9ec12940] wingdi vout display error: SetThumbNailClip failed: 0x80004005
+[0000022f9ec12940] wingdi vout display error: SetThumbNailClip failed: 0x80004005
+[0000022f9ec12940] wingdi vout display error: SetThumbNailClip failed: 0x80004005
+[0000022fbba173c0] avcodec decoder: Using D3D11VA (NVIDIA GeForce GTX 1060 3GB, vendor 10de(NVIDIA), device 1c02, revision a1) for hardware decoding
+resonance.TcpStreamReceiver: Failed to connect to  QUrl("tcp-ip://192.168.1.94:60216")  reason:  "Connection refused"
+[0000022f9ec12940] wingdi vout display error: SetThumbNailClip failed: 0x800706f4
+
+нормальный сценарий: [0000018264e9fff0] avcodec decoder: Using D3D11VA (NVIDIA GeForce GTX 1060 3GB, vendor 10de(NVIDIA), device 1c02, revision a1) for hardware decoding

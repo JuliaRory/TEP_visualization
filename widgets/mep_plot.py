@@ -175,14 +175,20 @@ class MEPPlot(FigureCanvas):
         max_ind = int(np.argmax(x))
 
         self.amps[0] = round(float(x[max_ind] - x[min_ind]), 2)
-        self.lats[0] = round(((max_ind + self._xmin) * 1000/self.params["Fs"]))
+        self.lats[0] = round(((max_ind - self.params["xmin_ms"]) * 1000/self.params["Fs"]))
 
         for i in range(self.params["n_plots"]):
             title = f"#{i+1}" if self.amps[i] is None else f"#{i+1} : {self.amps[i]} mV, {self.lats[i]} ms"
             self.titles[i].set_text(title)
             self.ax.draw_artist(self.titles[i])
 
-        self.amp_counter.emit(np.sum(self.amps>0.5))
+        try:
+            amps = np.asarray(self.amps).astype(float)
+            mask = np.isfinite(amps)
+            amps_clean = amps[mask]
+            self.amp_counter.emit(np.sum(amps_clean>0.5))
+        except:
+            print("amp counter doesnt work")
 
         
     
