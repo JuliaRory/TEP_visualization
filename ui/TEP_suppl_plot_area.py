@@ -88,7 +88,7 @@ class TEPsSupplPanel(QFrame):
         self._spinbox_max_time = spin_box(0, 500, self.params["xmax_ms"], parent=self, w=50, step=5)
         self._time_range = create_hbox([label1, self._spinbox_min_time, label2, self._spinbox_max_time, label3])
 
-        self._button_interactive_plot = create_button(text="Интерактив", disabled=True, parent=self)
+        self._button_interactive_plot = create_button(text="Интерактив", disabled=True)
 
         """Для топоплотов"""
         ts = self.params["timestamps_ms"]
@@ -118,7 +118,7 @@ class TEPsSupplPanel(QFrame):
         self.figure_TEP.move(0, butt_pos)
         self.figure_MEP.move(0, butt_pos + self.figure_TEP.height() + 10)
 
-        self._button_interactive_plot.move(20, butt_pos - 20)
+        # self._button_interactive_plot.move(20, butt_pos - 20)
 
         layout_settings = QVBoxLayout(self._frame_settings)
         for layout in [self._max_amp,self._time_range]:

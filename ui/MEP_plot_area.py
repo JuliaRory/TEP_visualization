@@ -23,7 +23,6 @@ class MEPsPanel(QFrame):
         self.resize(init_size[0], init_size[1])
         
         
-
         self.setMinimumHeight(50)
 
         """Параметры"""
@@ -57,7 +56,9 @@ class MEPsPanel(QFrame):
 
         self._label = QLabel("MEP", self)
         self._label.setFixedWidth(60)
-        self._label_counter = QLabel(f">0.5 mV: {self.n5_5}/5; {self.n5_10}/10.\n>1.0 mV: {self.n10_5}/5; {self.n10_10}/10.")
+
+        # self._label_counter = QLabel(f">0.5 mV: {self.n5_5}/5; {self.n5_10}/10.\n>1.0 mV: {self.n10_5}/5; {self.n10_10}/10.")
+        self._label_counter = QLabel(f"≥ 0.5 mV: \n    {self.n5_5} / 5.  ")
         self._label_counter.setFixedWidth(150)
 
         label1 = QLabel("Макс:", self)
@@ -89,9 +90,9 @@ class MEPsPanel(QFrame):
         layout_settings = QVBoxLayout(self._frame_settings)
         layout_settings.addWidget(self._label)
         layout_settings.addWidget(self._label_counter)
-        for layout in [self._max_amp, self._n_plots, self._time_range_min, self._time_range_max]:
-            layout_settings.addLayout(layout)
-        layout_settings.addWidget(self._button_apply)
+        # for layout in [self._max_amp, self._n_plots, self._time_range_min, self._time_range_max]:
+        #     layout_settings.addLayout(layout)
+        # layout_settings.addWidget(self._button_apply)
         
 
         self.splitter = QSplitter(Qt.Horizontal, parent=self)        # позволяет изменять размер
@@ -112,9 +113,11 @@ class MEPsPanel(QFrame):
 
     # --- Сигналы ---
     def _setup_connections(self):
-        if False:
-            print('skip')
+        self.figure.amp_counter.connect(self._on_change_amp_counter)
     
+    def _on_change_amp_counter(self, value):
+        self._label_counter.setText(f"≥ 0.5 mV: \n    {value} / 5.  ")
+
     # --- Финализация ---
     def _post_init(self):
         if False:

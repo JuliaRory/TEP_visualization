@@ -445,6 +445,7 @@ class MainWindow(QWidget):
         self._update_label_counter(0)
 
         self._epochs = []
+        self.ts = []
         self._create_average_functions()
 
         self._restart_plots()
@@ -783,6 +784,17 @@ class MainWindow(QWidget):
                     )
                     QApplication.sendEvent(topoplot, new_event)
                     return True  # блокируем обработку splitter'ом
+            
+            suppl_tep_plot = self.suppl_teps_panel.figure_TEP
+            local_pos = suppl_tep_plot.mapFromGlobal(global_pos)
+            if suppl_tep_plot.geometry().contains(suppl_tep_plot.mapFromGlobal(global_pos)):
+                new_event = QMouseEvent(
+                    event.type(), local_pos, global_pos,
+                    event.button(), event.buttons(), event.modifiers()
+                )
+                QApplication.sendEvent(suppl_tep_plot, new_event)
+                return True  # блокируем обработку splitter'ом
+
         return super().eventFilter(obj, event)
     
     def closeEvent(self, event):

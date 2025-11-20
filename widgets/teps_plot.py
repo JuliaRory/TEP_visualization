@@ -232,6 +232,8 @@ class TEPsPlot(FigureCanvas):
         xmin, xmax = self._last_xlim if axis == 'x' else self._last_ylim
         return (x - xmin) / (xmax - xmin)
     
+    
+    
     def update_position(self, positions=None, single_w=300, single_h=200, w=1000, h=700, dpi=100):
         fig_w, fig_h = self.fig.get_size_inches() * self.fig.dpi  # ширина и высота в пикселях
 

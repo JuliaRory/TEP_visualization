@@ -6,6 +6,8 @@ from matplotlib import colormaps as cm
 from matplotlib.colors import ListedColormap
 import numpy as np
 
+from PyQt5.QtWidgets import QLabel
+
 from utils.helpers import get_time_ticks, get_voltage_ticks
 
 MICROVOLT = "\u03BC"+"V"
@@ -54,6 +56,19 @@ class supplPlot(FigureCanvas):
         self._last_amp = None  # границы по оси y не заданы
 
         self._viridisBig = cm.get_cmap('jet')
+
+        # Подключаем события мыши
+        self.mpl_connect("motion_notify_event", self.on_mouse_move)
+        # self.mpl_connect("button_press_event", self.on_mouse_click)
+
+        # QLabel для всплывающих координат
+        self.coord_label = QLabel("", self)
+        self.coord_label.setStyleSheet("background-color: white; border: 1px solid black;")
+        self.coord_label.setVisible(False)
+
+        # флаг, показывать ли координаты
+        self.show_coords = False
+
         
     def set_x_shift(self, x_shift, window_dur, signal='TEP'):
         self._x = np.linspace(x_shift, window_dur+x_shift, window_dur)
@@ -163,6 +178,23 @@ class supplPlot(FigureCanvas):
         self.fig.canvas.restore_region(self._background) # восстанавливаем чистый фон
         self.fig.canvas.blit(self._ax.bbox)
     
+    def on_mouse_move(self, event):
+        if self.show_coords and event.inaxes:
+            text = f"x: {event.xdata:.2f}, y: {event.ydata:.2f}"
+            # перемещаем QLabel рядом с курсором
+            self.coord_label.setText(text)
+            # координаты QLabel в координатах окна
+            x_win, y_win = self.canvas.mouseEventCoords(event)
+            self.coord_label.move(int(x_win + 10), int(y_win + 10))
+            self.coord_label.setVisible(True)
+
+    def mouseMoveEvent(self, event):
+        
+        if event.button == 3:  # правая кнопка мыши
+            self.show_coords = not self.show_coords
+            if not self.show_coords:
+                self.coord_label.setVisible(False)
+
 #fontsize_ticks = 10
 # fontsize_axes = 10
 # fontsize_title = 12

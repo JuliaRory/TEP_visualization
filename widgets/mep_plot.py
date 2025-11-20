@@ -5,10 +5,14 @@ from matplotlib.patches import Rectangle
 from matplotlib.lines import Line2D
 
 from PyQt5.QtGui import QFont, QFontMetrics
+from PyQt5.QtCore import pyqtSignal
+
 import numpy as np
 from collections import deque
 
 class MEPPlot(FigureCanvas):
+    amp_counter = pyqtSignal(int)  
+
     """Класс для отрисовки графиков"""
     def __init__(self, parent=None, w=1000, h=700, params=None, dpi=100):
         
@@ -23,7 +27,7 @@ class MEPPlot(FigureCanvas):
         super().__init__(self.fig)
         self.setParent(parent)
 
-        self.setFixedSize(int(w), int(h))   # !!! временнные меры
+        self.setFixedSize(int(w), int(h))   # !!! временные меры
 
         self.setStyleSheet("background-color:transparent;")    # делаем виджет прозрачнымs
 
@@ -139,6 +143,7 @@ class MEPPlot(FigureCanvas):
         self.fig.canvas.draw()
         self.background = self.fig.canvas.copy_from_bbox(self.ax.bbox)
 
+
     def update_emg(self, emg):
         self.fig.canvas.restore_region(self.background) # восстанавливаем чистый фон
 
@@ -170,13 +175,14 @@ class MEPPlot(FigureCanvas):
         max_ind = int(np.argmax(x))
 
         self.amps[0] = round(float(x[max_ind] - x[min_ind]), 2)
-        self.lats[0] = round(((max_ind - self._xmin) * 1000/self.params["Fs"]))
+        self.lats[0] = round(((max_ind + self._xmin) * 1000/self.params["Fs"]))
 
         for i in range(self.params["n_plots"]):
             title = f"#{i+1}" if self.amps[i] is None else f"#{i+1} : {self.amps[i]} mV, {self.lats[i]} ms"
             self.titles[i].set_text(title)
             self.ax.draw_artist(self.titles[i])
 
+        self.amp_counter.emit(np.sum(self.amps>0.5))
 
         
     
