@@ -85,6 +85,12 @@ class TEPsPanel(QFrame):
         text_height = QFontMetrics(font).height()
         self.label_n_epoch.setFixedSize(text_width, text_height)        # чтобы помещался текст с разным количеством эпох
 
+        self.label_record = QLabel("", parent=self)
+        self.label_record.setObjectName("label_record")
+        text_width = QFontMetrics(font).horizontalAdvance('record in progress...')  # ширина текста в пикселях
+        text_height = QFontMetrics(font).height()
+        self.label_record.setFixedSize(text_width, text_height)        # чтобы помещался текст с разным количеством эпох
+
         """Создаём полотно для графиков"""
         self.figure = TEPsPlot(self, self._positions, single_w=self.plot_width, single_h=self.plot_height, w=self.width(), h=self.height(), channels=self.channels)
         
@@ -93,8 +99,10 @@ class TEPsPanel(QFrame):
     # --- Layout ---
     def _setup_layout(self):
         self.figure.move(0, 0)  # помещаем график
+
                                 # масштабирующие спинбоксы размещаем во время resize_event
         
+        self.label_record.move(10, 10)
         
 
     # --- Сигналы ---

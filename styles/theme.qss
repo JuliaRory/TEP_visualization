@@ -35,7 +35,6 @@ QPushButton:pressed {
     background-color: $panel_left_accent;
 }
 
-
 QLabel {
     color: $text;
     /* background-color: #4b5754; */
@@ -49,7 +48,6 @@ QSplitter::handle {
     background-color: $splitter_border;   /* цвет полосы */
     width: 6px;                                 /* ширина разделителя */
 }
-
 
 /* ===== Left Panel ===== */
 QFrame#settings_panel {
@@ -70,11 +68,18 @@ QFrame#tep_main_panel {
     border-right: 1px solid $border;
 }
 
-
 /* ===== MEP Panel ===== */
 QFrame#mep_main_panel {
     background-color: $mep_plot_background;
     border-right: 1px solid $border;
+}
+
+#label_record  {
+    color: #FF0000;
+    font-size: 12pt;
+    font-family: "Helvetica";
+    font-weight: normal;  /* можно normal, bold */
+    font-style: normal; /* normal или italic */
 }
 
 

@@ -5,6 +5,8 @@ from PyQt5.QtGui import QFont, QFontMetrics
 from PyQt5.QtCore import Qt
 
 import matplotlib.pyplot as plt
+import plotly.graph_objects as go
+import plotly.io as pio
 
 import numpy as np
 import pandas as pd
@@ -15,6 +17,7 @@ from utils.layout_utils import create_hbox, create_vbox
 from widgets.teps_suppl_plot import supplPlot
 # from widgets.meps_suppl_plot import MEPsSupplPlot
 from widgets.topoplot_plot import TopoPlot, ColorBar
+from widgets.interactive_plot import PlotWindow
 
 MICROVOLT = "\u03BC"+"V"
 
@@ -85,6 +88,8 @@ class TEPsSupplPanel(QFrame):
         self._spinbox_max_time = spin_box(0, 500, self.params["xmax_ms"], parent=self, w=50, step=5)
         self._time_range = create_hbox([label1, self._spinbox_min_time, label2, self._spinbox_max_time, label3])
 
+        self._button_interactive_plot = create_button(text="Интерактив", disabled=True, parent=self)
+
         """Для топоплотов"""
         ts = self.params["timestamps_ms"]
         
@@ -113,6 +118,8 @@ class TEPsSupplPanel(QFrame):
         self.figure_TEP.move(0, butt_pos)
         self.figure_MEP.move(0, butt_pos + self.figure_TEP.height() + 10)
 
+        self._button_interactive_plot.move(20, butt_pos - 20)
+
         layout_settings = QVBoxLayout(self._frame_settings)
         for layout in [self._max_amp,self._time_range]:
             layout_settings.addLayout(layout)
@@ -124,6 +131,8 @@ class TEPsSupplPanel(QFrame):
     def _setup_connections(self):
         for spin_box in [self._spinbox_min_time, self._spinbox_max_time, self._spinbox_max_amp]:
             spin_box.valueChanged.connect(self._update_scale)
+        
+        self._button_interactive_plot.clicked.connect(self._on_interactive_plot_button_clicked)
     
     # --- Логика ---
     def _update_scale(self):
@@ -133,6 +142,11 @@ class TEPsSupplPanel(QFrame):
 
         self.figure_TEP.update_axes(xmax, xmin, ymax)
         self.figure_MEP.update_axes(xmax, xmin, self.params["MEP"]["amp"])
+
+    def _on_interactive_plot_button_clicked(self):
+        self.inter_plot = PlotWindow()
+        
+        self.inter_plot.show()
 
     # --- Финализация ---
     def _post_init(self):

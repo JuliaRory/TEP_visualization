@@ -1,10 +1,20 @@
 import sys
 import os
+import ctypes
+# путь к папке, где установлен VLC
+# vlc_dir = r"C:\Program Files\VideoLAN\VLC"
+
+# # указываем путь к libvlc.dll
+# if sys.platform.startswith("win"):
+#     libvlc_path = os.path.join(vlc_dir, "libvlc.dll")
+#     ctypes.CDLL(libvlc_path)
+
+import vlc
 from PyQt5.QtWidgets import (
     QApplication, QWidget, QVBoxLayout, QPushButton,
     QFileDialog, QSlider, QLabel, QHBoxLayout, QSpinBox
 )
-from PyQt5.QtCore import Qt, QUrl
+from PyQt5.QtCore import Qt, QUrl, QTimer
 from PyQt5.QtGui import QKeyEvent
 from PyQt5.QtMultimedia import QMediaPlayer, QMediaContent, QMediaPlaylist
 from PyQt5.QtMultimediaWidgets import QVideoWidget
@@ -12,9 +22,72 @@ from PyQt5.QtMultimediaWidgets import QVideoWidget
 import time
 
 class StimuliPresentation(QWidget):
-    def __init__(self, filename):
+    def __init__(self, video_file, monitor=1):
+        """
+        :param video_file: путь к видеофайлу
+        :param monitor: номер монитора (1,2,...)
+        """
         super().__init__()
-        monitor_index=0
+
+        # Настройка окна на нужный монитор
+        screens = QApplication.instance().screens()
+        monitor_index = monitor - 1
+        screen = screens[monitor_index]
+        target_monitor = screen.geometry()
+        self.setGeometry(target_monitor)
+        self.showFullScreen()
+        self.setWindowTitle("VLC Video Player")
+
+        self.video_file = video_file
+
+        # --- VLC setup ---
+        self.instance = vlc.Instance("--start-time=0")
+        self.player = self.instance.media_player_new()
+
+        # Основной виджет для видео
+        self.video_widget = QWidget(self)
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(0)
+        layout.addWidget(self.video_widget)
+
+        # Привязываем видео к PyQt5 виджету
+        if sys.platform.startswith("win"):
+            self.player.set_hwnd(int(self.video_widget.winId()))
+        elif sys.platform.startswith("linux"):
+            self.player.set_xwindow(int(self.video_widget.winId()))
+        elif sys.platform.startswith("darwin"):
+            self.player.set_nsobject(int(self.video_widget.winId()))
+
+        # VLC событие окончания видео
+        events = self.player.event_manager()
+        events.event_attach(vlc.EventType.MediaPlayerEndReached, self._on_end_reached)
+
+        self._play_video()
+
+    def _play_video(self):
+        """Проигрываем видео"""
+        media = self.instance.media_new(self.video_file)
+        self.player.set_media(media)
+        self.player.play()
+
+    def _on_end_reached(self, event):
+        """Событие окончания видео"""
+        self.close()
+
+    def keyPressEvent(self, event: QKeyEvent):
+        """Escape останавливает видео и закрывает окно"""
+        if event.key() == Qt.Key_Escape:
+            if self.player is not None:
+                self.player.stop()
+            self.close()
+        else:
+            super().keyPressEvent(event)
+
+class StimuliPresentation_old(QWidget):
+    def __init__(self, filename, monitor):
+        super().__init__()
+        monitor_index = monitor - 1
 
         self.setWindowTitle("PyQt5 Video Player")
         
@@ -28,7 +101,23 @@ class StimuliPresentation(QWidget):
         self._init()
 
     def _init(self):
+
+        # --- скрытый виджет для предварительной буферизации ---
+        self._preloadWidget = QVideoWidget()
+        self._preloadPlayer = QMediaPlayer(None, QMediaPlayer.VideoSurface)
+        self._preloadPlayer.setVideoOutput(self._preloadWidget)
+        self._preloadPlayer.setMedia(QMediaContent(QUrl.fromLocalFile(self._fl)))
         
+        # Проигрываем первые 700 мс (пример)
+        self._preloadPlayer.play()
+        QTimer.singleShot(700, self._start_main_player)  # через 0.7 сек запускаем основной плеер
+
+    def _start_main_player(self):
+        # останавливаем скрытый плеер
+        self._preloadPlayer.stop()
+        self._preloadPlayer.deleteLater()
+        self._preloadWidget.deleteLater()
+
         self._videoWidget = QVideoWidget()   # виджет видео
         self._videoWidget.setFullScreen(True)  # включаем полноэкранный режим
         self._videoWidget.setAspectRatioMode(Qt.IgnoreAspectRatio)
@@ -46,16 +135,17 @@ class StimuliPresentation(QWidget):
         self._mediaPlayer.setMedia(video)
 
         self._mediaPlayer.mediaStatusChanged.connect(self._on_media_status_changed)
-
-        self._mediaPlayer.play()
     
     def _on_media_status_changed(self, status):
+        if status == QMediaPlayer.LoadedMedia:
+            self._mediaPlayer.play()  # запускаем только после полной загрузки
         if status == QMediaPlayer.EndOfMedia:
             self.close()  # закрываем окно, когда видео закончилось
 
     
     def keyPressEvent(self, event: QKeyEvent):
         if event.key() == Qt.Key_Escape:
+            self._mediaPlayer.stop()
             self.close()  # Закрываем окно
         else:
             super().keyPressEvent(event)

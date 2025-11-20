@@ -109,10 +109,10 @@ class MainWindow(QWidget):
         self.aver_all = self.params["aver_all"]             # флаг нужно ли усреднять все эпохи
 
         self._record_in_progress = False                    # флаг идёт ли запись
-        if self.params["activate_bat"]:
+        if self.params["record"]["activate_bat"]:
             # Запуск батника с qml-файлом для управления резонансными модулями
-            cwd = os.path.dirname(self.params["bat_file"]) # cwd = папка с батником
-            subprocess.Popen([self.params["bat_file"]], cwd=cwd)
+            cwd = os.path.dirname(self.params["record"]["bat_file"]) # cwd = папка с батником
+            subprocess.Popen([self.params["record"]["bat_file"]], cwd=cwd)
 
         self._player_window = None
 
@@ -129,11 +129,10 @@ class MainWindow(QWidget):
         self.specific_epoch = False                         # флаг для отслеживания режима показа определенной эпохи или стандартного
 
         params = self.params["stimuli"]
-        self._stimuli_filename = os.path.join(r"resources/stimuli_set", 
-                                    f'n{params["n_stimuli"]}_'+
-                                    f'i{params["countdown_s"]}_'+
-                                    f'b{params["before_s"]}_'+
-                                    f'a{params["after_s"]}.mp4')
+        self._stimuli_filename = os.path.join(r"resources/stimuli", 
+                                              f"{params['n_stimuli']}stimuli_"+
+                                              "triplets_"+
+                                              f"cross{params['before_s']}s.mp4")
         
         self.SPEED = self.params["SPEED"]
         self.ms_to_sample = lambda x: int(x / 1000 * self.SPEED["Fs"])                                  # функция для пересчёта мс в сэмплы
@@ -236,6 +235,7 @@ class MainWindow(QWidget):
         self.settings_panel.button_restart.clicked.connect(self._on_restart_button_click)
         self.settings_panel.button_nvx_record.clicked.connect(self._on_record_button_click)
         self.settings_panel.button_create_stimuli.clicked.connect(self._on_create_stimuli_button_click)
+        self.settings_panel.button_choose_stimuli.clicked.connect(self._on_choose_stimuli_button_click)
         self.settings_panel.button_stimuli.clicked.connect(self._on_stimuli_button_click)
         self.settings_panel.button_show_epoch.clicked.connect(self._on_show_epoch_button_click)
         self.settings_panel.button_remove_epoch.clicked.connect(self._on_remove_epoch_button_click)
@@ -450,13 +450,15 @@ class MainWindow(QWidget):
         self._restart_plots()
     
     def _on_record_button_click(self):
+        
         if not self._record_in_progress:    # если запись не была начата
             print("start nvx record")
             self._record_in_progress = True
             
-            self._service = self._resonance.getService(self.params["service_name"])     # Берем сервис
+            self._service = self._resonance.getService(self.params["record"]["service_name"])     # Берем сервис
             self._service.sendTransition('start')
-            
+
+            self.main_teps_panel.label_record.setText("🔴REC")
             self.settings_panel.button_nvx_record.setText("Остановить")
         else:                               # если запись уже идёт
             print("finish nvx record")
@@ -464,6 +466,7 @@ class MainWindow(QWidget):
 
             self._service.sendTransition('stop')
 
+            self.main_teps_panel.label_record.setText("")
             self.settings_panel.button_nvx_record.setText("Начать запись")
 
     def _on_create_stimuli_button_click(self):
@@ -478,23 +481,29 @@ class MainWindow(QWidget):
         
         order = [0] + idx_list * params["n_stimuli"] + [1]
 
-        self._stimuli_filename = os.path.join(r"resources/stimuli_set", 
-                                    f'n{params["n_stimuli"]}_'+
-                                    f'i{params["countdown_s"]}_'+
-                                    f'b{params["before_s"]}_'+
-                                    f'a{params["after_s"]}.mp4')
+        self._stimuli_filename = os.path.join(r"resources/stimuli", 
+                                              f"{params['n_stimuli']}stimuli_"+
+                                              "triplets_"+
+                                              f"cross{params['before_s']}s.mp4")
 
         concat_videos_by_order(video_files, order, self._stimuli_filename)
 
+    def _on_choose_stimuli_button_click(self):
+        print("doesnt work yet")
+
+
     def _on_stimuli_button_click(self):
         # начать запись
-        # self._on_record_button_click()
-
+        if self.settings_panel.check_box_stimuli_record.isChecked():
+            self._on_record_button_click()
+        
+        # если нет файла со стимулами
         if not os.path.exists(self._stimuli_filename):
             self._on_create_stimuli_button_click()
-            
+
+        n_monitor = self.settings_panel.spin_box_monitor.value()
         # открыть окно с плеером
-        self._player_window = StimuliPresentation(self._stimuli_filename)
+        self._player_window = StimuliPresentation(self._stimuli_filename, n_monitor)
 
         self._player_window.show()
         self._player_window.raise_()
@@ -688,7 +697,8 @@ class MainWindow(QWidget):
         self.settings_panel.button_remove_epoch.setEnabled(active_status)
         #self.shortcut_remove_epoch.setEnabled(True)
         self.settings_panel.button_show_epoch.setEnabled(active_status)
-
+        self.settings_panel.button_save.setEnabled(active_status)
+        
         self.settings_panel.spin_box_show_epoch.setMaximum(self._n_epoch)
         self.settings_panel.spin_box_show_epoch.setValue(self._n_epoch)
         self.settings_panel.spin_box_remove_epoch.setMaximum(self._n_epoch)

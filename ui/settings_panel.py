@@ -49,52 +49,59 @@ class SettingsPanel(QFrame):
         # --- Участок с управлением данными (сохранение, загрузка и тд) ---
         self._manager_frame = QFrame(self)
 
-        self.combo_box_to_save = checkable_combobox([], [], status=True, parent=self)
-        self.button_save = create_button(text='Сохранить', checkable=False, parent=self)
-        self._save = create_hbox([self.combo_box_to_save, self.button_save])
+        self.button_load = create_button(text='Load', disabled=False, parent=self)
+        self.button_save = create_button(text='Save', disabled=True, parent=self)
+        self._records_history = create_hbox([self.button_load, self.button_save])
 
-        # self.check_box_new_window = check_box(True, 'Новое окно', parent=self)
-        self.button_load = create_button(text='Загрузить', checkable=True, parent=self)
-        # self._load = create_hbox([self.check_box_new_window, self.button_load])
-
-        self.button_restart = create_button(text='Очистить память', checkable=False, parent=self)
-        # self.shortcut_restart = self.create_shortcut_button("Delete", self.restart, False)
-
-        self.button_nvx_record = create_button(text='Начать запись', checkable=False, parent=self)
-        # self.shortcut_restart = self.create_shortcut_button("Delete", self.restart, False)
-        
-        self.button_create_stimuli = create_button(text='Создать стимулы', checkable=False, parent=self)
-
-        self.button_stimuli = create_button(text='Начать стимулы', checkable=False, parent=self)
-        # self.shortcut_restart = self.create_shortcut_button("Delete", self.restart, False)
-        
-        self.button_show_epoch = create_button('Показать эпоху', checkable=False, parent=self)
+        self.button_show_epoch = create_button('Show #', disabled=True, parent=self)
         self.spin_box_show_epoch = spin_box(0, 0, 0, parent=self)
         self._show_epoch = create_hbox([self.button_show_epoch, self.spin_box_show_epoch])
 
-        self.button_remove_epoch = create_button('Удалить эпоху', checkable=False, parent=self)
+        self.button_remove_epoch = create_button('Delete #', disabled=True, parent=self)
         self.spin_box_remove_epoch =spin_box(0, 0, 0, parent=self)
         self._remove_epoch = create_hbox([self.button_remove_epoch, self.spin_box_remove_epoch])
+
+        self.button_restart = create_button(text='Очистить память', disabled=False, parent=self)
+        # self.shortcut_restart = self.create_shortcut_button("Delete", self.restart, False)
+
+        self.button_nvx_record = create_button(text='Начать запись', disabled=False, parent=self)
+        # self.shortcut_restart = self.create_shortcut_button("Delete", self.restart, False)
+
+        self._label_stimuli = QLabel("Стимулы", self)
+        self.button_create_stimuli = create_button(text='Создать стимулы', disabled=False, parent=self)
+
+        label_monitor = QLabel("монитор", self)
+        self.spin_box_monitor = spin_box(1, 3, self.params["stimuli"]["monitor"], parent=self)
+        self._monitor = create_hbox([label_monitor, self.spin_box_monitor])
+
+        self.button_stimuli = create_button(text='Начать', disabled=False, parent=self)
+        self.check_box_stimuli_record = check_box(self.params["stimuli"]["stimuli_with_record"], 'Запись', parent=self)
+        self._stimuli_record = create_hbox([self.button_stimuli, self.check_box_stimuli_record])
+
+        self.button_choose_stimuli = create_button(text='Выбрать', disabled=True, parent=self)
+        self.label_stimuli = QLabel("", self)
+        self._stimuli = create_hbox([self.button_choose_stimuli, self.label_stimuli])
+        # self.shortcut_restart = self.create_shortcut_button("Delete", self.restart, False)
 
         # --- Обработка эпох в приложении ---
         self._processing_frame = QFrame(self)
         self._label_aver_main = QLabel("Усреднение", self)
         self._label_aver = QLabel("Метод:", self)
         self.combo_box_aver = combo_box(self.params['aver_methods'], parent=self)
-        self.button_aver = create_button('Ок', checkable=True, parent=self)
+        self.button_aver = create_button('Ок', disabled=False, parent=self)
         self._aver_mode = create_hbox([self._label_aver, self.combo_box_aver, self.button_aver])
 
         self._label_lowpass_main = QLabel("Фильтр низких частот", self)
         self.check_box_lowpass = check_box(self.params["lowpass"], 'Исп?', parent=self)
         self.spin_box_lowpass = spin_box(min=1, max=2500, value=self.params["high_freq"], parent=self)
         _label_hz = QLabel("Гц", self)
-        self.button_update_lowpass = create_button('Ок', checkable=True, parent=self)
+        self.button_update_lowpass = create_button('Ок', disabled=False, parent=self)
         self._lowpass = create_hbox([self.check_box_lowpass, self.spin_box_lowpass, _label_hz, self.button_update_lowpass])
         
         self._label_reref_main = QLabel("Ре-референтация", self)
         self.check_box_rereference = check_box(self.params["rereference"], 'Исп?', parent=self)
         self.combo_box_rereference = checkable_combobox(self.channels, self.params['rereference_channel'], status=True, parent=self)
-        self.button_update_rereference = create_button('Ок', checkable=True, parent=self)
+        self.button_update_rereference = create_button('Ок', disabled=False, parent=self)
         self._rereference = create_hbox([self.check_box_rereference, self.combo_box_rereference, self.button_update_rereference])
 
         self._label_baseline_main = QLabel("Вычетание бейзлайна", self)
@@ -110,12 +117,12 @@ class SettingsPanel(QFrame):
 
         label = QLabel("Метод:", self)
         self.combo_box_baseline = combo_box(self.params['baseline_methods'], parent=self)
-        self.button_update_baseline = create_button('Ок', checkable=True, parent=self)
+        self.button_update_baseline = create_button('Ок', disabled=False, parent=self)
         self._baseline_mode = create_hbox([label, self.combo_box_baseline, self.button_update_baseline])
 
         self._label_CAR_main = QLabel("Common Average Reference", self)
         self.check_box_car = check_box(self.params['CAR'], 'Исп?', parent=self)
-        self.button_car = create_button('Ок', checkable=True, parent=self)
+        self.button_car = create_button('Ок', disabled=False, parent=self)
         _label_car = QLabel("Каналы:")
         self.combo_box_channels = checkable_combobox(self.channels, self.params['bad_channels'], parent=self)
         self.combo_box_channels.setFixedWidth(70)
@@ -155,15 +162,17 @@ class SettingsPanel(QFrame):
 
         layout.addWidget(self._label_mode)
         layout.addLayout(self._mode)
-        layout.addWidget(self.button_load)
-        layout.addLayout(self._save)
-        layout.addWidget(self.button_restart)
-        layout.addWidget(self.button_nvx_record)
-        layout.addWidget(self.button_create_stimuli)
-        layout.addWidget(self.button_stimuli)
+        layout.addLayout(self._records_history)
         layout.addLayout(self._show_epoch)
         layout.addLayout(self._remove_epoch)
-
+        layout.addWidget(self.button_restart)
+        layout.addWidget(self.button_nvx_record)
+        layout.addWidget(self._label_stimuli)
+        layout.addLayout(self._stimuli)                 # выбрать стимулы
+        layout.addLayout(self._monitor)
+        layout.addLayout(self._stimuli_record)          # начать проигрывать стимулы
+        layout.addWidget(self.button_create_stimuli)    # создать новый видос со стимулами
+        
     def _setup_processing_frame(self):
         layout = QVBoxLayout(self._processing_frame)
 

@@ -80,7 +80,7 @@ class MEPsPanel(QFrame):
         self._spinbox_max_time = spin_box(0, 500, self.params["xmax_ms"], parent=self, w=50)
         self._time_range_max = create_hbox([label2, self._spinbox_max_time, label3])
 
-        self._button_apply = create_button('Применить', checkable=False, parent=self, w=150)
+        self._button_apply = create_button('Применить', disabled=False, parent=self, w=150)
 
         self._frame_settings = QFrame(self)
 

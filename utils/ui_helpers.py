@@ -3,9 +3,9 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QStandardItemModel, QStandardItem, QKeySequence, QFont, QFontMetrics
 from widgets.checkable_combo_box import CheckableComboBox
 
-def create_button(text, callback=None, checkable=False, parent=None, w=None):
+def create_button(text, callback=None, disabled=False, parent=None, w=None):
     btn = QPushButton(text, parent)
-    btn.setCheckable(checkable)
+    btn.setDisabled(disabled)
     if w is not None:
         btn.setFixedWidth(w)
     if callback:

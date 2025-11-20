@@ -16,7 +16,7 @@ os.environ['PATH'] += r';~qgis directoryqt\apps\qgis\bin;~qgis directory\apps\Qt
 
 # == Создание главный объект приложения Qt == 
 app = QApplication(sys.argv)    
-style = load_qss(r"styles/theme.qss", r"styles/palette.json")   # подгрузка стиляs
+style = load_qss(r"styles/theme.qss", r"styles/palette.json")   # подгрузка стиля
 
 app.setStyleSheet(style)
 
