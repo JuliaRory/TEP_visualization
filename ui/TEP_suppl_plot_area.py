@@ -5,8 +5,6 @@ from PyQt5.QtGui import QFont, QFontMetrics
 from PyQt5.QtCore import Qt
 
 import matplotlib.pyplot as plt
-import plotly.graph_objects as go
-import plotly.io as pio
 
 import numpy as np
 import pandas as pd
@@ -17,7 +15,7 @@ from utils.layout_utils import create_hbox, create_vbox
 from widgets.teps_suppl_plot import supplPlot
 # from widgets.meps_suppl_plot import MEPsSupplPlot
 from widgets.topoplot_plot import TopoPlot, ColorBar
-from widgets.interactive_plot import PlotWindow
+# from widgets.interactive_plot import PlotWindow
 
 MICROVOLT = "\u03BC"+"V"
 

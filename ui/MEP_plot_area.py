@@ -55,10 +55,12 @@ class MEPsPanel(QFrame):
         self.figure.setAttribute(Qt.WA_TransparentForMouseEvents, True)
 
         self._label = QLabel("MEP", self)
+        self._label.setObjectName("label_mep")
         self._label.setFixedWidth(60)
 
         # self._label_counter = QLabel(f">0.5 mV: {self.n5_5}/5; {self.n5_10}/10.\n>1.0 mV: {self.n10_5}/5; {self.n10_10}/10.")
         self._label_counter = QLabel(f"≥ 0.5 mV: \n    {self.n5_5} / 5.  ")
+        self._label_counter.setObjectName("label_amp_counter")
         self._label_counter.setFixedWidth(150)
 
         label1 = QLabel("Макс:", self)

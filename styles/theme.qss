@@ -74,6 +74,18 @@ QFrame#mep_main_panel {
     border-right: 1px solid $border;
 }
 
+#label_mep 
+{
+    font-size: 18pt;
+    font-family: "Helvetica";
+}
+
+#label_amp_counter 
+{
+    font-size: 16pt;
+    font-family: "Helvetica";
+}
+
 #label_record  {
     color: #FF0000;
     font-size: 12pt;

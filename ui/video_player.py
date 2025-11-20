@@ -14,7 +14,7 @@ from PyQt5.QtWidgets import (
     QApplication, QWidget, QVBoxLayout, QPushButton,
     QFileDialog, QSlider, QLabel, QHBoxLayout, QSpinBox
 )
-from PyQt5.QtCore import Qt, QUrl, QTimer
+from PyQt5.QtCore import Qt, QUrl, QTimer, pyqtSignal
 from PyQt5.QtGui import QKeyEvent
 from PyQt5.QtMultimedia import QMediaPlayer, QMediaContent, QMediaPlaylist
 from PyQt5.QtMultimediaWidgets import QVideoWidget
@@ -22,6 +22,7 @@ from PyQt5.QtMultimediaWidgets import QVideoWidget
 import time
 
 class StimuliPresentation(QWidget):
+    finish = pyqtSignal()
     def __init__(self, video_file, monitor=1):
         """
         :param video_file: путь к видеофайлу
@@ -80,6 +81,7 @@ class StimuliPresentation(QWidget):
         if event.key() == Qt.Key_Escape:
             if self.player is not None:
                 self.player.stop()
+            self.finish.emit()
             self.close()
         else:
             super().keyPressEvent(event)

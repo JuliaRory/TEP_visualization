@@ -252,6 +252,7 @@ class MainWindow(QWidget):
             spin_box.valueChanged.connect(self._update_topoplots)
         
         self.main_teps_panel.scale_changed.connect(self._on_change_main_scale)
+        
 
     # --- Логика ---
     def _get_data(self, msg, timestamp):
@@ -470,6 +471,10 @@ class MainWindow(QWidget):
             self.main_teps_panel.label_record.setText("")
             self.settings_panel.button_nvx_record.setText("Начать запись")
 
+    def _on_finish_stimuli(self):
+        if self._record_in_progress:
+            self._on_record_button_click()
+
     def _on_create_stimuli_button_click(self):
         params = self.params["stimuli"]
         intro_video_fl = params["intro_video"] + f"_{params['countdown_s']}.mp4"
@@ -505,10 +510,12 @@ class MainWindow(QWidget):
         n_monitor = self.settings_panel.spin_box_monitor.value()
         # открыть окно с плеером
         self._player_window = StimuliPresentation(self._stimuli_filename, n_monitor)
+        self._player_window.finish.connect(self._on_finish_stimuli)                     # !!! настроить чтобы это было в коннекшенс остальных
 
         self._player_window.show()
         self._player_window.raise_()
         self._player_window.activateWindow()
+
 
 
     def _on_show_epoch_button_click(self):

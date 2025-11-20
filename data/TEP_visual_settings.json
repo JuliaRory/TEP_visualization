@@ -27,7 +27,7 @@
         },
     "stimuli":
         {   
-            "monitor": 1, 
+            "monitor": 3, 
             "stimuli_with_record": false,
             "video_folder": "resources/videoSamples", 
             "intro_video": "countdown",
