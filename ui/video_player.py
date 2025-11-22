@@ -23,86 +23,123 @@ from PyQt5.QtGui import QKeyEvent
 #                                   |
 #                                   ↓
 #                         _play_next_video()
+# 
+# закрытие окна (и остановка видео) происходит при нажатии на кнопку Escape или по окончании последовательности стимулов
+# окончание последовательности стимулов вызывает сигнал stimuliFinished
 
 
 class StimuliPresentation(QWidget):
-    videoEnded = pyqtSignal()  # сигнал окончания видео
+    """
+    Класс для последовательного воспроизведения серии стимулов в указанном порядке.
+    
+    Args:
+        video_files  (list[str]):    Пути к видеофайлам.
+        order        (list[int]):    Порядок воспроизведения (индексы video_files).
+        monitor      (int):          Номер монитора для полноэкранного вывода.
+    
+    Signals:
+        _videoEnded (pyqtSignal):  
+                Срабатывает, когда VLC заканчивает проигрывать очередное видео. 
+                **Внутренний сигнал**: используется для связки видео в VLC-плеере. Не для внешнего использования.
+        stimuliFinished (pyqtSignal):
+                Срабатывает, когда все видео в последовательности стимулов проиграны. Для использования извне.
+    
+    Example:
+        >>> widget = StimuliPresentation(
+        ...     video_files=["a.mp4", "b.mp4", "c.mp4"],
+        ...     order=[2, 0, 1],
+        ...     monitor=1
+        ... )
+        >>> widget.show()
+    """
+
+    _videoEnded = pyqtSignal()      # сигнал окончания очередного видео
+    stimuliFinished = pyqtSignal()  # сигнал окончания последовательности стимулов
 
     def __init__(self, video_files, order, monitor=1):
-        """
-        :param video_files: список путей к видеофайлам
-        :param order: список индексов video_files, определяющий порядок воспроизведения
-        :param monitor: номер монитора для воспроизведения
-        """
+
         super().__init__()
 
-        # Настройка окна на нужный монитор
+        # == Монитор и окно ==
         screens = QApplication.instance().screens()
         target_monitor = screens[monitor - 1].geometry()
         self.setGeometry(target_monitor)
+        self.showFullScreen()                 
 
-        self.showFullScreen()                   # полноэкранный режим
-
+        # == Данные ==
         self.video_files = video_files
         self.order = order
-        self.current_index = 0                  # индекс текущего видео в order
+        self._current_index = 0                  # индекс текущего видео в order
 
-        # --- VLC setup ---
-        self.instance = vlc.Instance(
+        # == VLC setup ==
+        self._instance = vlc.Instance(
             '--file-caching=300',           # буферизация
             '--quiet'                       # минимизация логов
             )
-        self.player = self.instance.media_player_new()
+        self._player = self.instance.media_player_new()
 
-        # Основной виджет для видео
-        self.video_widget = QWidget(self)
+        # == Контейнер для вывода ==
+        video_widget = QWidget(self)
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0,0,0,0)
         layout.setSpacing(0)
-        layout.addWidget(self.video_widget)
+        layout.addWidget(video_widget)
 
         # Привязываем видео к PyQt5 виджету
         if sys.platform.startswith("win"):
-            self.player.set_hwnd(int(self.video_widget.winId()))        # сообщаем плееру ID системного окна
+            self._player.set_hwnd(int(video_widget.winId()))        # сообщаем плееру ID системного окна
         elif sys.platform.startswith("linux"):
-            self.player.set_xwindow(int(self.video_widget.winId()))
+            self._player.set_xwindow(int(video_widget.winId()))
         elif sys.platform.startswith("darwin"):
-            self.player.set_nsobject(int(self.video_widget.winId()))
+            self._player.set_nsobject(int(video_widget.winId()))
 
-        # VLC событие окончания видео
-        events = self.player.event_manager()
+        # == События VLC ==
+        events = self._player.event_manager()
         events.event_attach(vlc.EventType.MediaPlayerEndReached, self._on_end_reached)
 
         # Подключаем сигнал окончания видео к запуску следующего видео
-        self.videoEnded.connect(self._play_next_video) 
+        self._videoEnded.connect(self._play_next_video)  
 
+        # Запуск первого видео
         self._play_next_video()
 
     def _play_next_video(self):
-        """Проигрываем следующее видео из списка order"""
-        if self.current_index >= len(self.order):
+        """
+        Проигрывает следующее видео из списка order.
+        Закрывает плеер, когда все видео из списка воспроизведены.
+        """
+        if self._current_index >= len(self.order):
             self.close()
             return
 
-        video_idx = self.order[self.current_index]
+        video_idx = self.order[self._current_index]
         video_path = self.video_files[video_idx]
 
         # создаём новый экземпляр media для каждого видео
         media = self.instance.media_new(video_path)
-        self.player.set_media(media)
-        self.player.play()
+        self._player.set_media(media)
+        self._player.play()
 
-        self.current_index += 1
+        self._current_index += 1
        
     def _on_end_reached(self, event):
-        """Испускаем сигнал, который вызовет следующий видеофайл в GUI-потоке"""
-        self.videoEnded.emit()
+        """
+        Вызывается, когда получает сигнал о завершении очередного видео. 
+        Срабатывает :attr:`_videoEnded` для вызова функции запуска следующего видео  в GUI-потоке.
+        """
+        self._videoEnded.emit()
 
     def keyPressEvent(self, event: QKeyEvent):
-        """Escape останавливает видео и закрывает окно"""
+        """
+        Останавливает воспроизведение видео и закрывает окно по нажатию на esc.
+        Срабатывает :attr:`stimuliFinished` для сообщения вовне о заверешении показа стимулов.
+        Args:
+            event (QKeyEvent): Key press event.
+        """
         if event.key() == Qt.Key_Escape:
-            if self.player is not None:
-                self.player.stop()
+            if self._player is not None:
+                self._player.stop()
+            self.stimuliFinished.emit()
             self.close()
         else:
             super().keyPressEvent(event)

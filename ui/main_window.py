@@ -502,10 +502,6 @@ class MainWindow(QWidget):
         # начать запись
         if self.settings_panel.check_box_stimuli_record.isChecked():
             self._on_record_button_click()
-        
-        # если нет файла со стимулами
-        # if not os.path.exists(self._stimuli_filename):
-        #     self._on_create_stimuli_button_click()
 
         params = self.params["stimuli"]
         intro_video_fl = params["intro_video"] + f"_{params['countdown_s']}.mp4"

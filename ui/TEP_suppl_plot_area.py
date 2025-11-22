@@ -21,7 +21,15 @@ MICROVOLT = "\u03BC"+"V"
 
 class TEPsSupplPanel(QFrame):
     """
+    Для чего нужен
+    Args: - параметры входные
+        video_files (list[str]): Пути к видеофайлам.
+        order (list[int]): Порядок воспроизведения (индексы video_files).
+        monitor (int): Номер монитора для полноэкранного вывода.
 
+    Attributes: - что можно использовать извне
+        player (vlc.MediaPlayer): VLC-плеер для вывода видео.
+        current_index (int): Текущий индекс проигрываемого видео.
     """
     def __init__(self, parent=None, params=None, init_size=[600, 800]):
         super().__init__(parent)
