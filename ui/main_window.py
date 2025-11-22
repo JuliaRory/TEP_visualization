@@ -504,13 +504,26 @@ class MainWindow(QWidget):
             self._on_record_button_click()
         
         # если нет файла со стимулами
-        if not os.path.exists(self._stimuli_filename):
-            self._on_create_stimuli_button_click()
+        # if not os.path.exists(self._stimuli_filename):
+        #     self._on_create_stimuli_button_click()
+
+        params = self.params["stimuli"]
+        intro_video_fl = params["intro_video"] + f"_{params['countdown_s']}.mp4"
+        video_files = [intro_video_fl, params["cross_video"], params["stimuli_video"]]
+        video_files = [os.path.join(params["video_folder"], video) for video in video_files]
+
+        idx_list =  [1 for _ in range(params["before_s"])] +\
+                    [2] +\
+                    [1 for _ in range(params["after_s"])]
+        
+        order = [0] + idx_list * params["n_stimuli"] + [1]
+
 
         n_monitor = self.settings_panel.spin_box_monitor.value()
         # открыть окно с плеером
-        self._player_window = StimuliPresentation(self._stimuli_filename, n_monitor)
-        self._player_window.finish.connect(self._on_finish_stimuli)                     # !!! настроить чтобы это было в коннекшенс остальных
+        # self._player_window = StimuliPresentation(self._stimuli_filename, n_monitor)
+        self._player_window = StimuliPresentation(video_files, order, n_monitor)
+        # self._player_window.finish.connect(self._on_finish_stimuli)                     # !!! настроить чтобы это было в коннекшенс остальных
 
         self._player_window.show()
         self._player_window.raise_()

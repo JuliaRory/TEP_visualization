@@ -3,15 +3,6 @@ import tempfile
 import os
 import uuid
 
-def convert_to_ts(infile, outfile):
-    subprocess.run([
-        "ffmpeg", "-y",
-        "-i", infile,
-        "-c", "copy",
-        "-bsf:v", "h264_mp4toannexb",
-        "-f", "mpegts",
-        outfile
-    ], check=True)
 
 def get_duration(file_path):
     """Возвращает длительность видео в секундах (float)"""
@@ -24,17 +15,6 @@ def get_duration(file_path):
     result = subprocess.run(cmd, capture_output=True, text=True)
     return float(result.stdout.strip())
 
-def has_audio(file_path):
-    """Проверяет, есть ли аудиопоток в видео с помощью ffprobe"""
-    cmd = [
-        "ffprobe", "-v", "error",
-        "-select_streams", "a",
-        "-show_entries", "stream=index",
-        "-of", "csv=p=0",
-        file_path
-    ]
-    result = subprocess.run(cmd, capture_output=True, text=True)
-    return bool(result.stdout.strip())
 
 def concat_videos_by_order(video_files, order, output_file):
     inputs = []
