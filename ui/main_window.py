@@ -511,15 +511,22 @@ class MainWindow(QWidget):
         idx_list =  [1 for _ in range(params["before_s"])] +\
                     [2] +\
                     [1 for _ in range(params["after_s"])]
+                    
         
-        order = [0] + idx_list * params["n_stimuli"] + [1]
+        order = idx_list * params["n_stimuli"] + [1]
 
+        idx_list =  [0 for _ in range(params["before_s"])] +\
+                    [1] +\
+                    [0 for _ in range(params["after_s"])]
+                    
+        
+        order = idx_list * params["n_stimuli"] + [0]
 
         n_monitor = self.settings_panel.spin_box_monitor.value()
         # открыть окно с плеером
         # self._player_window = StimuliPresentation(self._stimuli_filename, n_monitor)
-        self._player_window = StimuliPresentation(video_files, order, n_monitor)
-        # self._player_window.finish.connect(self._on_finish_stimuli)                     # !!! настроить чтобы это было в коннекшенс остальных
+        self._player_window = StimuliPresentation(video_files[0], video_files[1:], order, n_monitor)
+        # self._player_window.stimuliFinished.connect(self._on_finish_stimuli)                     # !!! настроить чтобы это было в коннекшенс остальных
 
         self._player_window.show()
         self._player_window.raise_()

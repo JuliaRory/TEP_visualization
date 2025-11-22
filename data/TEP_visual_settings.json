@@ -34,7 +34,7 @@
             "cross_video": "cross_1.mp4",
             "stimuli_video": "triple_white_black_0.65.mp4",
             "countdown_s": 3,
-            "before_s": 3,
+            "before_s": 2,
             "after_s": 0,
             "n_stimuli": 2
         },
