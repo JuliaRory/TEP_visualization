@@ -39,3 +39,4 @@ filename_params = r'data/TEP_visual_settings.json'     # файл с настр�
 main = MainWindow(dispatcher, resonance, filename_params)         # открыть Qt-окно приложения
 
 sys.exit(app.exec_())
+
