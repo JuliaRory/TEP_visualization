@@ -19,7 +19,7 @@ from widgets.topoplot_plot import TopoPlot, ColorBar
 
 MICROVOLT = "\u03BC"+"V"
 
-class TEPsSupplPanel(QFrame):
+class overviewPanel(QFrame):
     """
     Для чего нужен
     Args: - параметры входные

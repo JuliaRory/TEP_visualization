@@ -12,7 +12,7 @@ from utils.ui_helpers import shortcut_scale, spin_box, fit_font_to_width_spinbox
 from widgets.teps_plot import TEPsPlot
 MICROVOLT = "\u03BC"+"V"
 
-class TEPsPanel(QFrame):
+class TopoTEPsPanel(QFrame):
     scale_changed = pyqtSignal()  
 
     def __init__(self, parent=None, params=None, init_size=(600, 800)):
