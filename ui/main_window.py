@@ -1,6 +1,6 @@
 from PyQt5.QtCore import Qt, QTimer, pyqtSignal,  QEvent, QPoint
 from PyQt5.QtGui import QFont, QFontMetrics, QMouseEvent
-from PyQt5.QtWidgets import (QWidget, QGridLayout,QLabel, qApp, QFrame, QHBoxLayout, QSizePolicy, 
+from PyQt5.QtWidgets import (QWidget, QGridLayout, QLabel, qApp, QFrame, QHBoxLayout, QSizePolicy, 
                              QSplitter, QApplication, QFileDialog, QMessageBox)
 import numpy as np
 import pandas as pd
@@ -19,6 +19,7 @@ from .topo_teps_panel import TopoTEPsPanel
 from .overview_panel import overviewPanel
 from .meps_panel import MEPsPanel
 from .video_player import StimuliPresentation
+from .stimuli_window import StimuliCreation
 
 from utils.averaging_math import RollingMean, RollingMedian, RollingTrimMean
 from utils.concat_videos import concat_videos_by_order
@@ -141,6 +142,10 @@ class MainWindow(QWidget):
             "median": lambda x, y, z: RollingMedian(x, y, z), 
             "trimmean": lambda x, y, z: RollingTrimMean(x, y, z)
         }
+        self.aver_method = self.params["aver_methods"][0]
+        self._n_aver_max = self.params["n_aver"]
+        self._aver_all = self.params["aver_all"]
+
         self._transform = lambda x: x
 
         self._specific_epoch = False                         # флаг для отслеживания режима показа определенной эпохи или стандартного
@@ -206,15 +211,6 @@ class MainWindow(QWidget):
         splitter_center.setStretchFactor(1, 3) # растягивается в два раза сильнее
         splitter_center.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
 
-        # ratio = self.params["layout"]["right_ratio"]
-        # splitter_right = QSplitter(Qt.Vertical, parent=self)        # позволяет изменять размер
-        # splitter_right.addWidget(self.topoplots_panel)
-        # splitter_right.addWidget(self.suppl_teps_panel)
-        # splitter_right.setCollapsible(0, False)
-        # splitter_right.setOpaqueResize(False)
-        # splitter_right.setSizes([int(ratio*HEIGHT_SET), int((1-ratio)*HEIGHT_SET)])   # Можно задать начальные пропорции
-        # splitter_right.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-
         self.splitter = QSplitter(Qt.Horizontal, parent=self)        # позволяет изменять размер
         # splitter.addWidget(self._settings_panel)
         self.splitter.addWidget(self._settings_panel.scroll)
@@ -241,7 +237,7 @@ class MainWindow(QWidget):
         self._settings_panel.button_load.clicked.connect(self._on_button_load_click)
         self._settings_panel.button_restart.clicked.connect(self._on_restart_button_click)
         self._settings_panel.button_nvx_record.clicked.connect(self._on_record_button_click)
-        # self._settings_panel.button_create_stimuli.clicked.connect(self._on_create_stimuli_button_click)
+        self._settings_panel.button_create_stimuli.clicked.connect(self._on_create_stimuli_button_click)
         self._settings_panel.button_choose_stimuli.clicked.connect(self._on_choose_stimuli_button_click)
         self._settings_panel.button_stimuli.clicked.connect(self._on_stimuli_button_click)
         self._settings_panel.button_show_epoch.clicked.connect(self._on_show_epoch_button_click)
@@ -482,24 +478,9 @@ class MainWindow(QWidget):
         if self._record_in_progress:
             self._on_record_button_click()
 
-    # def _on_create_stimuli_button_click(self):
-    #     params = self.params["stimuli"]
-    #     intro_video_fl = params["intro_video"] + f"_{params['countdown_s']}.mp4"
-    #     video_files = [intro_video_fl, params["cross_video"], params["stimuli_video"]]
-    #     video_files = [os.path.join(params["video_folder"], video) for video in video_files]
-
-    #     idx_list =  [1 for _ in range(params["before_s"])] +\
-    #                 [2] +\
-    #                 [1 for _ in range(params["after_s"])]
-        
-    #     order = [0] + idx_list * params["n_stimuli"] + [1]
-
-    #     self._stimuli_filename = os.path.join(r"resources/stimuli", 
-    #                                           f"{params['n_stimuli']}stimuli_"+
-    #                                           "triplets_"+
-    #                                           f"cross{params['before_s']}s.mp4")
-
-    #     concat_videos_by_order(video_files, order, self._stimuli_filename)
+    def _on_create_stimuli_button_click(self):
+        self._create_stimuli_window = StimuliCreation()
+        self._create_stimuli_window.show()
 
     def _on_choose_stimuli_button_click(self):
         print("doesnt work yet")
@@ -651,14 +632,14 @@ class MainWindow(QWidget):
             if new_data is not None:
                 data = np.array([self._transform(np.array(TEPs[:-2, :], dtype=float) * 1E6) for TEPs in new_data])
                 self.average_functions = [
-                    [function(data[:, i, j], self.n_aver_max, self.aver_all)
-                    for j in range(self.n_samples)]
+                    [function(data[:, i, j], self._n_aver_max, self._aver_all)
+                    for j in range(self._n_samples)]
                     for i in range(len(CHANNELS))
                 ]
             else:
                 self.average_functions = [
-                    [function([], self.n_aver_max, self.aver_all)
-                    for _ in range(self.n_samples)]
+                    [function([], self._n_aver_max, self._aver_all)
+                    for _ in range(self._n_samples)]
                     for _ in range(len(CHANNELS))
                 ]
 
