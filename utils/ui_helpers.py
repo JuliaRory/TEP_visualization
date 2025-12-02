@@ -1,7 +1,16 @@
-from PyQt5.QtWidgets import QPushButton, QSpinBox, QDoubleSpinBox, QCheckBox, QComboBox, QShortcut
+from PyQt5.QtWidgets import QPushButton, QSpinBox, QDoubleSpinBox, QCheckBox, QComboBox, QShortcut, QLineEdit
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QStandardItemModel, QStandardItem, QKeySequence, QFont, QFontMetrics
 from widgets.checkable_combo_box import CheckableComboBox
+
+def create_lineedit(callback=None, disabled=False, parent=None, w=None):
+    lineedit = QLineEdit(parent)
+    lineedit.setDisabled(disabled)
+    if w is not None:
+        lineedit.setFixedWidth(w)
+    if callback:
+        lineedit.textChanged.connect(callback)
+    return lineedit
 
 def create_button(text, callback=None, disabled=False, parent=None, w=None):
     btn = QPushButton(text, parent)
