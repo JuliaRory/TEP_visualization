@@ -23,5 +23,15 @@
             2,
             3
         ]
+    },
+    "fd": {
+        "set": {
+            "1": "audio_countdown_5.mp4",
+            "2": "cross_1.mkv"
+        },
+        "order": [
+            2,
+            1
+        ]
     }
 }

@@ -11,10 +11,13 @@ from PyQt5.QtCore import Qt
 # Диалог генерации последовательности
 # ============================
 class SequenceDialog(QDialog):
-    def __init__(self, stimuli, parent=None):
+    def __init__(self, stimuli, set, parent=None):
         super().__init__(parent)
         self.setWindowTitle("Создать последовательность")
         self.stimuli = stimuli
+        self.set = set
+
+        n_set = [int([key for key, value in self.set.items() if value == stim.base_text][0]) for stim in self.stimuli]
 
         layout = QVBoxLayout(self)
 
@@ -25,7 +28,7 @@ class SequenceDialog(QDialog):
             spin = QSpinBox()
             spin.setRange(1, 100)
             spin.setValue(stim.repeats)
-            form_layout.addRow(f"#{i+1}: " + stim.base_text, spin)
+            form_layout.addRow(f"#{n_set[i]}: " + stim.base_text, spin)
             self.spin_boxes[stim.base_text] = spin
         layout.addLayout(form_layout)
 
@@ -62,7 +65,9 @@ class SequenceDialog(QDialog):
             stim.repeats = self.spin_boxes[stim.base_text].value()
 
         # Создаём mapping: номер -> стимул
-        self.stim_map = {i+1: stim for i, stim in enumerate(self.stimuli)}
+
+        n_set = [int([key for key, value in self.set.items() if value == stim.base_text][0]) for stim in self.stimuli]
+        self.stim_map ={n_set[i]: stim for i, stim in enumerate(self.stimuli)}
 
         # Список номеров с учётом повторений
         seq_numbers = []

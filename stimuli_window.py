@@ -18,7 +18,7 @@ from PyQt5.QtCore import Qt, QPoint, QEvent
 from PyQt5.QtGui import QKeyEvent
 
 from utils.video_helpers import *
-from utils.add_to_json import save_sequence_to_json, define_sequence
+from utils.add_to_json import save_sequence_to_json, define_sequence, save_sequence
 from widgets.dragging_label import DraggableLabel, StimulusGroup
 from widgets.sequence_creation_dialog import SequenceDialog
 
@@ -152,27 +152,31 @@ class StimuliCreation(QWidget):
         selected_stimuli = [stim for stim in self.bottom_line if getattr(stim, "selected", False)]
         if not selected_stimuli:
             return
-        seq = define_sequence(self.bottom_line)
+        
+        seq = define_sequence(self.bottom_line)     # определить набор (стимулос - номер)
 
-        block = []
+        block = []  # блок того что надо вставить
         for stim in selected_stimuli:
             number = int([key for key, value in seq["set"].items() if value == stim.base_text][0])
             block.extend([number for _ in range(stim.repeats)])
 
         curr_seq = self._lineedit_sequence.text()
         curr_seq = [int(x.strip()) for x in curr_seq.split(",")]
+
         def insert_block_between(stimulus, block):
             result = []
+            result.extend(block)
             for i, val in enumerate(stimulus):
                 result.append(val)
-                if i < len(stimulus) - 1:  # вставляем блок только между элементами
+                if i < len(stimulus):  # вставляем блок только между элементами
                     result.extend(block)
+            # result.append(block)
             return result
 
         new_seq = insert_block_between(curr_seq, block)
-        print(new_seq)
-        self._lineedit_sequence.setText(", ".join(map(str, new_seq)))
 
+        self._lineedit_sequence.setText(", ".join(map(str, new_seq)))
+        
 
     def _on_create_random_sequence_button_click(self):
         # выбираем выделенные стимулы
@@ -182,8 +186,10 @@ class StimuliCreation(QWidget):
 
         if not selected_stimuli:
             return
+        
+        seq = define_sequence(self.bottom_line)     # определить набор (стимулос - номер)
                 
-        dialog = SequenceDialog(selected_stimuli, self)
+        dialog = SequenceDialog(selected_stimuli, seq["set"], self)
         if dialog.exec_() == QDialog.Accepted:
             # получаем список номеров
             seq_numbers = dialog.get_sequence_numbers()
@@ -294,10 +300,19 @@ class StimuliCreation(QWidget):
         self._lineedit_sequence_name.setText(seq_name)
 
     def _on_create_sequence_button_click(self):
-        stimulus_sequnce = self.update_order(get_order=True)
+        # stimulus_sequnce = self.update_order(get_order=True)
+        
+        # save_sequence_to_json(self._stimuli_filename, sequence_name, stimulus_sequnce)
+
         sequence_name = self._lineedit_sequence_name.text()
-       
-        save_sequence_to_json(self._stimuli_filename, sequence_name, stimulus_sequnce)
+        curr_seq = self._lineedit_sequence.text()
+        order = [int(x.strip()) for x in curr_seq.split(",")]
+        seq = define_sequence(self.bottom_line)
+        seq['order'] = order
+
+        
+        save_sequence(self._stimuli_filename, sequence_name, seq)
+
         self._update_sequence_combo()
 
 
@@ -358,7 +373,6 @@ class StimuliCreation(QWidget):
             if label.zone == "bottom":
                 self.move_bottom_to_top(label)
 
-
         self.realign_lines()
         self.update_order()
 
@@ -416,8 +430,13 @@ class StimuliCreation(QWidget):
                 text = getattr(item, "base_text", item.text())
                 repeats = getattr(item, "repeats", 1)
                 order.extend([text] * repeats)
-        print("Текущий порядок (нижняя линия):", order)
         
+        print("Текущий порядок (нижняя линия):", order)
+        # seq = define_sequence(self.bottom_line)     # определить набор (стимулос - номер)
+        # seq_order = [int([key for key, value in seq["set"].items() if value == stim][0]) for stim in order]
+
+        # self._lineedit_sequence.setText(", ".join(map(str, seq_order)))
+
         if get_order:
             return order
 
