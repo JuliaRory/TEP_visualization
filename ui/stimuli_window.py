@@ -22,7 +22,7 @@ from utils.add_to_json import save_sequence_to_json, define_sequence, save_seque
 from widgets.dragging_label import DraggableLabel, StimulusGroup
 from widgets.sequence_creation_dialog import SequenceDialog
 
-from ui.video_player import StimuliPresentation_one_by_one
+from ui.video_player import StimuliPresentation, StimuliPresentation_one_by_one
 
 class StimuliCreation(QWidget):
     """
@@ -233,8 +233,10 @@ class StimuliCreation(QWidget):
             self._order_label.setText("")
             return
 
-        n_monitor = 1
-        self._player_window = StimuliPresentation_one_by_one(sequence, n_monitor)
+        n_monitor = 3
+        
+        # self._player_window = StimuliPresentation_one_by_one(sequence, n_monitor)
+        self._player_window = StimuliPresentation(sequence, save=True, sequence_name=seq_name, monitor=n_monitor)
 
         self._player_window.show()
         self._player_window.raise_()

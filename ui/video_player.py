@@ -7,6 +7,7 @@ from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout
 from PyQt5.QtCore import Qt, pyqtSignal, QTimer
 from PyQt5.QtGui import QKeyEvent
 
+from utils.add_to_json import save_sequence
 
 # воспроизведение стимулов идёт через VLC плеер (https://www.videolan.org/vlc/) <-- он должен быть установлен на компьютер (!!!) 
 # на питоне для этого устанавливается библиотека python-vlc (https://pypi.org/project/python-vlc/)
@@ -45,20 +46,40 @@ class StimuliPresentation(QWidget):
     """
     stimuliFinished = pyqtSignal()
 
-    def __init__(self, intro_file, stimuli_files, order, monitor=1):
+    def __init__(self, stimuli_sequence, save=True, sequence_name=None, monitor=1):
         super().__init__()
-        self._intro_file = os.path.abspath(intro_file)
-        self._stimuli_files = [os.path.abspath(f) for f in stimuli_files]
-        self._order = order
+        # self._intro_file = os.path.abspath(intro_file)
+        self._save = save
+        self._order = stimuli_sequence["order"]
+
+        video_names = list(stimuli_sequence["set"].values())
+        path = r"resources\videoSamples"
+        video_names = [os.path.join(path, file) for file in video_names]
+
+        self._stimuli_files = [video_names[i-1] for i in self._order]
+    
+
+        # self._stimuli_files = [os.path.abspath(f) for f in stimuli_files]
+        # self._order = order
         self._current_video_index = 0
+        try: 
+            self._temp_file = stimuli_sequence["filename"]
+        except:
 
-        # Проверка наличия аудио в стимульных файлах
-        for idx in order:
-            if not self._has_audio(self._stimuli_files[idx]):
-                raise RuntimeError(f"Stimulus video has no audio: {self._stimuli_files[idx]}")
+            
 
-        # Создаём комбинированный файл стимулов
-        self._temp_file = self._concat_stimuli(self._stimuli_files, self._order)
+            # Проверка наличия аудио в стимульных файлах
+            for idx in self._order:
+                if not self._has_audio(self._stimuli_files[idx]):
+                    raise RuntimeError(f"Stimulus video has no audio: {self._stimuli_files[idx]}")
+
+            # Создаём комбинированный файл стимулов
+            self._temp_file = self._concat_stimuli(self._stimuli_files, self._order)
+
+            if save:
+                stimuli_filename = r"resources/saved_stimuli.json"
+                stimuli_sequence["filename"] = self._temp_file
+                save_sequence(stimuli_filename, sequence_name, stimuli_sequence)
 
         # Настройка окна на нужный монитор
         screens = QApplication.instance().screens()
@@ -72,6 +93,7 @@ class StimuliPresentation(QWidget):
 
         # Виджет для видео
         self._video_widget = QWidget(self)
+        self._video_widget.setStyleSheet("background-color: black;")
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0,0,0,0)
         layout.setSpacing(0)
@@ -90,7 +112,7 @@ class StimuliPresentation(QWidget):
         self._timer.timeout.connect(self._check_end)
 
         # Список видео для проигрывания: сначала интро, потом стимулы
-        self._playlist = [self._intro_file, self._temp_file]
+        self._playlist = [self._temp_file]
 
         self._play_current_video()
 
@@ -109,25 +131,36 @@ class StimuliPresentation(QWidget):
         """Быстро объединяет стимулы в один файл"""
         temp_dir = tempfile.gettempdir()
         temp_file = os.path.join(temp_dir, "combined_stimuli.mp4")
-
-        # Сортируем по order
-        files = [files[i] for i in order]
-
+        
         # Создаём list.txt для ffmpeg concat
         list_file = os.path.join(temp_dir, "stimuli_list.txt")
         with open(list_file, "w") as f:
+
             for file in files:
-                f.write(f"file '{file}'\n")
+                f.write(f"file '{os.path.abspath(file)}'\n")
 
         # Склеиваем быстро, видео копируем, аудио перекодируем в AAC
         subprocess.run([
-            "ffmpeg", "-y", "-f", "concat", "-safe", "0",
+            "ffmpeg",
+            "-y",
+            "-f", "concat",
+            "-safe", "0",
             "-i", list_file,
-            "-c:v", "copy",
+            "-vf", "scale=1920:1080:force_original_aspect_ratio=decrease",
+            "-c:v", "libx264",
+            "-pix_fmt", "yuv420p",
             "-c:a", "aac",
             "-b:a", "128k",
             temp_file
         ], check=True)
+        # subprocess.run([
+        #     "ffmpeg", "-y", "-f", "concat", "-safe", "0",
+        #     "-i", list_file,
+        #     "-c:v", "copy",
+        #     "-c:a", "aac",
+        #     "-b:a", "128k",
+        #     temp_file
+        # ], check=True)
 
         return temp_file
 
@@ -157,7 +190,8 @@ class StimuliPresentation(QWidget):
 
         if os.path.exists(self._temp_file):
             try:
-                os.remove(self._temp_file)
+                if not self._save:
+                    os.remove(self._temp_file)
             except PermissionError:
                 print(f"Не удалось удалить временный файл: {self._temp_file}")
 
