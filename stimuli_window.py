@@ -12,14 +12,17 @@ from PyQt5.QtCore import Qt
 from utils.ui_helpers import create_button, spin_box, check_box, combo_box, create_lineedit
 from utils.layout_utils import create_hbox, create_vbox
 
-from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout
+from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QDialog
 from PyQt5.QtCore import Qt, pyqtSignal, QTimer
 from PyQt5.QtCore import Qt, QPoint, QEvent
 from PyQt5.QtGui import QKeyEvent
 
 from utils.video_helpers import *
-from utils.add_to_json import save_sequence_to_json
-from widgets.dragging_label import DraggableLabel, LabelGroup
+from utils.add_to_json import save_sequence_to_json, define_sequence
+from widgets.dragging_label import DraggableLabel, StimulusGroup
+from widgets.sequence_creation_dialog import SequenceDialog
+
+from ui.video_player import StimuliPresentation_one_by_one
 
 class StimuliCreation(QWidget):
     """
@@ -68,7 +71,8 @@ class StimuliCreation(QWidget):
         # --- ComboBox для выбора последовательности ---
         self._sequence_combo = combo_box([], parent=self)
         self._button_load_sequence = create_button("Загрузить", parent=self)
-        self._layout_load_sequence = create_hbox([self._sequence_combo, self._button_load_sequence])
+        self._button_show_sequence = create_button("Показать", parent=self)
+        self._layout_load_sequence = create_hbox([self._sequence_combo, self._button_load_sequence, self._button_show_sequence])
 
         # --- Метки для отображения ---
         self._set_label = QLabel("")
@@ -106,6 +110,11 @@ class StimuliCreation(QWidget):
         self.workspace.setFrameShape(QFrame.Box)
         self.workspace.setMinimumHeight(200)
 
+        self._button_random_sequence = create_button("Задать случайную последовательность", parent=self)
+        self._lineedit_sequence =  create_lineedit(parent=self)
+        self._button_add_between = create_button("Вставить между", parent=self)
+        self._layout_random_sequence = create_hbox([self._button_random_sequence, self._lineedit_sequence, self._button_add_between])
+
         label = QLabel("Название набора стимулов:")
         self._lineedit_sequence_name = create_lineedit(parent=self)
         self._button_create_sequence = create_button("Создать набор", parent=self)
@@ -121,16 +130,108 @@ class StimuliCreation(QWidget):
         layout.addWidget(self._label_instruction)
         layout.addLayout(self._layout_choose_stimulus)              # Добавление нового стимула
         layout.addWidget(self.workspace)
+        layout.addLayout(self._layout_random_sequence)
         layout.addLayout(self._layout_create_sequence)
 
         
     def _setup_connections(self):
         self._button_load_sequence.clicked.connect(self._on_load_selected_sequence_button_click)
+        self._button_show_sequence.clicked.connect(self._on_show_sequence_button_click)
+
         self._button_add_stimulus.clicked.connect(self._on_add_stimulus_button_click)
         self._button_check_sound.clicked.connect(self._on_check_stimulus_button_click)
         self._button_add_sound.clicked.connect(self._on_add_sound_button_click)
+
         self._make_group_button.clicked.connect(self._on_make_group_button_click)
+
+        self._button_random_sequence.clicked.connect(self._on_create_random_sequence_button_click)
+        self._button_add_between.clicked.connect(self._on_add_between_button_click)
         self._button_create_sequence.clicked.connect(self._on_create_sequence_button_click)
+
+    def _on_add_between_button_click(self):
+        selected_stimuli = [stim for stim in self.bottom_line if getattr(stim, "selected", False)]
+        if not selected_stimuli:
+            return
+        seq = define_sequence(self.bottom_line)
+
+        block = []
+        for stim in selected_stimuli:
+            number = int([key for key, value in seq["set"].items() if value == stim.base_text][0])
+            block.extend([number for _ in range(stim.repeats)])
+
+        curr_seq = self._lineedit_sequence.text()
+        curr_seq = [int(x.strip()) for x in curr_seq.split(",")]
+        def insert_block_between(stimulus, block):
+            result = []
+            for i, val in enumerate(stimulus):
+                result.append(val)
+                if i < len(stimulus) - 1:  # вставляем блок только между элементами
+                    result.extend(block)
+            return result
+
+        new_seq = insert_block_between(curr_seq, block)
+        print(new_seq)
+        self._lineedit_sequence.setText(", ".join(map(str, new_seq)))
+
+
+    def _on_create_random_sequence_button_click(self):
+        # выбираем выделенные стимулы
+        selected_stimuli = [stim for stim in self.bottom_line if getattr(stim, "selected", False)]
+        
+        # selected_stimuli = self.bottom_line
+
+        if not selected_stimuli:
+            return
+                
+        dialog = SequenceDialog(selected_stimuli, self)
+        if dialog.exec_() == QDialog.Accepted:
+            # получаем список номеров
+            seq_numbers = dialog.get_sequence_numbers()
+            # mapping номер -> стимул
+            stim_map = {i+1: stim for i, stim in enumerate(selected_stimuli)}
+            # отображаем последовательность в line edit
+            self._lineedit_sequence.setText(", ".join(map(str, seq_numbers)))
+            # отображаем все стимулы в workspace
+            # self.display_sequence(stim_map, seq_numbers)
+
+    def display_sequence(self, stim_map, seq_numbers):
+        # удаляем предыдущие копии
+        for child in self.workspace.children():
+            if isinstance(child, QLabel) and hasattr(child, "base_text"):
+                child.deleteLater()
+
+        x_offset = 20
+        y_offset = 40
+        for num in seq_numbers:
+            stim = stim_map[num]
+            lbl = DraggableLabel(stim.base_text, self.workspace)
+            lbl.repeats = stim.repeats
+            lbl.move(x_offset, y_offset)
+            lbl.show()
+            x_offset += lbl.width() + 10  # горизонтальное смещение
+
+    def _on_show_sequence_button_click(self):
+        seq_name = self._sequence_combo.currentText()
+        if not seq_name:
+            return
+
+        try:
+            with open(self._stimuli_filename, "r", encoding="utf-8") as f:
+                data = json.load(f)
+        except (FileNotFoundError, json.JSONDecodeError):
+            data = {}
+
+        sequence = data.get(seq_name)
+        if not sequence:
+            self._set_label.setText("Последовательность не найдена")
+            self._order_label.setText("")
+            return
+
+        n_monitor = 1
+        self._player_window = StimuliPresentation_one_by_one(sequence, n_monitor)
+
+        self._player_window.show()
+        self._player_window.raise_()
 
     def _on_load_selected_sequence_button_click(self):
         seq_name = self._sequence_combo.currentText()
@@ -201,24 +302,22 @@ class StimuliCreation(QWidget):
 
 
     def _on_make_group_button_click(self):
-        # -----------------------------------------------
-        # Create group from selected labels
-        # -----------------------------------------------
+        selected_stimuli = [stim for stim in self.bottom_line if getattr(stim, "selected", False)]
+        if not selected_stimuli:
+            return  # ничего не выделено
 
-        if len(self.selected) < 2:
-            print("Выберите минимум два элемента для группы")
-            return
-
-
-        group = LabelGroup(self.selected, self.workspace)
-        group.move(50, LabelGroup.fixed_y)
+        # создаём группу
+        group = StimulusGroup(selected_stimuli, parent=self.workspace)
+        group.move(20, self.bottom_zone_y)
         group.show()
 
+        # удаляем стимулы из bottom_line, добавляем группу
+        for stim in selected_stimuli:
+            self.bottom_line.remove(stim)
+            stim.selected = False  # снимаем выделение
+        self.bottom_line.append(group)
 
-        for lbl in self.selected:
-            lbl.removeEventFilter(self)
-
-        self.selected = []
+        self.realign_lines()
         self.update_order()
 
     def _on_add_stimulus_button_click(self):
@@ -245,7 +344,6 @@ class StimuliCreation(QWidget):
         except (FileNotFoundError, json.JSONDecodeError):
             print("файл пока пустой")
             pass  # файл пока пустой
-
 
 
     def handle_relocate(self, label):
@@ -309,9 +407,17 @@ class StimuliCreation(QWidget):
    
     def update_order(self, get_order=False):
         order = []
-        for lbl in self.bottom_line:
-            order.extend([lbl.base_text] * lbl.repeats)
+        for item in self.bottom_line:
+            if isinstance(item, StimulusGroup):
+                # получаем порядок стимулов внутри группы с учетом repeats
+                order.extend(item.get_order())
+            else:
+                # обычный стимул
+                text = getattr(item, "base_text", item.text())
+                repeats = getattr(item, "repeats", 1)
+                order.extend([text] * repeats)
         print("Текущий порядок (нижняя линия):", order)
+        
         if get_order:
             return order
 

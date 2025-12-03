@@ -3,16 +3,7 @@ import json
 
 from PyQt5.QtWidgets import QMessageBox
 
-def save_sequence_to_json(filename, sequence_name, bottom_line, parent=None):
-    """
-    Сохраняет последовательность стимулов в JSON в формате:
-    "sequence_name": {
-        "set": {"1": stimulus1, "2": stimulus2, ...},
-        "order": [1,2,3,...]  # с учётом повторений
-    }
-
-    bottom_line: список DraggableLabel (нижняя линия)
-    """
+def define_sequence(bottom_line):
     # --- Формируем set и order ---
     set_dict = {}
     order_list = []
@@ -38,6 +29,19 @@ def save_sequence_to_json(filename, sequence_name, bottom_line, parent=None):
         "set": set_dict,
         "order": order_list
     }
+    return new_sequence
+
+def save_sequence_to_json(filename, sequence_name, bottom_line, parent=None):
+    """
+    Сохраняет последовательность стимулов в JSON в формате:
+    "sequence_name": {
+        "set": {"1": stimulus1, "2": stimulus2, ...},
+        "order": [1,2,3,...]  # с учётом повторений
+    }
+
+    bottom_line: список DraggableLabel (нижняя линия)
+    """
+    new_sequence = define_sequence(bottom_line)
 
     # --- Чтение существующего файла ---
     try:

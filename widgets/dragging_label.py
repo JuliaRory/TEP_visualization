@@ -87,10 +87,25 @@ class DraggableLabel(QLabel):
 
     def mousePressEvent(self, event):
         if event.button() == Qt.LeftButton:
-            self.dragging = True
-            # запоминаем смещение внутри виджета, чтобы не «прыгал» левый верхний угол
-            self.offset = event.pos()
-            event.accept()
+            modifiers = QApplication.keyboardModifiers()
+            # если Ctrl зажат — выделяем стимул
+            if modifiers == Qt.ControlModifier:
+                self.selected = not getattr(self, "selected", False)
+                if self.selected:
+                    self.setStyleSheet("background-color: yellow; border: 2px solid red; padding: 5px;")
+                else:
+                    self.setStyleSheet("background-color: lightgray; border: 1px solid black; padding: 5px;")
+                event.accept()
+            else:
+                # проверяем: если стимул внутри группы — не начинаем drag
+                if isinstance(self.parent(), StimulusGroup):
+                    # просто передаём событие родителю, чтобы группа могла его обработать
+                    event.ignore()
+                else:
+                    # обычное перемещение стимулов вне группы
+                    self.dragging = True
+                    self.offset = event.pos()
+                    event.accept()
         else:
             super().mousePressEvent(event)
 
@@ -132,46 +147,65 @@ class DraggableLabel(QLabel):
         else:
             super().mouseReleaseEvent(event)
 
-# -----------------------
-# Group of labels (draggable together)
-# -----------------------
-class LabelGroup(QFrame):
-    fixed_y = 150
-
-
-    def __init__(self, labels, parent=None):
+class StimulusGroup(QFrame):
+    def __init__(self, stimuli_list, parent=None):
         super().__init__(parent)
-        self.setFrameShape(QFrame.Box)
-        self.setStyleSheet("background-color: #e0e0ff; border: 2px solid blue;")
+        self.setFrameShape(QFrame.Panel)
+        self.setFrameShadow(QFrame.Raised)
+        self.setStyleSheet("background-color: lightblue; border: 2px solid black;")
+        self.layout = QHBoxLayout(self)
+        self.layout.setContentsMargins(5, 5, 5, 5)
+        self.layout.setSpacing(5)
+        self.layout.setAlignment(Qt.AlignTop)
+
+        self.stimuli = []
+        for stim in stimuli_list:
+            stim.setParent(self)
+            stim.zone = "bottom"
+            stim.selected = False
+            stim.setStyleSheet("background-color: lightgray; border: 1px solid black; padding: 5px;")
+            self.layout.addWidget(stim)
+            self.stimuli.append(stim)
+        
         self.dragging = False
         self.offset = QPoint(0, 0)
-
-
-        layout = QHBoxLayout(self)
-        layout.setContentsMargins(5, 5, 5, 5)
-        for lbl in labels:
-            lbl.setParent(self)
-            layout.addWidget(lbl)
-
-        self.adjustSize()
-
 
     def mousePressEvent(self, event):
         if event.button() == Qt.LeftButton:
             self.dragging = True
             self.offset = event.pos()
-
+            event.accept()
+        else:
+            super().mousePressEvent(event)
 
     def mouseMoveEvent(self, event):
         if self.dragging:
-            new_x = self.mapToParent(event.pos() - self.offset).x()
+            new_pos = self.mapToParent(event.pos() - self.offset)
             parent = self.parent()
-        if parent is not None:
-            max_x = max(0, parent.width() - self.width())
-            new_x = max(0, min(new_x, max_x))
-        self.move(new_x, self.fixed_y)
-
+            if parent:
+                max_x = max(0, parent.width() - self.width())
+                max_y = max(0, parent.height() - self.height())
+                new_x = max(0, min(new_pos.x(), max_x))
+                new_y = max(0, min(new_pos.y(), max_y))
+                self.move(new_x, new_y)
+            else:
+                self.move(new_pos)
+            event.accept()
+        else:
+            super().mouseMoveEvent(event)
 
     def mouseReleaseEvent(self, event):
         if event.button() == Qt.LeftButton:
             self.dragging = False
+            if hasattr(self.parent(), "update_order"):
+                self.parent().update_order()
+            event.accept()
+        else:
+            super().mouseReleaseEvent(event)
+
+    def get_order(self):
+        order = []
+        for stim in self.stimuli:
+            repeats = getattr(stim, "repeats", 1)
+            order.extend([stim.base_text] * repeats)
+        return order

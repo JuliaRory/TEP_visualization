@@ -201,9 +201,10 @@ class StimuliPresentation_one_by_one(QWidget):
     _videoEnded = pyqtSignal()      # сигнал окончания очередного видео
     # stimuliFinished = pyqtSignal()  # сигнал окончания последовательности стимулов
 
-    def __init__(self, video_files, order, monitor=1):
+    def __init__(self, stimuli_sequence, monitor=1):
 
         super().__init__()
+        
 
         # == Монитор и окно ==
         screens = QApplication.instance().screens()
@@ -212,8 +213,16 @@ class StimuliPresentation_one_by_one(QWidget):
         self.showFullScreen()                 
 
         # == Данные ==
-        self.video_files = video_files
-        self.order = order
+
+        self.order = stimuli_sequence["order"]
+
+        video_names = list(stimuli_sequence["set"].values())
+        path = r"resources\videoSamples"
+        video_names = [os.path.join(path, file) for file in video_names]
+
+        self.video_files = [video_names[i-1] for i in self.order]
+    
+        print(self.video_files, self.order)
         self._current_index = 0                  # индекс текущего видео в order
 
         # == VLC setup ==
@@ -227,9 +236,9 @@ class StimuliPresentation_one_by_one(QWidget):
         
         self._player = self._instance.media_player_new()
         
-
         # == Контейнер для вывода ==
         self._video_widget = QWidget(self)
+        self._video_widget.setStyleSheet("background-color: black;")
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0,0,0,0)
         layout.setSpacing(0)
@@ -264,15 +273,16 @@ class StimuliPresentation_one_by_one(QWidget):
             return
 
         video_idx = self.order[self._current_index]
-        video_path = self.video_files[video_idx]
+        video_path = self.video_files[video_idx-1]
 
         print(f"Video #{self._current_index}: {video_path}")
         self._start_time = time.perf_counter()
 
         # создаём новый экземпляр media для каждого видео
         # media = self._instance.media_new(video_path)
-        self._player.set_media(self._medias[video_idx])
+        self._player.set_media(self._medias[video_idx-1])
         # self._player.set_media(media)
+        self._video_widget.update()
         self._player.play()
 
         self._current_index += 1
