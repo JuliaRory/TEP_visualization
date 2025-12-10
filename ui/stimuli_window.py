@@ -68,7 +68,9 @@ class StimuliCreation(QWidget):
         self._sequence_combo = combo_box([], parent=self)
         self._button_load_sequence = create_button("Загрузить", parent=self)
         self._button_show_sequence = create_button("Показать", parent=self)
-        self._layout_load_sequence = create_hbox([self._sequence_combo, self._button_load_sequence, self._button_show_sequence])
+        self._spinbox_monitor = spin_box(1, 4, 1, parent=self)
+        self._layout_load_sequence = create_hbox([self._sequence_combo, self._button_load_sequence, 
+                                                  self._button_show_sequence, self._spinbox_monitor])
 
         # --- Метки для отображения ---
         self._set_label = QLabel("")
@@ -112,9 +114,11 @@ class StimuliCreation(QWidget):
         label_cross = QLabel("Длительность фикс креста: ", self)
         self._spinbox_cross = spin_box(0, 10000, 3000, step=100, parent=self)
         label_ms = QLabel("ms", self)
+        self._combo_box_cross = combo_box(items=os.listdir(r"resources/crossFigures"), 
+                                        curr_item_idx=1, parent=self)
         # self._button_add_between = create_button("Вставить между", parent=self)
         self._layout_random_sequence = create_hbox([self._button_random_sequence, self._lineedit_sequence, 
-                                                    label_cross, self._spinbox_cross, label_ms])
+                                                    label_cross, self._spinbox_cross, label_ms, self._combo_box_cross])
 
         label = QLabel("Название набора стимулов:")
         self._lineedit_sequence_name = create_lineedit(parent=self)
@@ -235,7 +239,7 @@ class StimuliCreation(QWidget):
             self._cross_ms_label.setText("")
             return
 
-        n_monitor = 1
+        n_monitor = self._spinbox_monitor.value()
         
         self._player_window = StimuliPresentation_one_by_one(sequence, n_monitor)
         #self._player_window = StimuliPresentation(sequence, save=True, sequence_name=seq_name, monitor=n_monitor)
@@ -272,7 +276,7 @@ class StimuliCreation(QWidget):
         self._order_label.setText(order_text)
 
         # Формируем текст для cross_ms
-        cross_ms_text = f"\nДлительность фиксационного креста: {sequence['cross_ms']} мс.\n"
+        cross_ms_text = f"\nФиксационный крест: {sequence['cross']['filename']}. Длительность = {sequence['cross']['dur_ms']} мс.\n"
         self._cross_ms_label.setText(cross_ms_text)
 
         # --- Полностью очищаем нижнюю линию и все её виджеты ---
@@ -316,7 +320,8 @@ class StimuliCreation(QWidget):
         order = [int(x.strip()) for x in curr_seq.split(",")]
         seq = define_sequence(self.bottom_line)
         seq['order'] = order
-        seq["cross_ms"] = self._spinbox_cross.value()
+        seq["cross"] = {"dur_ms": self._spinbox_cross.value(), 
+                        "filename": self._combo_box_cross.currentText()}
 
         save_sequence(self._stimuli_filename, sequence_name, seq)
 

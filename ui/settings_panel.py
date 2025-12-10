@@ -4,6 +4,8 @@ from PyQt5.QtWidgets import (
 from PyQt5.QtGui import QFont, QFontMetrics
 from PyQt5.QtCore import Qt
 
+import json
+
 from utils.ui_helpers import create_button, spin_box, check_box, combo_box, checkable_combobox
 from utils.layout_utils import create_hbox, create_vbox
 
@@ -28,7 +30,8 @@ class SettingsPanel(QFrame):
 
         self._setup_frame()
         self._setup_layout()
-        self._connect_signals()  
+        self._setup_connections()
+        self._finilize()
 
         # Добавляем скролл-обёртку
         self.scroll = QScrollArea()
@@ -64,7 +67,7 @@ class SettingsPanel(QFrame):
         self.button_restart = create_button(text='Очистить память', disabled=False, parent=self)
         # self.shortcut_restart = self.create_shortcut_button("Delete", self.restart, False)
 
-        self.button_nvx_record = create_button(text='Начать запись', disabled=False, parent=self)
+        self.button_nvx_record = create_button(text='Начать запись NVX', disabled=False, parent=self)
         # self.shortcut_restart = self.create_shortcut_button("Delete", self.restart, False)
 
         self._label_stimuli = QLabel("Стимулы", self)
@@ -74,13 +77,16 @@ class SettingsPanel(QFrame):
         self.spin_box_monitor = spin_box(1, 3, self.params["stimuli"]["monitor"], parent=self)
         self._monitor = create_hbox([label_monitor, self.spin_box_monitor])
 
-        self.button_stimuli = create_button(text='Начать', disabled=False, parent=self)
-        self.check_box_stimuli_record = check_box(self.params["stimuli"]["stimuli_with_record"], 'Запись', parent=self)
+        
+        self.button_stimuli = create_button(text='Показ стимулов', disabled=False, parent=self)
+        self.check_box_stimuli_record = check_box(self.params["stimuli"]["stimuli_with_record"], 'Запись NVX', parent=self)
         self._stimuli_record = create_hbox([self.button_stimuli, self.check_box_stimuli_record])
 
-        self.button_choose_stimuli = create_button(text='Выбрать', disabled=True, parent=self)
-        self.label_stimuli = QLabel("", self)
-        self._stimuli = create_hbox([self.button_choose_stimuli, self.label_stimuli])
+        label_stimuli = QLabel("Выбрать: ", self)
+        self.combo_box_stimuli = combo_box([], parent=self)
+        # self.button_choose_stimuli = create_button(text='Выбрать', disabled=True, parent=self)
+        self._button_update_stimuli = create_button(text='⟳', disabled=False, parent=self, w=30)
+        self._stimuli = create_hbox([label_stimuli, self.combo_box_stimuli, self._button_update_stimuli])
         # self.shortcut_restart = self.create_shortcut_button("Delete", self.restart, False)
 
         # --- Обработка эпох в приложении ---
@@ -192,8 +198,16 @@ class SettingsPanel(QFrame):
         layout.addLayout(self._baseline_range)
         layout.addLayout(self._baseline_mode)
 
-    def _connect_signals(self):
-        print("hi")
+    
+    def _update_combo_box_stimuli(self):
+        self.combo_box_stimuli.clear()
+        try:
+            with open(self.params["stimuli"]["stimuli_filename"], "r", encoding="utf-8") as f:
+                data = json.load(f)
+                if isinstance(data, dict):
+                    self.combo_box_stimuli.addItems(data.keys())
+        except (FileNotFoundError, json.JSONDecodeError):
+            print("файл пока пустой")
         
     # ──────────────────────────────────────────────
     # Ниже — примеры подпанелей, вынесенные в отдельные методы
@@ -237,4 +251,10 @@ class SettingsPanel(QFrame):
 
         return box
 
+    def _setup_connections(self):
+        self._button_update_stimuli.clicked.connect(self._update_combo_box_stimuli)
+
+
+    def _finilize(self):
+        self._update_combo_box_stimuli()
 

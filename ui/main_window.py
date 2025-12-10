@@ -18,7 +18,7 @@ from .settings_panel import SettingsPanel
 from .topo_teps_panel import TopoTEPsPanel
 from .overview_panel import overviewPanel
 from .meps_panel import MEPsPanel
-from .video_player import StimuliPresentation
+from .video_player import StimuliPresentation, StimuliPresentation_one_by_one
 from .stimuli_window import StimuliCreation
 
 from utils.averaging_math import RollingMean, RollingMedian, RollingTrimMean
@@ -167,7 +167,6 @@ class MainWindow(QWidget):
 
         hor_ratio = self.params["layout"]["horizontal_ratios"]
         cen_ratio = self.params["layout"]["center_ratio"]
-        rigth_ratio = self.params["layout"]["right_ratio"]
 
         self._settings_panel = SettingsPanel(parent=self,
                                             params=self.params,
@@ -238,7 +237,6 @@ class MainWindow(QWidget):
         self._settings_panel.button_restart.clicked.connect(self._on_restart_button_click)
         self._settings_panel.button_nvx_record.clicked.connect(self._on_record_button_click)
         self._settings_panel.button_create_stimuli.clicked.connect(self._on_create_stimuli_button_click)
-        self._settings_panel.button_choose_stimuli.clicked.connect(self._on_choose_stimuli_button_click)
         self._settings_panel.button_stimuli.clicked.connect(self._on_stimuli_button_click)
         self._settings_panel.button_show_epoch.clicked.connect(self._on_show_epoch_button_click)
         self._settings_panel.button_remove_epoch.clicked.connect(self._on_remove_epoch_button_click)
@@ -475,6 +473,7 @@ class MainWindow(QWidget):
             self._settings_panel.button_nvx_record.setText("Начать запись")
 
     def _on_finish_stimuli(self):
+        print("закончить последовательность стимулов.")
         if self._record_in_progress:
             self._on_record_button_click()
 
@@ -482,43 +481,31 @@ class MainWindow(QWidget):
         self._create_stimuli_window = StimuliCreation()
         self._create_stimuli_window.show()
 
-    def _on_choose_stimuli_button_click(self):
-        print("doesnt work yet")
-
-
     def _on_stimuli_button_click(self):
         # начать запись
         if self._settings_panel.check_box_stimuli_record.isChecked():
             self._on_record_button_click()
 
-        params = self.params["stimuli"]
-        intro_video_fl = params["intro_video"] + f"_{params['countdown_s']}.mp4"
-        video_files = [intro_video_fl, params["cross_video"], params["stimuli_video"]]
-        video_files = [os.path.join(params["video_folder"], video) for video in video_files]
+        seq_name = self._settings_panel.combo_box_stimuli.currentText()
+        if not seq_name:
+            return
 
-        idx_list =  [1 for _ in range(params["before_s"])] +\
-                    [2] +\
-                    [1 for _ in range(params["after_s"])]
-                    
-        
-        order = idx_list * params["n_stimuli"] + [1]
+        try:
+            with open(self.params["stimuli"]["stimuli_filename"], "r", encoding="utf-8") as f:
+                data = json.load(f)
+        except (FileNotFoundError, json.JSONDecodeError):
+            data = {}
 
-        idx_list =  [0 for _ in range(params["before_s"])] +\
-                    [1] +\
-                    [0 for _ in range(params["after_s"])]
-                    
-        
-        order = idx_list * params["n_stimuli"] + [0]
+        sequence = data.get(seq_name)
 
-        n_monitor = self._settings_panel.spin_box_monitor.value()
-        # открыть окно с плеером
-        # self._player_window = StimuliPresentation(self._stimuli_filename, n_monitor)
-        self._player_window = StimuliPresentation(video_files[0], video_files[1:], order, n_monitor)
-        # self._player_window.stimuliFinished.connect(self._on_finish_stimuli)                     # !!! настроить чтобы это было в коннекшенс остальных
+        n_monitor = self.params["stimuli"]["monitor"]
+        self._player_window = StimuliPresentation_one_by_one(sequence, n_monitor)
 
         self._player_window.show()
         self._player_window.raise_()
-        self._player_window.activateWindow()
+
+        self._player_window.stimuliFinished.connect(self._on_finish_stimuli)                     # !!! настроить чтобы это было в коннекшенс остальных
+        # self._player_window.activateWindow()
 
     def _on_show_epoch_button_click(self):
         if self._specific_epoch: # если был режим показа отдельной эпохи - вернуться к стандартному отображению
@@ -813,6 +800,9 @@ class MainWindow(QWidget):
         except Exception as e:
             print(f"---> Ошибка закрытия autofile: {e}")
 
+        if self.params["record"]["activate_bat"]:
+            service = self._resonance.getService("Resonance-control")     # Берем сервис
+            service.sendTransition('!terminate')
         event.accept()
 
 

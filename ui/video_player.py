@@ -308,11 +308,14 @@ class StimuliPresentation_one_by_onefdf(QWidget):
             super().keyPressEvent(event)
 
 class StimuliPresentation_one_by_one(QWidget):
+    stimuliFinished = pyqtSignal()
+
     def __init__(self, stimuli_sequence, monitor=1):
         super().__init__()  
 
         self._stopped = False
-        self._cross_dur_ms = 3000      # проигрвать крест в течение 3 с между стимулами
+        self._cross_dur_ms = stimuli_sequence["cross"]["dur_ms"]      # проигрвать крест 
+        self.placeholder_path = os.path.join(r"resources\crossFigures", stimuli_sequence["cross"]["filename"])
 
         # Настройка экрана
         screens = QApplication.instance().screens()
@@ -353,9 +356,7 @@ class StimuliPresentation_one_by_one(QWidget):
         elif sys.platform.startswith("darwin"):
             self._player.set_nsobject(winid)
 
-        # === QLabel для placeholder ===
-        self.placeholder_path = r"resources\cross_image.png"
-        # Placeholder widget поверх всего
+        # === Placeholder widget поверх всего ===
         self._placeholder_widget = QLabel(self)
         self._placeholder_widget.setPixmap(
             QPixmap(self.placeholder_path).scaled(
@@ -378,8 +379,11 @@ class StimuliPresentation_one_by_one(QWidget):
         QTimer.singleShot(self._cross_dur_ms, self._play_next_video)  
 
     def _play_next_video(self):
+        if self._stopped:
+            return
         if self._current_index >= len(self.video_files):
-            QTimer.singleShot(50, self.close)
+            
+            QTimer.singleShot(50, self._end)
             return
 
         video_path = self.video_files[self._current_index]
@@ -390,7 +394,7 @@ class StimuliPresentation_one_by_one(QWidget):
         self._player.play()
 
         # Скрываем placeholder через 50ms после старта VLC
-        delay = 500 if self._current_index > 0 else 0
+        delay = 100 if self._current_index > 0 else 0
         QTimer.singleShot(delay, self._placeholder_widget.hide)
 
         self._current_index += 1
@@ -407,11 +411,17 @@ class StimuliPresentation_one_by_one(QWidget):
         else:
             QTimer.singleShot(50, self._check_video_end)
 
+    def _end(self):
+        self.stimuliFinished.emit()
+        self.close()
+    
     def keyPressEvent(self, event):
         if event.key() == Qt.Key_Escape:
             self._stopped = True           # ставим флаг остановки
             self._player.stop()
-            self.close()
+            self._player.release()
+            self._instance.release()
+            self._end()
         else:
             super().keyPressEvent(event)
 
@@ -545,7 +555,10 @@ class StimuliPresentation_one_by_onаааe(QWidget):
     # === Esc для выхода ===
     def keyPressEvent(self, event):
         if event.key() == Qt.Key_Escape:
+            self._stopped = True
             self._player.stop()
+            self._player.release()
+            self._instance.release()
             self.close()
         else:
             super().keyPressEvent(event)

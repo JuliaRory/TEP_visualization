@@ -52,7 +52,7 @@ ApplicationWindow {
             //service.sendTransition(msg.command)
             print(text)
             if (msg.type === "command") {
-                if (msg.command == "!terminate") {service.sendTransition(msg.parameter, msg.command)};
+                if (msg.command == "!terminate") {service.sendTransition(msg.command)};
                 
                 if (msg.command == "start") {
                     //rec_filename = "C:/Users/hodor/Documents/lab-MSU/Works/2025.10_TMS/TEP_visualization/data/records/rec-$$$.h5"; //msg.filename;
