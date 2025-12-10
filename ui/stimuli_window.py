@@ -26,10 +26,6 @@ from ui.video_player import StimuliPresentation, StimuliPresentation_one_by_one
 
 class StimuliCreation(QWidget):
     """
-    Должен быть установлен отсюда ffmpeg: https://www.gyan.dev/ffmpeg/builds/ и добавлен в переменные среды (папка bin из скаченного архива).
-    Проигрывает интро и затем стимулы в заданном порядке на указанном мониторе.
-    Входные стимулы должны иметь аудиодорожку.
-
     Args:
         intro_file (str): путь к интро-видео
         stimuli_files (list[str]): список стимульных видео
@@ -77,7 +73,8 @@ class StimuliCreation(QWidget):
         # --- Метки для отображения ---
         self._set_label = QLabel("")
         self._order_label = QLabel("")
-        self._layout_loaded_sequence = create_vbox([self._set_label, self._order_label])
+        self._cross_ms_label = QLabel("")
+        self._layout_loaded_sequence = create_vbox([self._set_label, self._order_label, self._cross_ms_label])
 
 
         self._label_new_stimuli_sequence = QLabel("Создать новую последовательность стимулов", self)
@@ -112,8 +109,12 @@ class StimuliCreation(QWidget):
 
         self._button_random_sequence = create_button("Задать случайную последовательность", parent=self)
         self._lineedit_sequence =  create_lineedit(parent=self)
-        self._button_add_between = create_button("Вставить между", parent=self)
-        self._layout_random_sequence = create_hbox([self._button_random_sequence, self._lineedit_sequence, self._button_add_between])
+        label_cross = QLabel("Длительность фикс креста: ", self)
+        self._spinbox_cross = spin_box(0, 10000, 3000, step=100, parent=self)
+        label_ms = QLabel("ms", self)
+        # self._button_add_between = create_button("Вставить между", parent=self)
+        self._layout_random_sequence = create_hbox([self._button_random_sequence, self._lineedit_sequence, 
+                                                    label_cross, self._spinbox_cross, label_ms])
 
         label = QLabel("Название набора стимулов:")
         self._lineedit_sequence_name = create_lineedit(parent=self)
@@ -145,7 +146,7 @@ class StimuliCreation(QWidget):
         self._make_group_button.clicked.connect(self._on_make_group_button_click)
 
         self._button_random_sequence.clicked.connect(self._on_create_random_sequence_button_click)
-        self._button_add_between.clicked.connect(self._on_add_between_button_click)
+        # self._button_add_between.clicked.connect(self._on_add_between_button_click)
         self._button_create_sequence.clicked.connect(self._on_create_sequence_button_click)
 
     def _on_add_between_button_click(self):
@@ -231,12 +232,13 @@ class StimuliCreation(QWidget):
         if not sequence:
             self._set_label.setText("Последовательность не найдена")
             self._order_label.setText("")
+            self._cross_ms_label.setText("")
             return
 
-        n_monitor = 3
+        n_monitor = 1
         
-        # self._player_window = StimuliPresentation_one_by_one(sequence, n_monitor)
-        self._player_window = StimuliPresentation(sequence, save=True, sequence_name=seq_name, monitor=n_monitor)
+        self._player_window = StimuliPresentation_one_by_one(sequence, n_monitor)
+        #self._player_window = StimuliPresentation(sequence, save=True, sequence_name=seq_name, monitor=n_monitor)
 
         self._player_window.show()
         self._player_window.raise_()
@@ -256,6 +258,7 @@ class StimuliCreation(QWidget):
         if not sequence:
             self._set_label.setText("Последовательность не найдена")
             self._order_label.setText("")
+            self._cross_ms_label.setText("")
             return
 
         # Формируем текст для set
@@ -267,6 +270,10 @@ class StimuliCreation(QWidget):
         # Формируем текст для order
         order_text = "Порядок предъявления:\n" + ", ".join(map(str, sequence["order"]))
         self._order_label.setText(order_text)
+
+        # Формируем текст для cross_ms
+        cross_ms_text = f"\nДлительность фиксационного креста: {sequence['cross_ms']} мс.\n"
+        self._cross_ms_label.setText(cross_ms_text)
 
         # --- Полностью очищаем нижнюю линию и все её виджеты ---
         for lbl in getattr(self, "bottom_line", []):
@@ -299,20 +306,18 @@ class StimuliCreation(QWidget):
         self.realign_lines()
         self.update_order()
 
-        self._lineedit_sequence_name.setText(seq_name)
+        self._lineedit_sequence.setText(", ".join(map(str, sequence["order"])))
+        self._lineedit_sequence_name.setText(str(seq_name))
 
     def _on_create_sequence_button_click(self):
-        # stimulus_sequnce = self.update_order(get_order=True)
-        
-        # save_sequence_to_json(self._stimuli_filename, sequence_name, stimulus_sequnce)
 
         sequence_name = self._lineedit_sequence_name.text()
         curr_seq = self._lineedit_sequence.text()
         order = [int(x.strip()) for x in curr_seq.split(",")]
         seq = define_sequence(self.bottom_line)
         seq['order'] = order
+        seq["cross_ms"] = self._spinbox_cross.value()
 
-        
         save_sequence(self._stimuli_filename, sequence_name, seq)
 
         self._update_sequence_combo()
@@ -433,7 +438,7 @@ class StimuliCreation(QWidget):
                 repeats = getattr(item, "repeats", 1)
                 order.extend([text] * repeats)
         
-        print("Текущий порядок (нижняя линия):", order)
+        #print("Текущий порядок (нижняя линия):", order)
         # seq = define_sequence(self.bottom_line)     # определить набор (стимулос - номер)
         # seq_order = [int([key for key, value in seq["set"].items() if value == stim][0]) for stim in order]
 
