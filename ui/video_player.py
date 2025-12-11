@@ -314,6 +314,7 @@ class StimuliPresentation_one_by_one(QWidget):
         super().__init__()  
 
         self._stopped = False
+        self._finished = False
         self._cross_dur_ms = stimuli_sequence["cross"]["dur_ms"]      # проигрвать крест 
         self.placeholder_path = os.path.join(r"resources\crossFigures", stimuli_sequence["cross"]["filename"])
 
@@ -388,6 +389,9 @@ class StimuliPresentation_one_by_one(QWidget):
         if self._stopped:
             return
         if self._current_index >= len(self.video_files):
+            self.stimuliFinished.emit()
+            self._finished = True
+
             self._placeholder_widget.setPixmap(self._final_pic)
             self._placeholder_widget.show()
             # QTimer.singleShot(50, self._end)
@@ -418,17 +422,16 @@ class StimuliPresentation_one_by_one(QWidget):
         else:
             QTimer.singleShot(50, self._check_video_end)
 
-    def _end(self):
-        self.stimuliFinished.emit()
-        self.close()
-    
+
     def keyPressEvent(self, event):
         if event.key() == Qt.Key_Escape:
             self._stopped = True           # ставим флаг остановки
             self._player.stop()
             self._player.release()
             self._instance.release()
-            self._end()
+            if not self._finished:
+                self.stimuliFinished.emit()
+            self.close()
         else:
             super().keyPressEvent(event)
 
