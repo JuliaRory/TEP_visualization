@@ -38,5 +38,6 @@ driver.loadConfig(r'resonance_settings_main.json')   # вгрузить наст
 filename_params = r'data/TEP_visual_settings.json'     # файл с настройками приложения
 main = MainWindow(dispatcher, resonance, filename_params)         # открыть Qt-окно приложения
 
+
 sys.exit(app.exec_())
 

@@ -2,7 +2,7 @@ import sys, os, time, tempfile, subprocess
 import time
 
 import vlc
-import cv2
+# import cv2
 
 from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QLabel
 from PyQt5.QtCore import Qt, pyqtSignal, QTimer, QMetaObject, QThread

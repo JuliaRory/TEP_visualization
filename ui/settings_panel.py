@@ -6,7 +6,7 @@ from PyQt5.QtCore import Qt
 
 import json
 
-from utils.ui_helpers import create_button, spin_box, check_box, combo_box, checkable_combobox
+from utils.ui_helpers import create_button, spin_box, check_box, combo_box, checkable_combobox, create_lineedit
 from utils.layout_utils import create_hbox, create_vbox
 
 
@@ -40,37 +40,50 @@ class SettingsPanel(QFrame):
         self.scroll.setFrameShape(QFrame.NoFrame)
 
     def _setup_frame(self):
-        
+        self._create_epochs_manager_widgets()
+        self._create_nvx_manager_widgets()
+        self._create_stimuli_manager_widgets()
+        self._create_data_processings_widgets()
+
+    def _create_epochs_manager_widgets(self):
+        self._epochs_manager_frame = QFrame(self)
+
         # --- Режим: усреднение или одиночные пробы ---
         self._label_mode = QLabel("РЕЖИМ", self)
         self.combo_box_mode = combo_box(items=["Усреднение", "Одиночные пробы"], 
                                         curr_item_idx=self.params["curr_mode_idx"], parent=self)
         self.combo_box_mode_data = combo_box(items=["Новые данные", "Сравнение"], 
                                         curr_item_idx=self.params["curr_mode_data_idx"], parent=self)
-        self._mode = create_vbox([self.combo_box_mode_data, self.combo_box_mode])
+        
 
-        # --- Участок с управлением данными (сохранение, загрузка и тд) ---
-        self._manager_frame = QFrame(self)
-
+        # --- Управление эпохами (сохранение, загрузка и тд) ---
         self.button_load = create_button(text='Load', disabled=False, parent=self)
         self.button_save = create_button(text='Save', disabled=True, parent=self)
-        self._records_history = create_hbox([self.button_load, self.button_save])
-
+        
         self.button_show_epoch = create_button('Show #', disabled=True, parent=self)
         self.spin_box_show_epoch = spin_box(0, 0, 0, parent=self)
-        self._show_epoch = create_hbox([self.button_show_epoch, self.spin_box_show_epoch])
-
         self.button_remove_epoch = create_button('Delete #', disabled=True, parent=self)
         self.spin_box_remove_epoch =spin_box(0, 0, 0, parent=self)
-        self._remove_epoch = create_hbox([self.button_remove_epoch, self.spin_box_remove_epoch])
-
+        
         self.button_restart = create_button(text='Очистить память', disabled=False, parent=self)
-        # self.shortcut_restart = self.create_shortcut_button("Delete", self.restart, False)
 
-        self.button_nvx_record = create_button(text='Начать запись NVX', disabled=False, parent=self)
-        # self.shortcut_restart = self.create_shortcut_button("Delete", self.restart, False)
+    def _create_nvx_manager_widgets(self):
+        self._nvx_control_frame = QFrame(self)
 
-        self._label_stimuli = QLabel("Стимулы", self)
+        # --- Управление NVX16 (запуск, запись и тд) ---
+        self._label_nvx = QLabel("КОНТРОЛЬ NVX", self)
+        self.button_nvx_control = create_button(text='Контроль qml', disabled=False, parent=self)   # запустить qml модуль для контроля над процессами
+        self._label_nvx_control = QLabel("...", self)                                               # надпись для отображения состояния qml-процесса для контроля
+        self.button_check_impedance = create_button(text='Импеданс', disabled=True, parent=self)
+        self.button_nvx_launch = create_button(text='Старт', disabled=False, parent=self)           # launch and/or start
+        self.button_nvx_stop = create_button(text='Стоп', disabled=False, parent=self)              # stop
+        self.button_nvx_kill = create_button(text='kill', disabled=False, parent=self)              # !terminate
+        self.lineedit_record = create_lineedit(parent=self)                                         # record name
+        self.button_nvx_record = create_button(text='Запись', disabled=False, parent=self)          # recorder.start()      <-> "Остановить"
+
+    def _create_stimuli_manager_widgets(self):
+        self._stimuli_manager_frame = QFrame(self)
+        self._label_stimuli = QLabel("СТИМУЛЫ", self)
         self.button_create_stimuli = create_button(text='Создать стимулы', disabled=False, parent=self)
 
         label_monitor = QLabel("монитор", self)
@@ -89,8 +102,9 @@ class SettingsPanel(QFrame):
         self._stimuli = create_hbox([label_stimuli, self.combo_box_stimuli, self._button_update_stimuli])
         # self.shortcut_restart = self.create_shortcut_button("Delete", self.restart, False)
 
-        # --- Обработка эпох в приложении ---
+    def _create_data_processings_widgets(self):
         self._processing_frame = QFrame(self)
+        # --- Обработка эпох в приложении ---
         self._label_aver_main = QLabel("Усреднение", self)
         self._label_aver = QLabel("Метод:", self)
         self.combo_box_aver = combo_box(self.params['aver_methods'], parent=self)
@@ -134,45 +148,62 @@ class SettingsPanel(QFrame):
         self.combo_box_channels.setFixedWidth(70)
         self._car = create_hbox([self.check_box_car, _label_car, self.combo_box_channels, self.button_car])
 
-        # delete!!!
-        # _label3 = QLabel("Хранить", self)
-        # self.spin_box_save_epoch = spin_box(0, self.params['n_max_save'], self.params['n_save'], parent=self, disabled=self.params['save_all'])
-        # _label4 = QLabel("эпох.", self)
-        # self.check_box_save_epoch = check_box(self.params['save_all'], 'все', parent=self, 
-        #                 function=lambda: self.spin_box_save_epoch.setEnabled(not self.spin_box_save_epoch.isEnabled()))
-        # self._save_epoch = create_hbox([_label3, self.spin_box_save_epoch, _label4, self.check_box_save_epoch])
-
-        # self.check_box_aver_mode = check_box(self.params['aver_mode'], 'Усреднять по ', parent=self)
-        # self.spin_box_aver_epoch = spin_box(0, 1000, self.params['n_aver'], parent=self, disabled=self.params['aver_all'])
-        # _label6 = QLabel("эпохам.", self)
-        # self.check_box_aver_epoch = check_box(self.params['aver_all'], 'всем', parent=self,
-        #                 function=lambda: self.spin_box_aver_epoch.setEnabled(not self.spin_box_aver_epoch.isEnabled()))
-        # self._aver_epoch = create_hbox([self.spin_box_aver_epoch, _label6, self.check_box_aver_epoch])
-
-
     def _setup_layout(self):
-        self._setup_manager_frame()
+        # Vertical layout
+        # +------------------|
+        # | EPOCHS manager   |           
+        # +------------------+
+        # | NVX control      |
+        # +------------------+
+        # | STIMULI manager  |
+        # +------------------+
+        # | processings      |
+        # +------------------+
+
+        self._setup_epochs_frame()
+        self._setup_nvx_frame()
+        self._setup_stimuli_frame()
         self._setup_processing_frame()
 
         layout = QVBoxLayout(self)
-
-        layout.addWidget(self._manager_frame)
+        layout.addWidget(self._epochs_manager_frame)
+        layout.addWidget(self._nvx_control_frame)
+        layout.addWidget(self._stimuli_manager_frame)
         layout.addWidget(self._processing_frame)
  
-
         self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
 
 
-    def _setup_manager_frame(self):
-        layout = QVBoxLayout(self._manager_frame)
+    def _setup_epochs_frame(self):
+        layout_records_history = create_hbox([self.button_load, self.button_save])
+        layout_control_epoch = create_hbox([self.button_show_epoch, self.spin_box_show_epoch, self.button_remove_epoch, self.spin_box_remove_epoch])
 
-        layout.addWidget(self._label_mode)
-        layout.addLayout(self._mode)
-        layout.addLayout(self._records_history)
-        layout.addLayout(self._show_epoch)
-        layout.addLayout(self._remove_epoch)
-        layout.addWidget(self.button_restart)
-        layout.addWidget(self.button_nvx_record)
+                                                                # Vertical layout
+        layout = QVBoxLayout(self._epochs_manager_frame)        # +-----------------------|
+        layout.addWidget(self._label_mode)                      # | РЕЖИМ                 |
+        layout.addWidget(self.combo_box_mode_data)              # | Новые / Загрузить     |
+        layout.addWidget(self.combo_box_mode)                   # | Среднее / Одиночные   |
+        layout.addLayout(layout_records_history)                # | Load      Save        |
+        layout.addLayout(layout_control_epoch)                  # | Show   #  Delete   #  |
+        layout.addWidget(self.button_restart)                   # | Очистить память       |
+                                                                # +-----------------------+
+
+    
+    def _setup_nvx_frame(self):
+        layout_qml_control = create_hbox([self.button_nvx_control, self._label_nvx_control])
+        layout_nvx_control = create_hbox([self.button_nvx_launch, self.button_nvx_stop, self.button_nvx_kill])
+        layout_record = create_hbox([self.lineedit_record, self.button_nvx_record])
+
+                                                                # Vertical layout
+        layout = QVBoxLayout(self._nvx_control_frame)           # +-----------------------|
+        layout.addWidget(self._label_nvx)                       # | NVX control           |
+        layout.addLayout(layout_qml_control)                    # | Контроль qml   ...    |
+        layout.addWidget(self.button_check_impedance)           # | Проверить импеданс    |
+        layout.addLayout(layout_nvx_control)                    # | start   stop    kill  |
+        layout.addLayout(layout_record)                         # | record_name   Запись  |
+                                                                # +-----------------------+
+
+    def _setup_stimuli_frame(self):                                               
         layout.addWidget(self._label_stimuli)
         layout.addLayout(self._stimuli)                 # выбрать стимулы
         layout.addLayout(self._monitor)
