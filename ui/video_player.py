@@ -317,6 +317,8 @@ class StimuliPresentation_one_by_one(QWidget):
         self._cross_dur_ms = stimuli_sequence["cross"]["dur_ms"]      # проигрвать крест 
         self.placeholder_path = os.path.join(r"resources\crossFigures", stimuli_sequence["cross"]["filename"])
 
+        self.final_pic_path = os.path.join(r"resources\crossFigures", "final_picture.png")
+
         # Настройка экрана
         screens = QApplication.instance().screens()
         target_monitor = screens[monitor - 1].geometry()
@@ -363,6 +365,10 @@ class StimuliPresentation_one_by_one(QWidget):
                 self.size(), Qt.KeepAspectRatio, Qt.SmoothTransformation
             )
         )
+        self._final_pic = QPixmap(self.final_pic_path).scaled(
+                self.size(), Qt.KeepAspectRatio, Qt.SmoothTransformation
+            )
+        
         self._placeholder_widget.setGeometry(self.rect())
         self._placeholder_widget.setAlignment(Qt.AlignCenter)
         self._placeholder_widget.setStyleSheet("background-color: black;")
@@ -382,8 +388,9 @@ class StimuliPresentation_one_by_one(QWidget):
         if self._stopped:
             return
         if self._current_index >= len(self.video_files):
-            
-            QTimer.singleShot(50, self._end)
+            self._placeholder_widget.setPixmap(self._final_pic)
+            self._placeholder_widget.show()
+            # QTimer.singleShot(50, self._end)
             return
 
         video_path = self.video_files[self._current_index]

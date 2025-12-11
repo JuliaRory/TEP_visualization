@@ -127,8 +127,13 @@ class MainWindow(QWidget):
         self._record_in_progress = False                    # флаг идёт ли запись
         if self.params["record"]["activate_bat"]:
             # Запуск батника с qml-файлом для управления резонансными модулями
-            cwd = os.path.dirname(self.params["record"]["bat_file"]) # cwd = папка с батником
-            subprocess.Popen([self.params["record"]["bat_file"]], cwd=cwd)
+            
+            try:
+                cwd = os.path.dirname(self.params["record"]["bat_file"]) # cwd = папка с батником
+                subprocess.Popen([self.params["record"]["bat_file"]], cwd=cwd)
+            except:
+                cwd = os.path.dirname(self.params["record"]["bat_file_home"]) # cwd = папка с батником
+                subprocess.Popen([self.params["record"]["bat_file_home"]], cwd=cwd)
 
         self._player_window = None
 
