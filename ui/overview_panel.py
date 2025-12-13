@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
-from utils.ui_helpers import shortcut_scale, spin_box, create_button
+from utils.ui_helpers import create_shortcut_scale, create_spin_box, create_button
 from utils.layout_utils import create_hbox, create_vbox
 
 from widgets.teps_suppl_plot import supplPlot
@@ -84,14 +84,14 @@ class overviewPanel(QFrame):
 
         label1 = QLabel("Макс:", self)
         label2 = QLabel(MICROVOLT, self)
-        self._spinbox_max_amp = spin_box(0, 10000, self.params["TEP"]["amp"], parent=self, w=50, step=10)
+        self._spinbox_max_amp = create_spin_box(0, 10000, self.params["TEP"]["amp"], parent=self, w=50, step=10)
         self._max_amp = create_hbox([label1, self._spinbox_max_amp, label2])
 
         label1 = QLabel("от:   ", self)
         label2 = QLabel("до:   ", self)
         label3 = QLabel("мс", self)
-        self._spinbox_min_time = spin_box(-300, 0, self.params["xmin_ms"], parent=self, w=50, step=5)
-        self._spinbox_max_time = spin_box(0, 500, self.params["xmax_ms"], parent=self, w=50, step=5)
+        self._spinbox_min_time = create_spin_box(-300, 0, self.params["xmin_ms"], parent=self, w=50, step=5)
+        self._spinbox_max_time = create_spin_box(0, 500, self.params["xmax_ms"], parent=self, w=50, step=5)
         self._time_range = create_hbox([label1, self._spinbox_min_time, label2, self._spinbox_max_time, label3])
 
         self._button_interactive_plot = create_button(text="Интерактив", disabled=True)
@@ -99,9 +99,9 @@ class overviewPanel(QFrame):
         """Для топоплотов"""
         ts = self.params["timestamps_ms"]
         
-        self.spinbox_ts_1 = spin_box(-20, 1000, ts[0], parent=self, w=50, step=1)
-        self.spinbox_ts_2 = spin_box(-20, 1000, ts[1], parent=self, w=50, step=1)
-        self.spinbox_ts_3 = spin_box(-20, 1000, ts[2], parent=self, w=50, step=1)
+        self.spinbox_ts_1 = create_spin_box(-20, 1000, ts[0], parent=self, w=50, step=1)
+        self.spinbox_ts_2 = create_spin_box(-20, 1000, ts[1], parent=self, w=50, step=1)
+        self.spinbox_ts_3 = create_spin_box(-20, 1000, ts[2], parent=self, w=50, step=1)
         self.spinbox_ts = [self.spinbox_ts_1, self.spinbox_ts_2, self.spinbox_ts_3]
 
         # self._button_apply = create_button('Применить', checkable=True, parent=self, w=150)

@@ -18,7 +18,7 @@ from .settings_panel import SettingsPanel
 from .topo_teps_panel import TopoTEPsPanel
 from .overview_panel import overviewPanel
 from .meps_panel import MEPsPanel
-from .video_player import StimuliPresentation, StimuliPresentation_one_by_one
+from .video_player import StimuliPresentation_one_by_one
 from .stimuli_window import StimuliCreation
 
 from utils.averaging_math import RollingMean, RollingMedian, RollingTrimMean
@@ -245,12 +245,13 @@ class MainWindow(QWidget):
         self._settings_panel.button_stimuli.clicked.connect(self._on_stimuli_button_click)
         self._settings_panel.button_show_epoch.clicked.connect(self._on_show_epoch_button_click)
         self._settings_panel.button_remove_epoch.clicked.connect(self._on_remove_epoch_button_click)
-        self._settings_panel.button_aver.clicked.connect(self._on_update_averaging_button_click)
-        self._settings_panel.button_update_lowpass.clicked.connect(self._on_update_lowpass_button_click)
-        self._settings_panel.button_update_rereference.clicked.connect(self._on_update_rereference_button_click)
-        self._settings_panel.button_update_baseline.clicked.connect(self._on_update_baseline_button_click)
-        self._settings_panel.button_car.clicked.connect(self._on_update_CAR_button_click)
 
+        self._settings_panel.averagingChanged.connect(self._on_update_averaging_signal)
+        self._settings_panel.lowpassChanged.connect(self._on_update_lowpass_signal)
+        self._settings_panel.rereferenceChanged.connect(self._on_update_rereference_signal)
+        self._settings_panel.CARChanged.connect(self._on_update_CAR_signal)
+        self._settings_panel.baselineChanged.connect(self._on_update_baseline_signal)
+        
         self._settings_panel.combo_box_mode.currentIndexChanged[int].connect(self._on_change_mode)
         self._settings_panel.combo_box_mode_data.currentIndexChanged[int].connect(self._on_change_mode_data)
 
@@ -535,7 +536,7 @@ class MainWindow(QWidget):
         
         self._update_data()
 
-    def _on_update_averaging_button_click(self):
+    def _on_update_averaging_signal(self):
         """применение настроек для усреднения эпох"""
         if self._average_data and self._process_new_data:         # если режим усреднения
             data = self._epochs if self._n_epoch > 0 else None
@@ -543,16 +544,16 @@ class MainWindow(QWidget):
 
         self._update_data()                     # отобразить изменения
 
-    def _on_update_baseline_button_click(self):
+    def _on_update_baseline_signal(self):
         apply_baseline = self._settings_panel.check_box_baseline.isChecked()   # вычитать ли бейзлайн
         if apply_baseline:
-            baseline_start = self._settings_panel.spin_box_baseline_start.value()
-            baseline_end  = self._settings_panel.spin_box_baseline_end.value()
-            ind_start = self._ms_to_sample(baseline_start - self.SPEED["window_start"])
-            ind_end = ind_start + self._ms_to_sample(baseline_end - baseline_start) + 1
+            baseline_from = self._settings_panel.spin_box_baseline_from.value()
+            baseline_to  = self._settings_panel.spin_box_baseline_to.value()
+            ind_from = self._ms_to_sample(baseline_from - self.SPEED["window_start"])
+            ind_to = ind_from + self._ms_to_sample(baseline_to - baseline_from) + 1
             mean_function = self._settings_panel.combo_box_baseline.currentText()
             func = (lambda x: np.mean(x, axis=1)) if mean_function == 'mean' else (lambda x: np.median(x, axis=1))
-            calculate_baseline = lambda x: func(x[:, ind_start:ind_end]).reshape((-1, 1))
+            calculate_baseline = lambda x: func(x[:, ind_from:ind_to]).reshape((-1, 1))
         
         self._baseline = (lambda x: x - calculate_baseline(x)) if apply_baseline else (lambda x: x)
         # если усреднять и уже есть данные - создать новые функции
@@ -561,7 +562,7 @@ class MainWindow(QWidget):
         
         self._update_data()         # отобразить изменения
     
-    def _on_update_lowpass_button_click(self):
+    def _on_update_lowpass_signal(self):
         apply_filter = self._settings_panel.check_box_lowpass.isChecked()
         if apply_filter:
             f = self._settings_panel.spin_box_lowpass.value()
@@ -573,7 +574,7 @@ class MainWindow(QWidget):
         
         self._update_data()         # отобразить изменения
 
-    def _on_update_rereference_button_click(self):
+    def _on_update_rereference_signal(self):
         apply_reref = self._settings_panel.check_box_rereference.isChecked()
         reref_channel = self._settings_panel.combo_box_rereference.checkedItems()[0] # канал для ререферентации
         idx = np.where(CHANNELS == reref_channel)[0][0] # индекс канала для ререферентации
@@ -590,7 +591,7 @@ class MainWindow(QWidget):
         
         self._update_data()         # отобразить изменения
 
-    def _on_update_CAR_button_click(self):
+    def _on_update_CAR_signal(self):
         apply_CAR = self._settings_panel.check_box_car.isChecked()   # применять ли CAR
         if apply_CAR: 
             CAR_channels = self._settings_panel.combo_box_channels.checkedItems()
@@ -672,11 +673,11 @@ class MainWindow(QWidget):
     def _initial_calculations(self):
         t0 = time.perf_counter()
 
-        self._on_update_CAR_button_click()
-        self._on_update_baseline_button_click()
-        self._on_update_lowpass_button_click()
-        self._on_update_rereference_button_click()
-        self._on_update_averaging_button_click()
+        self._on_update_CAR_signal()
+        self._on_update_baseline_signal()
+        self._on_update_lowpass_signal()
+        self._on_update_rereference_signal()
+        self._on_update_averaging_signal()
 
         self._create_full_transform()
 
