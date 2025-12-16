@@ -32,6 +32,8 @@ from utils.add_to_json import save_sequence
 
 class StimuliPresentation_one_by_one(QWidget):
     stimuliFinished = pyqtSignal()
+    volumeChanged = pyqtSignal(int)
+    playerIsMuted = pyqtSignal()
 
     def __init__(self, stimuli_sequence, monitor=1, volume=80):
         super().__init__()  
@@ -150,6 +152,13 @@ class StimuliPresentation_one_by_one(QWidget):
         else:
             QTimer.singleShot(50, self._check_video_end)
 
+    def update_volume(self, value):
+        self._volume = value
+        self._player.audio_set_volume(self._volume)
+        # print("Volume:", self._volume)
+    
+    def get_last_volume(self):
+        return self._volume
 
     def keyPressEvent(self, event):
         # closing regulation
@@ -166,15 +175,18 @@ class StimuliPresentation_one_by_one(QWidget):
         elif event.key() == Qt.Key_Up:
             self._volume = min(100, self._volume + 1)
             self._player.audio_set_volume(self._volume)
-            print("Volume:", self._volume)
+            self.volumeChanged.emit(self._volume)
+            # print("Volume:", self._volume)
 
         elif event.key() == Qt.Key_Down:
             self._volume = max(0, self._volume - 1)
             self._player.audio_set_volume(self._volume)
-            print("Volume:", self._volume)
+            self.volumeChanged.emit(self._volume)
+            # print("Volume:", self._volume)
 
         elif event.key() == Qt.Key_M:
             self._player.audio_toggle_mute()
+            self.playerIsMuted.emit()
 
         else:
             super().keyPressEvent(event)

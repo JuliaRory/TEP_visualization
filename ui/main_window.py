@@ -259,6 +259,9 @@ class MainWindow(QWidget):
             spin_box.valueChanged.connect(self._update_topoplots)
         
         self._topo_teps_panel.scale_changed.connect(self._on_change_main_scale)
+
+        self._settings_panel.volume_slider.valueChanged.connect(self._on_change_volume)
+        
         
 
     # --- Логика ---
@@ -505,13 +508,34 @@ class MainWindow(QWidget):
         sequence = data.get(seq_name)
 
         n_monitor = self._settings_panel.spin_box_monitor.value() #self.params["stimuli"]["monitor"]
-        self._player_window = StimuliPresentation_one_by_one(sequence, n_monitor)
+        volume = self._settings_panel.volume_slider.value()
+        self._player_window = StimuliPresentation_one_by_one(sequence, n_monitor, volume=volume)
 
         self._player_window.show()
         self._player_window.raise_()
 
         self._player_window.stimuliFinished.connect(self._on_finish_stimuli)                     # !!! настроить чтобы это было в коннекшенс остальных
         # self._player_window.activateWindow()
+        self._player_window.volumeChanged.connect(self._on_player_volume_changed)
+        self._player_window.playerIsMuted.connect(self._on_player_muted)
+
+    def _on_player_volume_changed(self, value):
+        self._settings_panel.volume_slider.setValue(value)
+    
+    def _on_player_muted(self):
+        cur_volume = self._settings_panel.volume_slider.value()
+        if cur_volume == 0:
+            volume = self._player_window.get_last_volume()
+        else:
+            volume = 0
+        self._settings_panel.volume_slider.setValue(volume)
+
+    def _on_change_volume(self, value):
+        # changes from slider
+        pw = getattr(self, "_player_window", None)
+        if isinstance(pw, QWidget) and not pw.isHidden():
+            self._player_window.update_volume(value)
+
 
     def _on_show_epoch_button_click(self):
         if self._specific_epoch: # если был режим показа отдельной эпохи - вернуться к стандартному отображению

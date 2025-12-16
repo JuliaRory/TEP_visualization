@@ -48,7 +48,8 @@
             "monitor": 3, 
             "stimuli_with_record": true,
             "stimuli_filename": "resources/saved_stimuli.json",
-            "video_folder": "resources/videoSamples"
+            "video_folder": "resources/videoSamples",
+            "volume": 80
         },
     "plot":
         {

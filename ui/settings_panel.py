@@ -1,5 +1,5 @@
 from PyQt5.QtWidgets import (
-    QFrame, QGridLayout, QHBoxLayout, QVBoxLayout, QLabel, QScrollArea, QSizePolicy
+    QFrame, QGridLayout, QHBoxLayout, QVBoxLayout, QLabel, QScrollArea, QSizePolicy, QSlider
 )
 from PyQt5.QtGui import QFont, QFontMetrics
 from PyQt5.QtCore import Qt, pyqtSignal
@@ -121,6 +121,11 @@ class SettingsPanel(QFrame):
         self._label_stimuli_choose = QLabel("Выбрать: ", self)
         self.combo_box_stimuli = create_combo_box([], parent=self)
         self._button_update_stimuli = create_button(text='⟳', disabled=False, parent=self, w=30)
+
+        self.volume_slider = QSlider(Qt.Vertical, self)
+        self.volume_slider.setRange(0, 100)
+        self.volume_slider.setValue(self._params["stimuli"]["volume"])
+        
         
     def _setup_data_processings_widgets(self):
         self._processing_frame = QFrame(self)
@@ -214,13 +219,18 @@ class SettingsPanel(QFrame):
         layout_monitor = create_hbox([self._label_monitor, self.spin_box_monitor, self.check_box_stimuli_record])
 
                                                                 # Vertical layout
-        layout = QVBoxLayout(self._stimuli_manager_frame)       # +-----------------------|
+        layout = QVBoxLayout()                                  # +-----------------------|
         layout.addWidget(self._label_stimuli)                   # | Стимулы               |
         layout.addLayout(layout_stimuli)                        # | Выбрать __________ ⟳ |
         layout.addLayout(layout_monitor)                        # | Монитор __  _запись__ |
         layout.addWidget(self.button_stimuli)                   # | Показ стимулов        |
         layout.addWidget(self.button_create_stimuli)            # | Создать новые стимулы |
                                                                 # +-----------------------+
+
+        final_layout = QHBoxLayout(self._stimuli_manager_frame)
+        final_layout.addLayout(layout)
+        final_layout.addWidget(self.volume_slider)
+        
         
     def _setup_processing_frame(self):
         layout_processing = create_hbox([self._label_processing, self.button_processing])
