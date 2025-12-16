@@ -6,7 +6,6 @@ from PyQt5.QtCore import Qt, pyqtSignal
 
 import json
 
-
 from utils.ui_helpers import (
     create_button, create_spin_box, create_check_box, create_combo_box, create_checkable_combobox, create_lineedit
 )
@@ -77,11 +76,8 @@ class SettingsPanel(QFrame):
         # --- Режим: усреднение или одиночные пробы ---
         self._label_epochs = QLabel("ПРОСМОТР ЭПОХ", self)
         self._label_data = QLabel("Выводить:", self)
-        self.combo_box_mode_data = create_combo_box(items=["Новые данные", "Сравнение"], 
+        self.combo_box_mode_data = create_combo_box(items=["Новые данные", "Загруженные"], 
                                         curr_item_idx=self._params["curr_mode_data_idx"], parent=self)
-        self._label_mode = QLabel("Формат", self)
-        self.combo_box_mode = create_combo_box(items=["Усреднение", "Одиночные пробы"], 
-                                        curr_item_idx=self._params["curr_mode_idx"], parent=self)
         
         # --- Управление эпохами (сохранение, загрузка и тд) ---
         self.button_show_epoch = create_button('Show #', disabled=True, parent=self)
@@ -150,7 +146,6 @@ class SettingsPanel(QFrame):
         self._label_ms = QLabel("мс", self)
         self.combo_box_baseline = create_combo_box(self._proc_params['baseline_methods'], 
                                             curr_item=self._proc_params["curr_baseline_method"],parent=self)
-
         
     # =======================
     # =====   LAYOUT    =====
@@ -182,16 +177,14 @@ class SettingsPanel(QFrame):
 
     def _setup_epochs_frame(self):
         layout_data = create_hbox([self._label_data, self.combo_box_mode_data])
-        layout_mode = create_hbox([self._label_mode, self.combo_box_mode])
         layout_control_epoch = create_hbox([self.button_show_epoch, self.spin_box_show_epoch, self.button_remove_epoch, self.spin_box_remove_epoch])
         layout_records_history = create_hbox([self.button_load, self.button_save, self.button_restart])
 
                                                                 # Vertical layout
         layout = QVBoxLayout(self._epochs_manager_frame)        # +-----------------------|
         layout.addWidget(self._label_epochs)                    # | ПРОСМОТР ЭПОХ         |
-        layout.addLayout(layout_data)                           # | Новые/Загрузить       |
-        layout.addLayout(layout_mode)                           # | Среднее / Одиночные   |
         layout.addLayout(layout_control_epoch)                  # | Show   #  Delete   #  |
+        layout.addLayout(layout_data)                           # | Новые/Загрузить       |
         layout.addLayout(layout_records_history)                # | Load   Save   Clear   |
                                                                 # +-----------------------+
     

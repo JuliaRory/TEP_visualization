@@ -23,6 +23,12 @@ from .stimuli_window import StimuliCreation
 
 from utils.averaging_math import RollingMean, RollingMedian, RollingTrimMean
 from utils.concat_videos import concat_videos_by_order
+ 
+from logic.sources.stream import StreamSource
+from logic.data_processor import DataProcessor
+from settings.settings import Settings 
+from settings.settings_handler import SettingsHandler
+from logic.plot_updater import PlotUpdater
 
 WIDTH_SET, HEIGHT_SET = 1850, 900  # параметры изначального окна интерфейса
 MICROVOLT = "\u03BC"+"V"
@@ -60,28 +66,7 @@ PALETTE = {
 }
 
 class MainWindow(QWidget):
-    """
-    Открывает приложение для проведения исследования с ТВП. 
-    Позволяет:
-        - проводить онлайн-обработку ЭЭГ и ЭМГ; 
-        - визуализировать ТВП и МВП;
-        - писать записи с резонанса; 
-        - сохранять вырезанные по триггеру - импульсу ТМС - эпохи;
-        - собирать и презентовать стимулы.
-
-    Attributes:
-        params (dict): словарь с параметрами приложения
-        SPEED (dict): словарь с параметрами для модуля SPEED
-        autosave_file (str): путь к файлу для автосохранения вырезаемых эпох
-    Args:
-        input_stream (?): пустышка для функции-обработчика входного потока
-        resonance (?): прокси-резонанса (для управления его серверами)
-        filename_params (str): название файла с настройками приложения
-
-    Signals:
-        start_calc_signal (pyqtSignal): срабатывает после всех Qt-процессов для запуска рассчётов необходимых мат функций
-    """
-
+    
     start_calc_signal = pyqtSignal()
 
     def __init__(self, input_stream, resonance, filename_params):
@@ -92,9 +77,16 @@ class MainWindow(QWidget):
         self.resize(WIDTH_SET, HEIGHT_SET)
         #self.setWindowIcon(QtGui.QIcon(r"./pictures/icon.png"))
 
+        self.settings = Settings()                                                   # Хранилище настроек
+        self._settings_handler = SettingsHandler(self.settings)                      # Обработчик настроек
+
+        self._input_stream = StreamSource(input_stream)     # Приёмник входных данных
+        #self._load_data = FileSource()                     # Приёмник загружаемых данных
+        
+        self._data_processor = DataProcessor()              # Обработчик данных (эпох)
+        # self._plot_updater = PlotUpdater(topo_panel, overview_panel, meps_panel, params)
+
         # == Параметры и структуры данных ==
-        self._dispatcher = input_stream                    # пустая-функция обработчик входящего потока от резонанса     
-        self._dispatcher.set_callback(self._get_data)      # установить новую функцию-обработчик входящего потока
 
         self._resonance = resonance                       # прокси для управления резонансными модулями
 
@@ -166,7 +158,7 @@ class MainWindow(QWidget):
         self._dset = self.autosave_file.create_dataset("epochs", (0, 66), maxshape=(None, 66), dtype='float32')  # для эпох (64 EEG + 2 EMG)
         self._tset = self.autosave_file.create_dataset("timestamps", (0, ), maxshape=(None, ), dtype='int64')    # для таймстемпов резонанса (в нс)
 
-    # --- UI ---
+    # --- UI: WIDGETS---
     def _setup_ui(self):
         """Создаёт все элементы интерфейса"""
 
@@ -191,7 +183,7 @@ class MainWindow(QWidget):
         
         
 
-    # --- Layout ---
+    # --- UI: Layout ---
     def _setup_main_grid(self):
         # Grid layout (all widgets in splitters):
         # +-------+-------------------------+---------+ 
@@ -200,7 +192,7 @@ class MainWindow(QWidget):
         # |       |                         |  TEPs   |
         # |       |                         |         |
         # |       +-------------------------+         |
-        # |       |      MEP epochs         |   MEPs  |
+        # |       |      MEP epochs         |  MEPs   |
         # |       |                         |         |
         # +-------+-------------------------+---------+
 
@@ -233,50 +225,64 @@ class MainWindow(QWidget):
         # фильтр событий на splitter
         self.splitter.installEventFilter(self)
 
-    # --- Сигналы ---
+    # --- Connections ---
     def _setup_connections(self):
+        self._input_stream.dataReady.connect(self._data_processor.add_epoch)
+        self._data_processor.newDataProcessed.connect(lambda: self._plot_updater.update_plots(self._data_processor))
+
+        # начальная замедленная инициализиация всех вычислений для уменьшения подтупливаний при запуске приложения
         self.start_calc_signal.connect(self._initial_calculations)
 
+        # работа с эпохами
+        self._settings_panel.combo_box_mode_data.currentIndexChanged[int].connect(self._on_change_mode_data)
         self._settings_panel.button_save.clicked.connect(self._on_button_save_click)
         self._settings_panel.button_load.clicked.connect(self._on_button_load_click)
         self._settings_panel.button_restart.clicked.connect(self._on_restart_button_click)
+        self._settings_panel.button_remove_epoch.clicked.connect(self._on_remove_epoch_button_click)
+
+        # работа с nvx
         self._settings_panel.button_nvx_record.clicked.connect(self._on_record_button_click)
+
+        # работа со стимулами
         self._settings_panel.button_create_stimuli.clicked.connect(self._on_create_stimuli_button_click)
         self._settings_panel.button_stimuli.clicked.connect(self._on_stimuli_button_click)
         self._settings_panel.button_show_epoch.clicked.connect(self._on_show_epoch_button_click)
-        self._settings_panel.button_remove_epoch.clicked.connect(self._on_remove_epoch_button_click)
-
+               
+        # работа с обработкой данных
+        # -- checkboxы для быстрого переключения
+        self._settings_panel.check_box_average.toggled.connect(self._on_switch_averaging)
+        self._settings_panel.check_box_lowpass.toggled.connect(self._on_switch_lowpass_filtering)
+        self._settings_panel.check_box_rereference.toggled.connect(self._on_switch_rereferencing)
+        self._settings_panel.check_box_car.toggled.connect(self._on_switch_car_filtering)
+        self._settings_panel.check_box_baseline.toggled.connect(self._on_switch_baseline_correcting)
+        # -- изменение параметров обработки
         self._settings_panel.averagingChanged.connect(self._on_update_averaging_signal)
         self._settings_panel.lowpassChanged.connect(self._on_update_lowpass_signal)
         self._settings_panel.rereferenceChanged.connect(self._on_update_rereference_signal)
         self._settings_panel.CARChanged.connect(self._on_update_CAR_signal)
         self._settings_panel.baselineChanged.connect(self._on_update_baseline_signal)
-        
-        self._settings_panel.combo_box_mode.currentIndexChanged[int].connect(self._on_change_mode)
-        self._settings_panel.combo_box_mode_data.currentIndexChanged[int].connect(self._on_change_mode_data)
 
+        # изменение масштаба для визуализации 
         for spin_box in self._overview_panel.spinbox_ts:
             spin_box.valueChanged.connect(self._update_topoplots)
-        
         self._topo_teps_panel.scale_changed.connect(self._on_change_main_scale)
         
-
     # --- Логика ---
     def _get_data(self, msg, timestamp):
         # если режим обработки новых данных
         if self._process_new_data:
             self._save_data(msg, timestamp)     # сохранить новые данные
             
-            self._n_epoch += 1                   # обновить счётчик количества эпох
+            # self._n_epoch += 1                   # обновить счётчик количества эпох
             self._update_label_counter(self._n_epoch)
 
             # распаковать "сообщение" в формате {"TEPs": list of EEG data in microvolt} 
             # data = np.array(json.loads(msg)["TEPs"]).T  # [n_channels x n_samples]
             
-            data = np.array(msg).T          # [n_channels x n_samples], n_channels = EEG_channels + 2 EMG_channels
+            # data = np.array(msg).T          # [n_channels x n_samples], n_channels = EEG_channels + 2 EMG_channels
 
-            self._epochs.append(data)        # добавить в список хранимых эпох -> [n_epoch x n_channels x n_samples]
-            self._ts.append(timestamp)       # только для сохранения таймстемпов резонанса в файлы
+            # self._epochs.append(data)        # добавить в список хранимых эпох -> [n_epoch x n_channels x n_samples]
+            # self._ts.append(timestamp)       # только для сохранения таймстемпов резонанса в файлы
 
             if self._average_data:                    # если режим усреднения, обновить функции усреднения
                 TEPs = data[:-2, :] * 10**6           # выделить только TEPs и преобразовать в мкВ
