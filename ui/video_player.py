@@ -33,8 +33,10 @@ from utils.add_to_json import save_sequence
 class StimuliPresentation_one_by_one(QWidget):
     stimuliFinished = pyqtSignal()
 
-    def __init__(self, stimuli_sequence, monitor=1):
+    def __init__(self, stimuli_sequence, monitor=1, volume=80):
         super().__init__()  
+
+        self._volume = volume
 
         self._stopped = False
         self._finished = False
@@ -125,6 +127,9 @@ class StimuliPresentation_one_by_one(QWidget):
         media.parse_async()  # preload
 
         self._player.set_media(media)
+
+        self._player.audio_set_volume(self._volume)
+
         self._player.play()
 
         # Скрываем placeholder через 50ms после старта VLC
@@ -147,6 +152,7 @@ class StimuliPresentation_one_by_one(QWidget):
 
 
     def keyPressEvent(self, event):
+        # closing regulation
         if event.key() == Qt.Key_Escape:
             self._stopped = True           # ставим флаг остановки
             self._player.stop()
@@ -155,6 +161,21 @@ class StimuliPresentation_one_by_one(QWidget):
             if not self._finished:
                 self.stimuliFinished.emit()
             self.close()
+
+        # volume regulation
+        elif event.key() == Qt.Key_Up:
+            self._volume = min(100, self._volume + 1)
+            self._player.audio_set_volume(self._volume)
+            print("Volume:", self._volume)
+
+        elif event.key() == Qt.Key_Down:
+            self._volume = max(0, self._volume - 1)
+            self._player.audio_set_volume(self._volume)
+            print("Volume:", self._volume)
+
+        elif event.key() == Qt.Key_M:
+            self._player.audio_toggle_mute()
+
         else:
             super().keyPressEvent(event)
             

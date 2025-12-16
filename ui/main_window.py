@@ -504,7 +504,7 @@ class MainWindow(QWidget):
 
         sequence = data.get(seq_name)
 
-        n_monitor = self.params["stimuli"]["monitor"]
+        n_monitor = self._settings_panel.spin_box_monitor.value() #self.params["stimuli"]["monitor"]
         self._player_window = StimuliPresentation_one_by_one(sequence, n_monitor)
 
         self._player_window.show()
