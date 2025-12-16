@@ -114,5 +114,21 @@
             "dur_ms": 3000,
             "filename": "cross_image_white_photomark.png"
         }
+    },
+    "short_test": {
+        "set": {
+            "1": "audio_countdown_3.mkv",
+            "2": "triple_white_black_750_onlyTriplet_+300_audio30.mkv",
+            "3": "triple_white_black_750_onlyTriplet_+300_audio0.mkv"
+        },
+        "order": [
+            1,
+            2,
+            3
+        ],
+        "cross": {
+            "dur_ms": 1000,
+            "filename": "cross_image_white_photomark.png"
+        }
     }
 }

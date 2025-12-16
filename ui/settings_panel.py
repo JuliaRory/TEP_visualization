@@ -110,7 +110,7 @@ class SettingsPanel(QFrame):
     def _setup_stimuli_manager_widgets(self):
         self._stimuli_manager_frame = QFrame(self)
         self._label_stimuli = QLabel("СТИМУЛЫ", self)
-        self.button_create_stimuli = create_button(text='Создать стимулы', disabled=False, parent=self)
+        self.button_create_stimuli = create_button(text='Создать', disabled=False, parent=self)
 
         self._label_monitor = QLabel("монитор", self)
         self.spin_box_monitor = create_spin_box(1, 3, self._params["stimuli"]["monitor"], parent=self)
@@ -215,16 +215,17 @@ class SettingsPanel(QFrame):
                                                                 # +-----------------------+
 
     def _setup_stimuli_frame(self):
+        layout_stimuli_creation = create_hbox([self._label_stimuli, self.button_create_stimuli])
         layout_stimuli = create_hbox([self._label_stimuli_choose, self.combo_box_stimuli, self._button_update_stimuli])
         layout_monitor = create_hbox([self._label_monitor, self.spin_box_monitor, self.check_box_stimuli_record])
 
                                                                 # Vertical layout
         layout = QVBoxLayout()                                  # +-----------------------|
-        layout.addWidget(self._label_stimuli)                   # | Стимулы               |
+        layout.addLayout(layout_stimuli_creation)               # | Стимулы   Создать     |
         layout.addLayout(layout_stimuli)                        # | Выбрать __________ ⟳ |
         layout.addLayout(layout_monitor)                        # | Монитор __  _запись__ |
         layout.addWidget(self.button_stimuli)                   # | Показ стимулов        |
-        layout.addWidget(self.button_create_stimuli)            # | Создать новые стимулы |
+        # layout.addWidget(self.button_create_stimuli)          # |                       |
                                                                 # +-----------------------+
 
         final_layout = QHBoxLayout(self._stimuli_manager_frame)

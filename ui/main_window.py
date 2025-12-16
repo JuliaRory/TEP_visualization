@@ -491,6 +491,7 @@ class MainWindow(QWidget):
         self._create_stimuli_window.show()
 
     def _on_stimuli_button_click(self):
+       
         # начать запись
         if self._settings_panel.check_box_stimuli_record.isChecked():
             self._on_record_button_click()
@@ -518,6 +519,8 @@ class MainWindow(QWidget):
         # self._player_window.activateWindow()
         self._player_window.volumeChanged.connect(self._on_player_volume_changed)
         self._player_window.playerIsMuted.connect(self._on_player_muted)
+
+        # self._settings_panel
 
     def _on_player_volume_changed(self, value):
         self._settings_panel.volume_slider.setValue(value)

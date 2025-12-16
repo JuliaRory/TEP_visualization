@@ -3,6 +3,8 @@ import time
 
 import vlc
 
+import random
+
 from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QLabel
 from PyQt5.QtCore import Qt, pyqtSignal, QTimer, QMetaObject, QThread
 from PyQt5.QtGui import QKeyEvent, QPixmap, QImage
@@ -34,6 +36,7 @@ class StimuliPresentation_one_by_one(QWidget):
     stimuliFinished = pyqtSignal()
     volumeChanged = pyqtSignal(int)
     playerIsMuted = pyqtSignal()
+    _videoEnded = pyqtSignal()
 
     def __init__(self, stimuli_sequence, monitor=1, volume=80):
         super().__init__()  
@@ -42,10 +45,17 @@ class StimuliPresentation_one_by_one(QWidget):
 
         self._stopped = False
         self._finished = False
+        self._sequence_started = False
+        self._is_paused = False
         self._cross_dur_ms = stimuli_sequence["cross"]["dur_ms"]      # проигрвать крест 
         self.placeholder_path = os.path.join(r"resources\crossFigures", stimuli_sequence["cross"]["filename"])
 
-        self.final_pic_path = os.path.join(r"resources\crossFigures", "final_picture.png")
+        # self.final_pic_path = os.path.join(r"resources\crossFigures", "final_picture.png")
+        final_fig_files = os.listdir(r"resources\final_fig")
+        self.final_pic_path = os.path.join(r"resources\final_fig", random.choice(final_fig_files))
+        print(self.final_pic_path)
+
+        # self.final_pic_path = os.path.join(r"resources\final_fig", "final_1.png")
 
         # Настройка экрана
         screens = QApplication.instance().screens()
@@ -70,6 +80,10 @@ class StimuliPresentation_one_by_one(QWidget):
             '--no-spu'
             )
         self._player = self._instance.media_player_new()
+
+        # Привязка событий
+        events = self._player.event_manager()
+        events.event_attach(vlc.EventType.MediaPlayerEndReached, self._on_end_reached)
 
         # Видео виджет
         self._video_widget = QWidget(self)
@@ -103,44 +117,84 @@ class StimuliPresentation_one_by_one(QWidget):
         self._placeholder_widget.show()
 
         # Запуск воспроизведения
-        self._play_next_video()
-        # self._show_placeholder_then_play()
-
+        self._prepare_next_video()
+        print('[VLC player]: press Space to start.')
+        
     def _show_placeholder_then_play(self):
         """Показываем placeholder, затем запускаем видео через короткую задержку"""
         self._placeholder_widget.show()
 
         QTimer.singleShot(self._cross_dur_ms, self._play_next_video)  
 
-    def _play_next_video(self):
-        if self._stopped:
-            return
+    def _prepare_next_video(self):
+        
         if self._current_index >= len(self.video_files):
-            self.stimuliFinished.emit()
-            self._finished = True
-
-            self._placeholder_widget.setPixmap(self._final_pic)
-            self._placeholder_widget.show()
-            # QTimer.singleShot(50, self._end)
+            self._next_media = None
             return
 
         video_path = self.video_files[self._current_index]
         media = self._instance.media_new(video_path)
         media.parse_async()  # preload
 
-        self._player.set_media(media)
+        # self._player.set_media(media)
 
+        # Сохраняем для следующего проигрывания
+        self._next_media = media
+
+        
+    def _play_next_video(self):
+        if self._stopped:
+            print('[VLC player]: stimuli presentation was stopped.')
+            return
+        
+        if self._next_media is None:
+            print("[VLC player]: stimuli sequence was ended.")
+            self.stimuliFinished.emit()
+            self._finished = True
+
+            self._placeholder_widget.setPixmap(self._final_pic)
+            self._placeholder_widget.show()
+            return
+        
+        self._placeholder_widget.show()
+        
+        # self._player.stop()
+        self._player.set_media(self._next_media)
         self._player.audio_set_volume(self._volume)
-
         self._player.play()
 
+        self._current_index += 1
+        self._prepare_next_video()
+        self._is_paused = False
+
         # Скрываем placeholder через 50ms после старта VLC
-        delay = 100 if self._current_index > 0 else 0
+        delay = 50 # if self._current_index > 0 else 0
         QTimer.singleShot(delay, self._placeholder_widget.hide)
 
-        self._current_index += 1
         # Проверяем окончание видео каждые 50ms
         QTimer.singleShot(50, self._check_video_end)
+    
+        # Таймер для плавной замены: placeholder за 100 мс до конца
+        # QTimer.singleShot(50, self._schedule_placeholder_before_end)
+
+    # Показ placeholder за 100 мс до конца видео
+    def _schedule_placeholder_before_end(self, pre_ms=100):
+        length = self._player.get_length()
+        if length <= 0:
+            # если длина ещё не готова, повторяем через 50 мс
+            QTimer.singleShot(50, self._schedule_placeholder_before_end)
+            return
+        remaining = max(0, length - self._player.get_time() - pre_ms)
+        QTimer.singleShot(remaining, self._placeholder_widget.show)
+
+    def _wait_for_first_frame(self):
+        state = self._player.get_state()
+        if state in (vlc.State.Playing, vlc.State.Buffering):
+            # первый кадр уже рендерится
+            self._placeholder_widget.hide()
+        else:
+            # повторяем проверку каждые 30 мс
+            QTimer.singleShot(30, self._wait_for_first_frame)
 
     def _check_video_end(self):
         if self._stopped:
@@ -151,6 +205,33 @@ class StimuliPresentation_one_by_one(QWidget):
             QTimer.singleShot(self._cross_dur_ms, self._play_next_video)
         else:
             QTimer.singleShot(50, self._check_video_end)
+    
+    def _on_end_reached(self, event):
+        if self._is_paused:
+            return  # если вдруг pause совпал с концом
+        
+        QTimer.singleShot(0, self._videoEnded.emit)
+
+    def _on_space_pressed(self):
+        # 1️⃣ Последовательность ещё не запускалась
+        if not self._sequence_started:
+            print("[VLC player]: start the stimuli presentation.")
+            self._sequence_started = True
+            self._is_paused = False
+            self._play_next_video()
+            return
+
+        # 2️⃣ Видео играет → пауза
+        if not self._is_paused:
+            print("[VLC player]: pause the stimuli presentation.")
+            self._player.pause()
+            self._is_paused = True
+            return
+
+        # 3️⃣ Видео на паузе → продолжить
+        print("[VLC player]: continue the stimuli presentation.")
+        self._player.play()
+        self._is_paused = False
 
     def update_volume(self, value):
         self._volume = value
@@ -161,8 +242,13 @@ class StimuliPresentation_one_by_one(QWidget):
         return self._volume
 
     def keyPressEvent(self, event):
+        # start|stop regulation
+        if event.key() == Qt.Key_Space:
+            self._on_space_pressed()
+
         # closing regulation
-        if event.key() == Qt.Key_Escape:
+        elif event.key() == Qt.Key_Escape:
+            print("[VLC player]: finish the stimuli presentation and close the player.")
             self._stopped = True           # ставим флаг остановки
             self._player.stop()
             self._player.release()
