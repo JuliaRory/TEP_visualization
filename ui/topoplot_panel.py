@@ -7,7 +7,7 @@ from PyQt5.QtCore import Qt
 import numpy as np
 import pandas as pd
 
-from utils.ui_helpers import shortcut_scale, spin_box
+# from utils.ui_helpers import shortcut_scale, spin_box
 from widgets.topoplot_plot import TopoCanvas
 
 MICROVOLT = "\u03BC"+"V"

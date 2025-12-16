@@ -2,7 +2,7 @@ from PyQt5.QtWidgets import (
     QFrame, QGridLayout, QHBoxLayout, QVBoxLayout, QLabel, QScrollArea, QSizePolicy
 )
 from PyQt5.QtGui import QFont, QFontMetrics
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, pyqtSignal
 
 import json
 
@@ -10,16 +10,23 @@ from utils.ui_helpers import (
     create_button, create_spin_box, create_check_box, create_combo_box, create_checkable_combobox, create_lineedit
 )
 from utils.layout_utils import create_hbox, create_vbox
+from utils.logic_helpers import are_equal
 
 
 class SettingsPanel(QFrame):
+    averagingChanged = pyqtSignal()
+    lowpassChanged = pyqtSignal()
+    rereferenceChanged = pyqtSignal()
+    CARChanged = pyqtSignal()
+    baselineChanged = pyqtSignal()
+
     """ Панель с настройками."""
 
     def __init__(self, parent=None, callbacks=None, params=None, channels=None):
         super().__init__(parent)
 
         self.callbacks = callbacks or {}
-        self.params = params or {}
+        self._params = params or {}
         self.channels = channels
 
         self._init_ui()
@@ -30,6 +37,7 @@ class SettingsPanel(QFrame):
         self.setObjectName("settings_panel")    # для привязки стиля
         self.setMinimumWidth(150)
 
+        self._init_state()
         self._setup_frame()
         self._setup_layout()
         self._setup_connections()
@@ -41,13 +49,28 @@ class SettingsPanel(QFrame):
         self.scroll.setWidgetResizable(True)
         self.scroll.setFrameShape(QFrame.NoFrame)
 
-    def _setup_frame(self):
-        self._create_epochs_manager_widgets()
-        self._create_nvx_manager_widgets()
-        self._create_stimuli_manager_widgets()
-        self._create_data_processings_widgets()
+    def _init_state(self):
+        self._proc_params = self._params["processing_settings"]
 
-    def _create_epochs_manager_widgets(self):
+        self._last_aver_method = self._proc_params["curr_aver_method"]
+        self._last_lowpass_freq = self._proc_params["lowpass_freq_Hz"]
+        self._last_rereference_channel = self._proc_params["rereference_channel"]
+        self._last_CAR_except_channels = self._proc_params["CAR_except_channels"]
+        self._last_baseline_method = self._proc_params["curr_baseline_method"]
+        self._last_baseline_from = self._proc_params["baseline_from_ms"]
+        self._last_baseline_to = self._proc_params["baseline_to_ms"]
+
+    
+    # =======================
+    # =====     UI      =====
+    # =======================
+    def _setup_frame(self):
+        self._setup_epochs_manager_widgets()
+        self._setup_nvx_manager_widgets()
+        self._setup_stimuli_manager_widgets()
+        self._setup_data_processings_widgets()
+
+    def _setup_epochs_manager_widgets(self):
         self._epochs_manager_frame = QFrame(self)
 
         # --- Режим: усреднение или одиночные пробы ---
@@ -57,17 +80,16 @@ class SettingsPanel(QFrame):
                                         curr_item_idx=self._params["curr_mode_data_idx"], parent=self)
         
         # --- Управление эпохами (сохранение, загрузка и тд) ---
+        self.button_show_epoch = create_button('Show #', disabled=True, parent=self)
+        self.spin_box_show_epoch = create_spin_box(0, 0, 0, parent=self)
+        self.button_remove_epoch = create_button('Delete #', disabled=True, parent=self)
+        self.spin_box_remove_epoch =create_spin_box(0, 0, 0, parent=self)
+
         self.button_load = create_button(text='Load', disabled=False, parent=self)
         self.button_save = create_button(text='Save', disabled=True, parent=self)
-        
-        self.button_show_epoch = create_button('Show #', disabled=True, parent=self)
-        self.spin_box_show_epoch = spin_box(0, 0, 0, parent=self)
-        self.button_remove_epoch = create_button('Delete #', disabled=True, parent=self)
-        self.spin_box_remove_epoch =spin_box(0, 0, 0, parent=self)
-        
-        self.button_restart = create_button(text='Очистить память', disabled=False, parent=self)
-
-    def _create_nvx_manager_widgets(self):
+        self.button_restart = create_button(text='Clear', disabled=False, parent=self)
+               
+    def _setup_nvx_manager_widgets(self):
         self._nvx_control_frame = QFrame(self)
 
         # --- Управление NVX16 (запуск, запись и тд) ---
@@ -81,28 +103,22 @@ class SettingsPanel(QFrame):
         self.lineedit_record = create_lineedit(parent=self)                                         # record name
         self.button_nvx_record = create_button(text='Запись', disabled=False, parent=self)          # recorder.start()      <-> "Остановить"
 
-    def _create_stimuli_manager_widgets(self):
+    def _setup_stimuli_manager_widgets(self):
         self._stimuli_manager_frame = QFrame(self)
         self._label_stimuli = QLabel("СТИМУЛЫ", self)
         self.button_create_stimuli = create_button(text='Создать стимулы', disabled=False, parent=self)
 
-        label_monitor = QLabel("монитор", self)
-        self.spin_box_monitor = spin_box(1, 3, self.params["stimuli"]["monitor"], parent=self)
-        self._monitor = create_hbox([label_monitor, self.spin_box_monitor])
-
+        self._label_monitor = QLabel("монитор", self)
+        self.spin_box_monitor = create_spin_box(1, 3, self._params["stimuli"]["monitor"], parent=self)
         
         self.button_stimuli = create_button(text='Показ стимулов', disabled=False, parent=self)
-        self.check_box_stimuli_record = check_box(self.params["stimuli"]["stimuli_with_record"], 'Запись NVX', parent=self)
-        self._stimuli_record = create_hbox([self.button_stimuli, self.check_box_stimuli_record])
+        self.check_box_stimuli_record = create_check_box(self._params["stimuli"]["stimuli_with_record"], 'Запись NVX', parent=self)
 
-        label_stimuli = QLabel("Выбрать: ", self)
-        self.combo_box_stimuli = combo_box([], parent=self)
-        # self.button_choose_stimuli = create_button(text='Выбрать', disabled=True, parent=self)
+        self._label_stimuli_choose = QLabel("Выбрать: ", self)
+        self.combo_box_stimuli = create_combo_box([], parent=self)
         self._button_update_stimuli = create_button(text='⟳', disabled=False, parent=self, w=30)
-        self._stimuli = create_hbox([label_stimuli, self.combo_box_stimuli, self._button_update_stimuli])
-        # self.shortcut_restart = self.create_shortcut_button("Delete", self.restart, False)
-
-    def _create_data_processings_widgets(self):
+        
+    def _setup_data_processings_widgets(self):
         self._processing_frame = QFrame(self)
         # --- Обработка эпох в приложении ---
         self._label_processing = QLabel("ОБРАБОТКА", self)
@@ -159,10 +175,10 @@ class SettingsPanel(QFrame):
  
         self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
 
-
     def _setup_epochs_frame(self):
         layout_data = create_hbox([self._label_data, self.combo_box_mode_data])
         layout_control_epoch = create_hbox([self.button_show_epoch, self.spin_box_show_epoch, self.button_remove_epoch, self.spin_box_remove_epoch])
+        layout_records_history = create_hbox([self.button_load, self.button_save, self.button_restart])
 
                                                                 # Vertical layout
         layout = QVBoxLayout(self._epochs_manager_frame)        # +-----------------------|
@@ -171,7 +187,6 @@ class SettingsPanel(QFrame):
         layout.addLayout(layout_data)                           # | Новые/Загрузить       |
         layout.addLayout(layout_records_history)                # | Load   Save   Clear   |
                                                                 # +-----------------------+
-
     
     def _setup_nvx_frame(self):
         layout_qml_control = create_hbox([self.button_nvx_control, self._label_nvx_control])
@@ -187,37 +202,101 @@ class SettingsPanel(QFrame):
         layout.addLayout(layout_record)                         # | record_name   Запись  |
                                                                 # +-----------------------+
 
-    def _setup_stimuli_frame(self):                                               
-        layout.addWidget(self._label_stimuli)
-        layout.addLayout(self._stimuli)                 # выбрать стимулы
-        layout.addLayout(self._monitor)
-        layout.addLayout(self._stimuli_record)          # начать проигрывать стимулы
-        layout.addWidget(self.button_create_stimuli)    # создать новый видос со стимулами
+    def _setup_stimuli_frame(self):
+        layout_stimuli = create_hbox([self._label_stimuli_choose, self.combo_box_stimuli, self._button_update_stimuli])
+        layout_monitor = create_hbox([self._label_monitor, self.spin_box_monitor, self.check_box_stimuli_record])
+
+                                                                # Vertical layout
+        layout = QVBoxLayout(self._stimuli_manager_frame)       # +-----------------------|
+        layout.addWidget(self._label_stimuli)                   # | Стимулы               |
+        layout.addLayout(layout_stimuli)                        # | Выбрать __________ ⟳ |
+        layout.addLayout(layout_monitor)                        # | Монитор __  _запись__ |
+        layout.addWidget(self.button_stimuli)                   # | Показ стимулов        |
+        layout.addWidget(self.button_create_stimuli)            # | Создать новые стимулы |
+                                                                # +-----------------------+
         
     def _setup_processing_frame(self):
-        layout = QVBoxLayout(self._processing_frame)
-
-        layout.addWidget(self._label_aver_main)
-        layout.addLayout(self._aver_mode)
-
-        layout.addWidget(self._label_lowpass_main)
-        layout.addLayout(self._lowpass)
-
-        layout.addWidget(self._label_reref_main)
-        layout.addLayout(self._rereference)
-
-        layout.addWidget(self._label_CAR_main)
-        layout.addLayout(self._car)
-
-        layout.addWidget(self._label_baseline_main)
-        layout.addLayout(self._baseline_range)
-        layout.addLayout(self._baseline_mode)
-
+        layout_processing = create_hbox([self._label_processing, self.button_processing])
+        layout_aver_mode = create_hbox([self.check_box_average, self.combo_box_aver])
+        layout_lowpass = create_hbox([self.check_box_lowpass, self.spin_box_lowpass, self._label_hz])
+        layout_rereference = create_hbox([self.check_box_rereference, self.combo_box_rereference])
+        layout_car = create_hbox([self.check_box_car, self._label_CAR_except, self.combo_box_channels])
+        layout_baseline_method = create_hbox([self.check_box_baseline, self.combo_box_baseline])
+        layout_baseline_range = create_hbox([self._label_start, self.spin_box_baseline_from, 
+                                        self._label_end, self.spin_box_baseline_to, self._label_ms,
+                                        ])
+        layout_baseline = QVBoxLayout()
+        layout_baseline.addLayout(layout_baseline_method)
+        layout_baseline.addLayout(layout_baseline_range)
+      
+        
+                                                               # Vertical layout
+        layout = QVBoxLayout(self._processing_frame)           # +------------------------------|
+        layout.addLayout(layout_processing)                    # | ОБРАБОТКА ДАННЫХ  применить  |
+        layout.addLayout(layout_aver_mode)                     # | _Усреднение: __mean__        |
+        layout.addLayout(layout_lowpass)                       # | _ФНЧ:  _____ Гц              |
+        layout.addLayout(layout_rereference)                   # | _Референт:  _____            |
+        layout.addLayout(layout_car)                           # | _CAR кроме: _____            |
+        layout.addLayout(layout_baseline)                      # | _Baseline метод: __mean__    |
+                                                               # | от __ до __ мс               |
+                                                               # +------------------------------+
     
+    # =======================
+    # =====   Сигналы    ====
+    # =======================
+    def _setup_connections(self):
+        self._button_update_stimuli.clicked.connect(self._update_combo_box_stimuli)
+        self.button_processing.clicked.connect(self._on_processing_button_click)
+        
+        # self.combo_box_aver.currentTextChanged[str].connect(lambda text: setattr(self, "_last_aver_method", text))
+        # self.spin_box_lowpass.valueChanged[int].connect(lambda value: setattr(self, "_last_lowpass_freq", value))
+        # self.combo_box_rereference.textChanged[list].connect(lambda value: setattr(self, "_last_rereference_channel", value))
+        # self.combo_box_channels.textChanged[list].connect(lambda value: setattr(self, "_last_CAR_except_channels", value))
+        # self.combo_box_baseline.currentTextChanged[str].connect(lambda text: setattr(self, "_last_baseline_method", text))
+        # self.spin_box_baseline_from.valueChanged[int].connect(lambda value: setattr(self, "_last_baseline_from", value))
+        # self.spin_box_baseline_to.valueChanged[int].connect(lambda value: setattr(self, "_last_baseline_to", value))
+
+
+    # =======================
+    # =====   Логика    =====
+    # =======================
+
+    def _on_processing_button_click(self):
+        if ~are_equal(self.combo_box_aver.currentText(), self._last_aver_method):
+            self._last_aver_method = self.combo_box_aver.currentText()
+            self.averagingChanged.emit()
+        
+        if ~are_equal(self.spin_box_lowpass.value(), self._last_lowpass_freq):
+            self._last_lowpass_freq = self.spin_box_lowpass.value()
+            self.lowpassChanged.emit()
+        
+        if ~are_equal(self.combo_box_rereference.checkedItems(), self._last_rereference_channel):
+            self._last_rereference_channel = self.combo_box_rereference.checkedItems()
+            self.rereferenceChanged.emit()
+
+        if ~are_equal(self.combo_box_channels.checkedItems(), self._last_CAR_except_channels):
+            self._last_CAR_except_channels = self.combo_box_channels.checkedItems()
+            self.CARChanged.emit()
+
+        is_baseline_method_changed = ~are_equal(self.combo_box_baseline.currentText(), self._last_baseline_method)
+        is_baseline_from_changed = ~are_equal(self.spin_box_baseline_from.value(), self._last_baseline_from)
+        is_baseline_to_changed = ~are_equal(self.spin_box_baseline_to.value(), self._last_baseline_to)
+        
+        if is_baseline_method_changed:
+            self._last_baseline_method = self.combo_box_baseline.currentText()
+        if is_baseline_from_changed:
+            self._last_baseline_from = self.spin_box_baseline_from.value()
+        if is_baseline_to_changed:
+            self._last_baseline_to = self.spin_box_baseline_to.value()
+
+        if is_baseline_method_changed or is_baseline_from_changed or is_baseline_to_changed:
+            self.baselineChanged.emit()
+
+        
     def _update_combo_box_stimuli(self):
         self.combo_box_stimuli.clear()
         try:
-            with open(self.params["stimuli"]["stimuli_filename"], "r", encoding="utf-8") as f:
+            with open(self._params["stimuli"]["stimuli_filename"], "r", encoding="utf-8") as f:
                 data = json.load(f)
                 if isinstance(data, dict):
                     self.combo_box_stimuli.addItems(data.keys())
@@ -266,8 +345,7 @@ class SettingsPanel(QFrame):
 
         return box
 
-    def _setup_connections(self):
-        self._button_update_stimuli.clicked.connect(self._update_combo_box_stimuli)
+    
 
 
     def _finilize(self):

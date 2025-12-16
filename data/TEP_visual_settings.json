@@ -17,11 +17,28 @@
     "high_freq": 250,
     "rereference": false,
     "rereference_channel": ["Fz"],
+    "processing_settings":
+        {
+            "do_averaging": false,
+            "do_lowpass_filtering": true, 
+            "do_rereferencing": false,
+            "do_CAR_filtering": true, 
+            "do_baseline_correction": true,
+            "aver_methods": ["mean", "median", "trimmean"],
+            "curr_aver_method": "mean",
+            "lowpass_freq_Hz": 250,
+            "rereference_channel": ["Fz"],
+            "CAR_except_channels": ["FT9", "FT10", "TP9", "TP10"], 
+            "baseline_methods": ["mean", "median"],
+            "curr_baseline_method": "mean",
+            "baseline_from_ms": -75,
+            "baseline_to_ms": -20
+        },
     "record":
         {
             "bat_file": "D:/Resonance/distro-dual/msvc/control.bat",
             "bat_file_home": "C:/Users/hodor/Documents/lab-MSU/Works/2025.10_TMS/dist_2024_11_13_imp/control.bat",
-            "activate_bat": true,
+            "activate_bat": false,
             "service_name": "nvx136",
             "records_folder": "C:/Users/hodor/Documents/lab-MSU/Works/2025.10_TMS/TEP_visualization/data/records"
         },
