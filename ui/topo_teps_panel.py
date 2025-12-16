@@ -7,7 +7,7 @@ from PyQt5.QtCore import Qt, pyqtSignal
 import numpy as np
 import pandas as pd
 
-from utils.ui_helpers import create_shortcut_scale, create_spin_box, fit_font_to_width_spinbox
+from utils.ui_helpers import shortcut_scale, spin_box, fit_font_to_width_spinbox
 
 from widgets.teps_plot import TEPsPlot
 MICROVOLT = "\u03BC"+"V"
@@ -64,15 +64,15 @@ class TopoTEPsPanel(QFrame):
     def _setup_ui(self):
         
         """Создаём спинбоксы (и shortcut) для масштабирования графиков"""
-        self.spin_box_scale_ymin = create_spin_box(-10000, 0, self.ymin, step=10, parent=self) 
-        self.spin_box_scale_ymax = create_spin_box(1, 10000, self.ymax, step=10, parent=self) 
-        self.spin_box_scale_xmin = create_spin_box(-1000, 0, self.xmin, step=5, parent=self) 
-        self.spin_box_scale_xmax = create_spin_box(1, 1000, self.xmax, step=5, parent=self) 
+        self.spin_box_scale_ymin = spin_box(-10000, 0, self.ymin, step=10, parent=self) 
+        self.spin_box_scale_ymax = spin_box(1, 10000, self.ymax, step=10, parent=self) 
+        self.spin_box_scale_xmin = spin_box(-1000, 0, self.xmin, step=5, parent=self) 
+        self.spin_box_scale_xmax = spin_box(1, 1000, self.xmax, step=5, parent=self) 
 
-        create_shortcut_scale(keyword="Alt+Up", spin1=self.spin_box_scale_ymax, spin2=self.spin_box_scale_ymin, action='more', parent=self) 
-        create_shortcut_scale(keyword="Alt+Down", spin1=self.spin_box_scale_ymax, spin2=self.spin_box_scale_ymin, action='less', parent=self) 
-        create_shortcut_scale(keyword="Alt+Left", spin1=self.spin_box_scale_xmax, spin2=self.spin_box_scale_xmin, action='less', parent=self) 
-        create_shortcut_scale(keyword="Alt+Right", spin1=self.spin_box_scale_xmax, spin2=self.spin_box_scale_xmin, action='more', parent=self) 
+        shortcut_scale(keyword="Alt+Up", spin1=self.spin_box_scale_ymax, spin2=self.spin_box_scale_ymin, action='more', parent=self) 
+        shortcut_scale(keyword="Alt+Down", spin1=self.spin_box_scale_ymax, spin2=self.spin_box_scale_ymin, action='less', parent=self) 
+        shortcut_scale(keyword="Alt+Left", spin1=self.spin_box_scale_xmax, spin2=self.spin_box_scale_xmin, action='less', parent=self) 
+        shortcut_scale(keyword="Alt+Right", spin1=self.spin_box_scale_xmax, spin2=self.spin_box_scale_xmin, action='more', parent=self) 
 
         self._label_scale_y = QLabel(MICROVOLT, parent=self) 
         self._label_scale_x = QLabel('ms', parent=self) 

@@ -7,7 +7,7 @@ from PyQt5.QtCore import Qt
 import numpy as np
 import pandas as pd
 
-from utils.ui_helpers import create_shortcut_scale, create_spin_box, create_button
+from utils.ui_helpers import shortcut_scale, spin_box, create_button
 from utils.layout_utils import create_hbox, create_vbox
 from widgets.mep_plot import MEPPlot
 
@@ -65,22 +65,22 @@ class MEPsPanel(QFrame):
 
         label1 = QLabel("Макс:", self)
         label2 = QLabel("мВ", self)
-        self._spinbox_max_amp = create_spin_box(0, 1000, self.params["max_amp_mV"], parent=self, w=50)
+        self._spinbox_max_amp = spin_box(0, 1000, self.params["max_amp_mV"], parent=self, w=50)
         self._max_amp = create_hbox([label1, self._spinbox_max_amp, label2])
 
         label = QLabel("N:    ", self)
         label_epmty = QLabel("", self)
-        self._spinbox_n_plots = create_spin_box(1, 10, self.params["n_plots"], parent=self, w=50)
+        self._spinbox_n_plots = spin_box(1, 10, self.params["n_plots"], parent=self, w=50)
         self._n_plots = create_hbox([label, self._spinbox_n_plots, label_epmty])
 
         label1 = QLabel("от:   ", self)
         label3 = QLabel("мс", self)
-        self._spinbox_min_time = create_spin_box(-300, 0, self.params["xmin_ms"], parent=self, w=50)
+        self._spinbox_min_time = spin_box(-300, 0, self.params["xmin_ms"], parent=self, w=50)
         self._time_range_min = create_hbox([label1, self._spinbox_min_time, label3])
 
         label2 = QLabel("до:   ", self)
         label3 = QLabel("мс", self)
-        self._spinbox_max_time = create_spin_box(0, 500, self.params["xmax_ms"], parent=self, w=50)
+        self._spinbox_max_time = spin_box(0, 500, self.params["xmax_ms"], parent=self, w=50)
         self._time_range_max = create_hbox([label2, self._spinbox_max_time, label3])
 
         self._button_apply = create_button('Применить', disabled=False, parent=self, w=150)

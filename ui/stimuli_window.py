@@ -9,7 +9,7 @@ from PyQt5.QtWidgets import (
 from PyQt5.QtGui import QFont, QFontMetrics
 from PyQt5.QtCore import Qt
 
-from utils.ui_helpers import create_button, create_spin_box, create_check_box, create_combo_box, create_lineedit
+from utils.ui_helpers import create_button, spin_box, check_box, combo_box, create_lineedit
 from utils.layout_utils import create_hbox, create_vbox
 
 from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QDialog
@@ -22,7 +22,7 @@ from utils.add_to_json import save_sequence_to_json, define_sequence, save_seque
 from widgets.dragging_label import DraggableLabel, StimulusGroup
 from widgets.sequence_creation_dialog import SequenceDialog
 
-from ui.video_player import StimuliPresentation_one_by_one
+from ui.video_player import StimuliPresentation, StimuliPresentation_one_by_one
 
 class StimuliCreation(QWidget):
     """
@@ -65,10 +65,10 @@ class StimuliCreation(QWidget):
         self._label_load_sequence = QLabel("Загрузить существующую последовательность стимулов", self)
 
         # --- ComboBox для выбора последовательности ---
-        self._sequence_combo = create_combo_box([], parent=self)
+        self._sequence_combo = combo_box([], parent=self)
         self._button_load_sequence = create_button("Загрузить", parent=self)
         self._button_show_sequence = create_button("Показать", parent=self)
-        self._spinbox_monitor = create_spin_box(1, 4, 1, parent=self)
+        self._spinbox_monitor = spin_box(1, 4, 1, parent=self)
         self._layout_load_sequence = create_hbox([self._sequence_combo, self._button_load_sequence, 
                                                   self._button_show_sequence, self._spinbox_monitor])
 
@@ -89,7 +89,7 @@ class StimuliCreation(QWidget):
             self)
 
         label = QLabel("Выбрать стимул:", self)
-        self._combo_box_choose_stimulus = create_combo_box(items=os.listdir(r"resources/videoSamples"), 
+        self._combo_box_choose_stimulus = combo_box(items=os.listdir(r"resources/videoSamples"), 
                                         curr_item_idx=1, parent=self)
         self._button_add_stimulus = create_button("Добавить", parent=self)
 
@@ -112,9 +112,9 @@ class StimuliCreation(QWidget):
         self._button_random_sequence = create_button("Задать случайную последовательность", parent=self)
         self._lineedit_sequence =  create_lineedit(parent=self)
         label_cross = QLabel("Длительность фикс креста: ", self)
-        self._spinbox_cross = create_spin_box(0, 10000, 3000, step=100, parent=self)
+        self._spinbox_cross = spin_box(0, 10000, 3000, step=100, parent=self)
         label_ms = QLabel("ms", self)
-        self._combo_box_cross = create_combo_box(items=os.listdir(r"resources/crossFigures"), 
+        self._combo_box_cross = combo_box(items=os.listdir(r"resources/crossFigures"), 
                                         curr_item_idx=1, parent=self)
         # self._button_add_between = create_button("Вставить между", parent=self)
         self._layout_random_sequence = create_hbox([self._button_random_sequence, self._lineedit_sequence, 

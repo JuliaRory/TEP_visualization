@@ -1,18 +1,14 @@
 from PyQt5.QtWidgets import QComboBox, QListView
-from PyQt5.QtCore import Qt, pyqtSignal
+from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QStandardItemModel, QStandardItem
 
 class CheckableComboBox(QComboBox):
-    textChanged  = pyqtSignal(list)
-
     def __init__(self, parent=None):
         super().__init__(parent)
         view = QListView()
-        view.setSelectionMode(QListView.ExtendedSelection)  
+        view.setSelectionMode(QListView.ExtendedSelection)  # <--- вот это важно
         self.setView(view)
         self.setModel(QStandardItemModel(self))
-
-        self._setup_connections()
 
     def addItem(self, text, checked=True):
         item = QStandardItem(text)
@@ -29,13 +25,6 @@ class CheckableComboBox(QComboBox):
             if item.checkState() == Qt.Checked:
                 checked_list.append(item.text())
         return checked_list
-
-    def _setup_connections(self):
-        self.model().dataChanged.connect(self._on_current_text_changed)
-    
-    def _on_current_text_changed(self):
-        curr_items = self.checkedItems()
-        self.textChanged.emit(curr_items)
     
     def keyPressEvent(self, event):
         # если нажали пробел, переключаем выделенные элементы

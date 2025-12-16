@@ -21,7 +21,7 @@ def create_button(text, callback=None, disabled=False, parent=None, w=None):
         btn.clicked.connect(callback)
     return btn
 
-def create_spin_box(min, max, value, data_type = 'int', step=1, decimals=4, parent=None, w=None, h=None, function=None, disabled=False):
+def spin_box(min, max, value, data_type = 'int', step=1, decimals=4, parent=None, w=None, h=None, function=None, disabled=False):
     if data_type == 'int':
         spin_box = QSpinBox(parent)
     else:
@@ -39,7 +39,7 @@ def create_spin_box(min, max, value, data_type = 'int', step=1, decimals=4, pare
     spin_box.setDisabled(disabled)
     return spin_box
 
-def create_check_box(state, text='', parent=None, function=None):
+def check_box(state, text='', parent=None, function=None):
     check_box = QCheckBox(text, parent)
     if state:
         check_box.toggle()
@@ -47,18 +47,14 @@ def create_check_box(state, text='', parent=None, function=None):
         check_box.stateChanged.connect(function)
     return check_box
 
-def create_checkable_combobox(channels, bad_channels, status=False, w=None, h=None, parent=None):
+def checkable_combobox(channels, bad_channels, status=False, parent=None):
     combobox = CheckableComboBox(parent)
     for item in channels:
         checked = status if item in bad_channels else not status
         combobox.addItem(item, checked)
-    if w is not None:
-        combobox.setFixedWidth(w)
-    if h is not None:
-        combobox.setFixedHeight(h)
     return combobox
 
-def create_combo_box(items, curr_item=None, curr_item_idx=None, parent=None):
+def combo_box(items, curr_item=None, curr_item_idx=None, parent=None):
     combo_box = QComboBox(parent)
     combo_box.addItems(items)
     if curr_item is not None:
@@ -67,13 +63,13 @@ def create_combo_box(items, curr_item=None, curr_item_idx=None, parent=None):
         combo_box.setCurrentIndex(curr_item_idx)
     return combo_box
 
-def create_shortcut_button(keyword, function, enabled=True, parent=None):
+def shortcut_button(keyword, function, enabled=True, parent=None):
     shortcut = QShortcut(QKeySequence(keyword), parent)
     shortcut.activated.connect(function)
     shortcut.setEnabled(enabled)
     return shortcut
 
-def create_shortcut_scale(keyword, spin1, spin2, action, parent=None):
+def shortcut_scale(keyword, spin1, spin2, action, parent=None):
     shortcut = QShortcut(QKeySequence(keyword), parent)
     alpha = 1 if action == 'more' else -1
     shortcut.activated.connect(lambda: (spin1.setValue(spin1.value() + alpha * spin1.singleStep()),
