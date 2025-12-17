@@ -38,6 +38,7 @@ class StimuliPresentation_one_by_one(QWidget):
     stimuliPaused = pyqtSignal()
     volumeChanged = pyqtSignal(int)
     playerIsMuted = pyqtSignal()
+    currIdxChanged = pyqtSignal(int)
     _videoEnded = pyqtSignal()
     
     def __init__(self, stimuli_sequence, monitor=1, volume=80):
@@ -71,6 +72,7 @@ class StimuliPresentation_one_by_one(QWidget):
         video_names = [os.path.join(path, file) for file in video_names]
         self.video_files = [video_names[i-1] for i in self.order]
         self._current_index = 0
+        self.currIdxChanged.emit(self._current_index)
 
         # VLC
         self._instance = vlc.Instance(
@@ -165,6 +167,7 @@ class StimuliPresentation_one_by_one(QWidget):
         self._player.play()
 
         self._current_index += 1
+        self.currIdxChanged.emit(self._current_index)
         self._prepare_next_video()
         self._is_paused = False
 
@@ -227,6 +230,7 @@ class StimuliPresentation_one_by_one(QWidget):
         self._player.stop()
 
         self._current_index = 0
+        self.currIdxChanged.emit(self._current_index)
         self._is_paused = False
         self._sequence_started = False
         self._stopped = False

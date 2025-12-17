@@ -13,6 +13,7 @@ from utils.ui_helpers import (
 from utils.layout_utils import create_hbox, create_vbox
 from utils.logic_helpers import are_equal
 
+from widgets.slider_with_labels import VerticalSliderWithLabel
 
 class SettingsPanel(QFrame):
     averagingChanged = pyqtSignal()
@@ -118,16 +119,21 @@ class SettingsPanel(QFrame):
         self.button_stimuli = create_button(text='Запуск', disabled=False, parent=self)
         self.check_box_stimuli_record = create_check_box(self._params["stimuli"]["stimuli_with_record"], 'Запись NVX', parent=self)
 
-        self.button_stimuli_restart = create_button(text='Заново', disabled=True, parent=self)
+        self.button_stimuli_restart = create_button(text='Заново', disabled=True)
         self.button_stimuli_pause = create_button(text='▶', disabled=True, parent=self)
+
+        self.label_stimuli_idx = QLabel("", self)
 
         self._label_stimuli_choose = QLabel("Выбрать: ", self)
         self.combo_box_stimuli = create_combo_box([], parent=self)
         self._button_update_stimuli = create_button(text='⟳', disabled=False, parent=self, w=30)
 
-        self.volume_slider = QSlider(Qt.Vertical, self)
-        self.volume_slider.setRange(0, 100)
-        self.volume_slider.setValue(self._params["stimuli"]["volume"])
+        self.volume_slider = VerticalSliderWithLabel()
+        self.volume_slider.slider.setValue(self._params["stimuli"]["volume"])
+
+        # self.volume_slider = QSlider(Qt.Vertical, self)
+        # self.volume_slider.setRange(0, 100)
+        # self.volume_slider.setValue(self._params["stimuli"]["volume"])
         
         
     def _setup_data_processings_widgets(self):
@@ -221,7 +227,7 @@ class SettingsPanel(QFrame):
         layout_stimuli_creation = create_hbox([self._label_stimuli, self.button_create_stimuli])
         layout_stimuli = create_hbox([self._label_stimuli_choose, self.combo_box_stimuli, self._button_update_stimuli])
         layout_monitor = create_hbox([self._label_monitor, self.spin_box_monitor, self.check_box_stimuli_record])
-        layout_stimuli_control = create_hbox([self.button_stimuli, self.button_stimuli_pause, self.button_stimuli_restart])
+        layout_stimuli_control = create_hbox([self.button_stimuli, self.button_stimuli_pause, self.label_stimuli_idx])
 
                                                                 # Vertical layout
         layout = QVBoxLayout()                                  # +-----------------------|

@@ -264,6 +264,7 @@ class MainWindow(QWidget):
         
         self._topo_teps_panel.scale_changed.connect(self._on_change_main_scale)
 
+        # self._settings_panel.volume_slider.slider.valueChanged.connect(self._on_change_volume)
         self._settings_panel.volume_slider.valueChanged.connect(self._on_change_volume)
         
         
@@ -504,6 +505,8 @@ class MainWindow(QWidget):
     def _on_finish_stimuli(self):
         if self._record_in_progress:
             self._on_record_button_click()
+        
+        self._settings_panel.label_stimuli_idx.setText(f"")
     
     def _on_start_stimuli(self):
         if self._settings_panel.check_box_stimuli_record.isChecked():
@@ -513,6 +516,9 @@ class MainWindow(QWidget):
     def _on_create_stimuli_button_click(self):
         self._create_stimuli_window = StimuliCreation()
         self._create_stimuli_window.show()
+    
+    def _on_stimuli_idx_changed(self, idx):
+        self._settings_panel.label_stimuli_idx.setText(f"#{idx}")
 
     def _on_stimuli_button_click(self):
         # если стимул-презентейшн уже открыт -> хотим закрыть
@@ -538,7 +544,7 @@ class MainWindow(QWidget):
             sequence = data.get(seq_name)
 
             n_monitor = self._settings_panel.spin_box_monitor.value()
-            volume = self._settings_panel.volume_slider.value()
+            volume = self._settings_panel.volume_slider.slider.value()
             self._player_window = StimuliPresentation_one_by_one(sequence, n_monitor, volume=volume)
 
             self._player_window.show()
@@ -548,6 +554,9 @@ class MainWindow(QWidget):
             self._player_window.stimuliStarted.connect(self._on_start_stimuli)
             self._player_window.stimuliPaused.connect(self._change_button_pause_stimuli_text)
             self._player_window.stimuliFinished.connect(self._on_finish_stimuli)                     # !!! настроить чтобы это было в коннекшенс остальных
+            
+            self._player_window.currIdxChanged.connect(self._on_stimuli_idx_changed)
+
             # self._player_window.activateWindow()
             self._player_window.volumeChanged.connect(self._on_player_volume_changed)
             self._player_window.playerIsMuted.connect(self._on_player_muted)
@@ -559,15 +568,15 @@ class MainWindow(QWidget):
             self._settings_panel.button_stimuli.setText("Завершить")
 
     def _on_player_volume_changed(self, value):
-        self._settings_panel.volume_slider.setValue(value)
+        self._settings_panel.volume_slider.slider.setValue(value)
     
     def _on_player_muted(self):
-        cur_volume = self._settings_panel.volume_slider.value()
+        cur_volume = self._settings_panel.volume_slider.slider.value()
         if cur_volume == 0:
             volume = self._player_window.get_last_volume()
         else:
             volume = 0
-        self._settings_panel.volume_slider.setValue(volume)
+        self._settings_panel.volume_slider.slider.setValue(volume)
 
     def _on_change_volume(self, value):
         # changes from slider
