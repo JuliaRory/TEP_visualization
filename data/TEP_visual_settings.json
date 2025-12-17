@@ -1,5 +1,5 @@
 {   
-    "curr_mode_idx": 0,
+    "curr_mode_idx": 1,
     "curr_mode_data_idx": 0,
     "n_max_save": 1000,
     "n_save": 2,
@@ -39,7 +39,7 @@
         {
             "bat_file": "D:/Resonance/distro-dual/msvc/control.bat",
             "bat_file_home": "C:/Users/hodor/Documents/lab-MSU/Works/2025.10_TMS/dist_2024_11_13_imp/control.bat",
-            "activate_bat": false,
+            "activate_bat": true,
             "service_name": "nvx136",
             "records_folder": "C:/Users/hodor/Documents/lab-MSU/Works/2025.10_TMS/TEP_visualization/data/records"
         },

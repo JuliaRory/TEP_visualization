@@ -57,6 +57,8 @@ class StimuliPresentation_one_by_one(QWidget):
         final_fig_files = os.listdir(r"resources\final_fig")
         self.final_pic_path = os.path.join(r"resources\final_fig", random.choice(final_fig_files))
 
+        self.intro_pic_path = os.path.join(r"resources\crossFigures", "cross_image_black_photomark.png")
+
         # self.final_pic_path = os.path.join(r"resources\final_fig", "final_1.png")
 
         # Настройка экрана
@@ -105,14 +107,20 @@ class StimuliPresentation_one_by_one(QWidget):
 
         # === Placeholder widget поверх всего ===
         self._placeholder_widget = QLabel(self)
-        self._placeholder_widget.setPixmap(
-            QPixmap(self.placeholder_path).scaled(
+        
+
+        self._main_cross_pic = QPixmap(self.placeholder_path).scaled(
                 self.size(), Qt.KeepAspectRatio, Qt.SmoothTransformation
             )
-        )
         self._final_pic = QPixmap(self.final_pic_path).scaled(
                 self.size(), Qt.KeepAspectRatio, Qt.SmoothTransformation
             )
+        
+        self._intro_pic = QPixmap(self.intro_pic_path).scaled(
+                self.size(), Qt.KeepAspectRatio, Qt.SmoothTransformation
+            )
+        
+        self._placeholder_widget.setPixmap(self._intro_pic)
         
         self._placeholder_widget.setGeometry(self.rect())
         self._placeholder_widget.setAlignment(Qt.AlignCenter)
@@ -159,6 +167,8 @@ class StimuliPresentation_one_by_one(QWidget):
             self._placeholder_widget.show()
             return
         
+        if self._current_index == 1:
+            self._placeholder_widget.setPixmap(self._main_cross_pic)
         self._placeholder_widget.show()
         
         # self._player.stop()
