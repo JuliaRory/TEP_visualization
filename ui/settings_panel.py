@@ -115,8 +115,11 @@ class SettingsPanel(QFrame):
         self._label_monitor = QLabel("монитор", self)
         self.spin_box_monitor = create_spin_box(1, 3, self._params["stimuli"]["monitor"], parent=self)
         
-        self.button_stimuli = create_button(text='Показ стимулов', disabled=False, parent=self)
+        self.button_stimuli = create_button(text='Запуск', disabled=False, parent=self)
         self.check_box_stimuli_record = create_check_box(self._params["stimuli"]["stimuli_with_record"], 'Запись NVX', parent=self)
+
+        self.button_stimuli_restart = create_button(text='Заново', disabled=True, parent=self)
+        self.button_stimuli_pause = create_button(text='▶', disabled=True, parent=self)
 
         self._label_stimuli_choose = QLabel("Выбрать: ", self)
         self.combo_box_stimuli = create_combo_box([], parent=self)
@@ -218,13 +221,14 @@ class SettingsPanel(QFrame):
         layout_stimuli_creation = create_hbox([self._label_stimuli, self.button_create_stimuli])
         layout_stimuli = create_hbox([self._label_stimuli_choose, self.combo_box_stimuli, self._button_update_stimuli])
         layout_monitor = create_hbox([self._label_monitor, self.spin_box_monitor, self.check_box_stimuli_record])
+        layout_stimuli_control = create_hbox([self.button_stimuli, self.button_stimuli_pause, self.button_stimuli_restart])
 
                                                                 # Vertical layout
         layout = QVBoxLayout()                                  # +-----------------------|
         layout.addLayout(layout_stimuli_creation)               # | Стимулы   Создать     |
         layout.addLayout(layout_stimuli)                        # | Выбрать __________ ⟳ |
         layout.addLayout(layout_monitor)                        # | Монитор __  _запись__ |
-        layout.addWidget(self.button_stimuli)                   # | Показ стимулов        |
+        layout.addLayout(layout_stimuli_control)                # | Запуск  Пауза  Заново |
         # layout.addWidget(self.button_create_stimuli)          # |                       |
                                                                 # +-----------------------+
 
