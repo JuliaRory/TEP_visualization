@@ -9,7 +9,7 @@ import pandas as pd
 
 from utils.ui_helpers import create_shortcut_scale, create_spin_box, create_button
 from utils.layout_utils import create_hbox, create_vbox
-from widgets.mep_plot import MEPPlot
+from ui.widgets.mep_plot import MEPPlot
 
 MICROVOLT = "\u03BC"+"V"
 

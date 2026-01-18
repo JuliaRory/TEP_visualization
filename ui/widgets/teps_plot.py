@@ -13,29 +13,33 @@ from utils.helpers import get_time_ticks, get_voltage_ticks
 class TEPsPlot(FigureCanvas):
     """Класс для отрисовки графиков"""
     def __init__(self, parent=None, positions=None, single_w=300, single_h=200, w=1000, h=700, dpi=100, channels=None):
+        
         figsize = (w/dpi, h/dpi)
         self.fig = Figure(figsize=figsize, dpi=100) 
         self.fig.patch.set_alpha(0.0)                          # Делаем фон холста matplolib прозрачным
-        
         super().__init__(self.fig)
+
         self.setStyleSheet("background-color:transparent;")    # делаем виджет прозрачнымs
         
         self.setParent(parent)
 
-        self.ax = self.fig.add_axes([0, 0, 1, 1])   # создаём ось на всё пространство графика [left, bottom, width, height]
-        self.ax.set_axis_off()                      # полностью скрываем оси
-        self.ax.patch.set_visible(False)            # убираем фон осей
-        for spine in self.ax.spines.values():       # убираем рамку
-            spine.set_visible(False)
-
-        channels = [f"CH{i+1}" for i in range(len(positions)-1)] if channels is None else channels.tolist()
-        titles = channels + ['']   # последнее без названия - для осей с указанием масштаба
-        
-        fig_w_px, fig_h_px = figsize[0] * dpi, figsize[1] * dpi    # размеры всего пространства в пикселях (для нормализации значений)
-        width, height = single_w / fig_w_px, single_h / fig_h_px   # размеры для одного графика
-
+        ## variables
         self.n_xticks = 5
         self.n_yticks = 4
+        self.channels = channels
+
+        self.ax = self.fig.add_axes([0, 0, 1, 1])   # создаём ось на всё пространство графика [left, bottom, width, height]
+        
+        self.refresh_plots( positions, single_w, single_h)
+       
+        self._xdata = []
+        self._ydata = None
+
+        self._viridisBig = cm.get_cmap('jet')
+    
+    def refresh_plots(self, positions, single_w, single_h):
+        # self.fig.canvas.restore_region(self.background) # восстанавливаем чистый фон
+
         self.ticks = []
         
         self.lines = []       # список с линиями
@@ -43,7 +47,29 @@ class TEPsPlot(FigureCanvas):
         self.texts = []       # список с надписями (названия графиков)
         self.affines = []     # список с преобразованиями для позиционирования
         self.transforms = []
+
+        ## axes
+        self.ax.clear()
+        self.ax.set_axis_off()                      # полностью скрываем оси
+        self.ax.patch.set_visible(False)            # убираем фон осей
+        for spine in self.ax.spines.values():       # убираем рамку
+            spine.set_visible(False)
+        self.create_axes(positions, single_w, single_h)
+
+        self.fig.canvas.draw()      # отрисовка
+        self.background = self.fig.canvas.copy_from_bbox(self.ax.bbox)      # сохранение фона чистого
+
+        self._last_xlim = None  # границы по оси х не заданы
+        self._last_ylim = None  # границы по оси y не заданы      
+
+
+    def create_axes(self, positions, single_w, single_h, channels=None):
+        fig_w_px, fig_h_px = self.fig.get_size_inches() * self.fig.dpi  # ширина и высота в пикселях
+        width, height = single_w / fig_w_px, single_h / fig_h_px   # размеры для одного графика
         
+        channels = [f"CH{i+1}" for i in range(len(positions)-1)] if self.channels is None else self.channels.tolist()
+        titles = channels + ['']   # последнее без названия - для осей с указанием масштаба  
+
         # Создаём все линии, используя трансформации для позиционирования 
         for i, (x_px, y_px) in enumerate(positions):
             # нормализуем координаты
@@ -84,16 +110,20 @@ class TEPsPlot(FigureCanvas):
                                ha='center', va='center', fontsize=8, color='gray')
             self.texts.append(txt)
 
-        self.fig.canvas.draw()      # отрисовка
-        self.background = self.fig.canvas.copy_from_bbox(self.ax.bbox)      # сохранение фона чистого
 
-        self._last_xlim = None  # границы по оси х не заданы
-        self._last_ylim = None  # границы по оси y не заданы
+    # def update_position(self, positions=None, single_w=300, single_h=200, w=1000, h=700, dpi=100):
+    #     fig_w, fig_h = self.fig.get_size_inches() * self.fig.dpi  # ширина и высота в пикселях
 
-        self._xdata = []
-        self._ydata = None
+    #     def px_to_norm(x_px, y_px, w_px, h_px):
+    #         return [x_px / fig_w, y_px / fig_h, w_px / fig_w, h_px / fig_h]
 
-        self._viridisBig = cm.get_cmap('jet')
+    #     for i, (x_px, y_px) in enumerate(positions):  # создаём оси по заданным пиксельным координатам
+    #         self.axes[i].set_position(px_to_norm(x_px, y_px, single_w, single_h))
+        
+    #     self.fig.set_size_inches(w/dpi, h/dpi, forward=True)
+
+    #     self.fig.canvas.draw_idle()
+    #     self.backgrounds = [self.fig.canvas.copy_from_bbox(ax.bbox) for ax in self.axes]
 
     def set_x_shift(self, x_shift, window_dur):
         self._x = np.linspace(x_shift, window_dur+x_shift, window_dur)
@@ -231,20 +261,5 @@ class TEPsPlot(FigureCanvas):
         assert hasattr(self, "_last_xlim"), f"Границы графика ещё не заданы -> невозможно нормализовать данные по оси {axis}."
         xmin, xmax = self._last_xlim if axis == 'x' else self._last_ylim
         return (x - xmin) / (xmax - xmin)
-    
-    
-    
-    def update_position(self, positions=None, single_w=300, single_h=200, w=1000, h=700, dpi=100):
-        fig_w, fig_h = self.fig.get_size_inches() * self.fig.dpi  # ширина и высота в пикселях
-
-        def px_to_norm(x_px, y_px, w_px, h_px):
-            return [x_px / fig_w, y_px / fig_h, w_px / fig_w, h_px / fig_h]
-
-        for i, (x_px, y_px) in enumerate(positions):  # создаём оси по заданным пиксельным координатам
-
-            self.axes[i].set_position(px_to_norm(x_px, y_px, single_w, single_h))
         
-        self.fig.set_size_inches(w/dpi, h/dpi, forward=True)
-
-        self.fig.canvas.draw_idle()
-        self.backgrounds = [self.fig.canvas.copy_from_bbox(ax.bbox) for ax in self.axes]
+    

@@ -15,6 +15,7 @@ from collections import deque
 import subprocess
 
 from .settings_panel import SettingsPanel
+from .processing_panel import ProcessingPanel
 from .topo_teps_panel import TopoTEPsPanel
 from .overview_panel import overviewPanel
 from .meps_panel import MEPsPanel
@@ -26,8 +27,13 @@ from utils.concat_videos import concat_videos_by_order
  
 from logic.sources.stream import StreamSource
 from logic.data_processor import DataProcessor
+
 from settings.settings import Settings 
+from settings.plot_settings import PlotSettings 
+
 from settings.settings_handler import SettingsHandler
+from settings.plot_settings_handler import PlotSettingsHandler
+
 from logic.plot_updater import PlotUpdater
 
 WIDTH_SET, HEIGHT_SET = 1850, 900  # параметры изначального окна интерфейса
@@ -72,20 +78,6 @@ class MainWindow(QWidget):
     def __init__(self, input_stream, resonance, filename_params):
         super().__init__()
 
-        # == Внешний вид окна == 
-        self.setWindowTitle("TEP visualization")
-        self.resize(WIDTH_SET, HEIGHT_SET)
-        #self.setWindowIcon(QtGui.QIcon(r"./pictures/icon.png"))
-
-        self.settings = Settings()                                                   # Хранилище настроек
-        self._settings_handler = SettingsHandler(self.settings)                      # Обработчик настроек
-
-        self._input_stream = StreamSource(input_stream)     # Приёмник входных данных
-        #self._load_data = FileSource()                     # Приёмник загружаемых данных
-        
-        self._data_processor = DataProcessor()              # Обработчик данных (эпох)
-        # self._plot_updater = PlotUpdater(topo_panel, overview_panel, meps_panel, params)
-
         # == Параметры и структуры данных ==
 
         self._resonance = resonance                       # прокси для управления резонансными модулями
@@ -93,10 +85,25 @@ class MainWindow(QWidget):
         with open(filename_params) as json_data:          # вгрузить настройки приложения
             self.params = json.load(json_data)  
         
+        self.settings = Settings()                                                   # Хранилище настроек
+        self.settings_plot = PlotSettings()                                        # Хранилище настроек для отрисовки графиков
+
+        self._input_stream = StreamSource(input_stream)                              # Приёмник (онлайн) данных
+        #self._load_data = FileSource()                                              # Приёмник загружаемых данных
+        
+        self._data_processor = DataProcessor(self.settings)                                       # Обработчик данных (эпох)
+      
+
+        self._settings_handler = SettingsHandler(self.settings, self._data_processor)                      # Обработчик настроек
+        self._settings_handler_plots = PlotSettingsHandler(self.settings_plot)                      # Обработчик настроек
+        
         self._init_state()                                # инициализация начального состояния переменных
         
         # == Визуальная часть интерфейса ==
         self._setup_ui()                                  # создание всех виджетов
+
+        self._plot_updater = PlotUpdater(self._topo_teps_panel, self._overview_panel, self._meps_panel, self.params)
+
         self._setup_main_grid()                           # расположение виджетов на экране
         
         # == Взаимосвязи между элементами интерфейса ==
@@ -105,58 +112,56 @@ class MainWindow(QWidget):
         # == Показать окно ==
         self._post_init()
 
-
     # --- Инициализация ---
     def _init_state(self):
-        """Инициализирует начальное состояние переменных"""
-        self._n_epoch = 0                                   # счётчик количества хранимых в памяти эпох
-        self._epochs = []                                   # список для хранения всех signle-trial TEPs
-        self._ts = []                                       # список для хранения таймстемпов (от резонанса) -- для сохранения эпох only
+        """Инициализирует начальное состояние"""
+        # == Внешний вид окна == 
+        self.setWindowTitle("TEP visualization")
+        self.resize(WIDTH_SET, HEIGHT_SET)
+        #self.setWindowIcon(QtGui.QIcon(r"./pictures/icon.png"))
+    
+        # self._session_loaded = []                              # список с подгруженными датасетами
+        # self._session_loaded_labels = []                       # список с названиями подгруженных файлов (для легенды)
 
-        self._session_loaded = []                              # список с подгруженными датасетами
-        self._session_loaded_labels = []                       # список с названиями подгруженных файлов (для легенды)
-
-        self._record_in_progress = False                    # флаг идёт ли запись
-        if self.params["record"]["activate_bat"]:
-            # Запуск батника с qml-файлом для управления резонансными модулями
+        # self._record_in_progress = False                    # флаг идёт ли запись
+        # if self.settings.record.activate_bat:
+        #     # Запуск батника с qml-файлом для управления резонансными модулями
             
-            try:
-                cwd = os.path.dirname(self.params["record"]["bat_file"]) # cwd = папка с батником
-                subprocess.Popen([self.params["record"]["bat_file"]], cwd=cwd)
-            except:
-                cwd = os.path.dirname(self.params["record"]["bat_file_home"]) # cwd = папка с батником
-                subprocess.Popen([self.params["record"]["bat_file_home"]], cwd=cwd)
+        #     try:
+        #         cwd = os.path.dirname(self.settings.record.bat_file) # cwd = папка с батником
+        #         subprocess.Popen([self.settings.record,bat_file], cwd=cwd)
+        #     except:
+        #         cwd = os.path.dirname(self.settings.record,bat_file_home) # cwd = папка с батником
+        #         subprocess.Popen([self.settings.record.bat_file_home], cwd=cwd)
 
-        self._player_window = None
+        # self._player_window = None
 
-        self._average_data = True if self.params["curr_mode_idx"] == 0 else False           # 0 == "Усреднение" из  ["Усреднение", "Одиночные пробы"]
-        self._process_new_data = True if self.params["curr_mode_data_idx"] == 0 else False  # 0 == "Новые данные" из ["Новые данные", "Сравнение"]
 
-        self.average_functions = []
+        # self.average_functions = []
 
-        self.aver_empty_func = {                                        # dict с функциями для усреднения
-            "mean": lambda x, y, z: RollingMean(x, y, z), 
-            "median": lambda x, y, z: RollingMedian(x, y, z), 
-            "trimmean": lambda x, y, z: RollingTrimMean(x, y, z)
-        }
-        self.aver_method = self.params["aver_methods"][0]
-        self._n_aver_max = self.params["n_aver"]
-        self._aver_all = self.params["aver_all"]
+        # self.aver_empty_func = {                                        # dict с функциями для усреднения
+        #     "mean": lambda x, y, z: RollingMean(x, y, z), 
+        #     "median": lambda x, y, z: RollingMedian(x, y, z), 
+        #     "trimmean": lambda x, y, z: RollingTrimMean(x, y, z)
+        # }
+        # self.aver_method = self.settings.aver_methods[0]
+        # self._n_aver_max = self.settings.n_aver
+        # self._aver_all = self.settings.aver_all
 
-        self._transform = lambda x: x
+        # self._transform = lambda x: x
 
-        self._specific_epoch = False                         # флаг для отслеживания режима показа определенной эпохи или стандартного
+        # self._specific_epoch = False                         # флаг для отслеживания режима показа определенной эпохи или стандартного
         
-        self.SPEED = self.params["SPEED"]
-        self._ms_to_sample = lambda x: int(x / 1000 * self.SPEED["Fs"])                                  # функция для пересчёта мс в сэмплы
-        self._n_samples = self._ms_to_sample(self.SPEED["window_end"] - self.SPEED["window_start"])       # длина эпохи в сэмплах
-        self._time_shift = self._ms_to_sample(0 - self.SPEED["window_start"])                             # смещение относительно нуля для графиков в сэпмлах
+        # self.SPEED = self.params['SPEED']
+        # self._ms_to_sample = lambda x: int(x / 1000 * self.SPEED["Fs"])                                  # функция для пересчёта мс в сэмплы
+        # self._n_samples = self._ms_to_sample(self.SPEED["window_end"] - self.SPEED["window_start"])       # длина эпохи в сэмплах
+        # self._time_shift = self._ms_to_sample(0 - self.SPEED["window_start"])                             # смещение относительно нуля для графиков в сэпмлах
 
-        # --- создать и открыть файл для автоматической записи получаемых данных ---
-        cur_time = datetime.now().strftime("%Y.%m.%d_%H.%M")
-        self.autosave_file = h5py.File(os.path.join("data/autosave", f"{cur_time}.h5"), "w")
-        self._dset = self.autosave_file.create_dataset("epochs", (0, 66), maxshape=(None, 66), dtype='float32')  # для эпох (64 EEG + 2 EMG)
-        self._tset = self.autosave_file.create_dataset("timestamps", (0, ), maxshape=(None, ), dtype='int64')    # для таймстемпов резонанса (в нс)
+        # # --- создать и открыть файл для автоматической записи получаемых данных ---
+        # cur_time = datetime.now().strftime("%Y.%m.%d_%H.%M")
+        # self.autosave_file = h5py.File(os.path.join("data/autosave", f"{cur_time}.h5"), "w")
+        # self._dset = self.autosave_file.create_dataset("epochs", (0, 66), maxshape=(None, 66), dtype='float32')  # для эпох (64 EEG + 2 EMG)
+        # self._tset = self.autosave_file.create_dataset("timestamps", (0, ), maxshape=(None, ), dtype='int64')    # для таймстемпов резонанса (в нс)
 
     # --- UI: WIDGETS---
     def _setup_ui(self):
@@ -166,11 +171,19 @@ class MainWindow(QWidget):
         cen_ratio = self.params["layout"]["center_ratio"]
 
         self._settings_panel = SettingsPanel(parent=self,
-                                            params=self.params,
-                                            channels=CHANNELS)
+                                             settings=self.settings,
+                                             settings_handler=self._settings_handler,
+                                             channels=self.settings.channels)
+
+        self._processing_panel = ProcessingPanel(parent=self,
+                                             settings=self.settings.processing_settings,
+                                             settings_handler=self._settings_handler,
+                                             channels=self.settings.channels)
         
         self._topo_teps_panel = TopoTEPsPanel(parent=self,
-                                         params=self.params, 
+                                         settings=self.settings_plot.topo_teps, 
+                                         speed_settings=self.settings.speed,
+                                         settings_handler=self._settings_handler,
                                          init_size=[int(hor_ratio[1] * WIDTH_SET), int(cen_ratio*HEIGHT_SET)])
         
         self._overview_panel = overviewPanel(parent=self,
@@ -182,7 +195,6 @@ class MainWindow(QWidget):
                                     init_size=[int(hor_ratio[1] * WIDTH_SET), int((1-cen_ratio)*HEIGHT_SET)])
         
         
-
     # --- UI: Layout ---
     def _setup_main_grid(self):
         # Grid layout (all widgets in splitters):
@@ -225,49 +237,37 @@ class MainWindow(QWidget):
         # фильтр событий на splitter
         self.splitter.installEventFilter(self)
 
+
+
     # --- Connections ---
     def _setup_connections(self):
-        self._input_stream.dataReady.connect(self._data_processor.add_epoch)
+        self._settings_handler.setupUI(self._processing_panel, self._plot_updater)
+        self._settings_handler_plots.setupUI(self._plot_updater)
+
+        self._input_stream.dataReady.connect(lambda epoch, ts: self._data_processor.add_epoch(epoch, ts))
         self._data_processor.newDataProcessed.connect(lambda: self._plot_updater.update_plots(self._data_processor))
 
         # начальная замедленная инициализиация всех вычислений для уменьшения подтупливаний при запуске приложения
-        self.start_calc_signal.connect(self._initial_calculations)
+        # self.start_calc_signal.connect(self._initial_calculations)
 
         # работа с эпохами
-        self._settings_panel.combo_box_mode_data.currentIndexChanged[int].connect(self._on_change_mode_data)
-        self._settings_panel.button_save.clicked.connect(self._on_button_save_click)
-        self._settings_panel.button_load.clicked.connect(self._on_button_load_click)
-        self._settings_panel.button_restart.clicked.connect(self._on_restart_button_click)
-        self._settings_panel.button_remove_epoch.clicked.connect(self._on_remove_epoch_button_click)
+        # self._settings_panel.combo_box_mode_data.currentIndexChanged[int].connect(self._on_change_mode_data)
+        # self._settings_panel.button_save.clicked.connect(self._on_button_save_click)
+        # self._settings_panel.button_load.clicked.connect(self._on_button_load_click)
+        # self._settings_panel.button_restart.clicked.connect(self._on_restart_button_click)
+        # self._settings_panel.button_remove_epoch.clicked.connect(self._on_remove_epoch_button_click)
 
         # работа с nvx
-        self._settings_panel.button_nvx_record.clicked.connect(self._on_record_button_click)
+        # self._settings_panel.button_nvx_record.clicked.connect(self._on_record_button_click)
 
-<<<<<<< HEAD
         # работа со стимулами
-=======
->>>>>>> stimuli_volume_update
         self._settings_panel.button_create_stimuli.clicked.connect(self._on_create_stimuli_button_click)
         self._settings_panel.button_stimuli.clicked.connect(self._on_stimuli_button_click)
         self._settings_panel.button_stimuli_pause.clicked.connect(self._on_pause_stimuli_button_click)
         self._settings_panel.button_stimuli_restart.clicked.connect(self._on_restart_stimuli_presentation)
 
-        self._settings_panel.button_show_epoch.clicked.connect(self._on_show_epoch_button_click)
+        # self._settings_panel.button_show_epoch.clicked.connect(self._on_show_epoch_button_click)
                
-        # работа с обработкой данных
-        # -- checkboxы для быстрого переключения
-        self._settings_panel.check_box_average.toggled.connect(self._on_switch_averaging)
-        self._settings_panel.check_box_lowpass.toggled.connect(self._on_switch_lowpass_filtering)
-        self._settings_panel.check_box_rereference.toggled.connect(self._on_switch_rereferencing)
-        self._settings_panel.check_box_car.toggled.connect(self._on_switch_car_filtering)
-        self._settings_panel.check_box_baseline.toggled.connect(self._on_switch_baseline_correcting)
-        # -- изменение параметров обработки
-        self._settings_panel.averagingChanged.connect(self._on_update_averaging_signal)
-        self._settings_panel.lowpassChanged.connect(self._on_update_lowpass_signal)
-        self._settings_panel.rereferenceChanged.connect(self._on_update_rereference_signal)
-        self._settings_panel.CARChanged.connect(self._on_update_CAR_signal)
-        self._settings_panel.baselineChanged.connect(self._on_update_baseline_signal)
-
         # изменение масштаба для визуализации 
         for spin_box in self._overview_panel.spinbox_ts:
             spin_box.valueChanged.connect(self._update_topoplots)
@@ -276,75 +276,33 @@ class MainWindow(QWidget):
         # self._settings_panel.volume_slider.slider.valueChanged.connect(self._on_change_volume)
         self._settings_panel.volume_slider.valueChanged.connect(self._on_change_volume)
         
-        
+
     # --- Логика ---
-    def _get_data(self, msg, timestamp):
-        # если режим обработки новых данных
-        if self._process_new_data:
-            self._save_data(msg, timestamp)     # сохранить новые данные
+
+    # def _get_data(self, msg, timestamp):
+    #     # если режим обработки новых данных
+    #     if self._process_new_data:
+    #         self._save_data(msg, timestamp)     # сохранить новые данные
             
-            # self._n_epoch += 1                   # обновить счётчик количества эпох
-            self._update_label_counter(self._n_epoch)
+    #         # self._n_epoch += 1                   # обновить счётчик количества эпох
+    #         self._update_label_counter(self._n_epoch)
 
-            # распаковать "сообщение" в формате {"TEPs": list of EEG data in microvolt} 
-            # data = np.array(json.loads(msg)["TEPs"]).T  # [n_channels x n_samples]
+    #         # распаковать "сообщение" в формате {"TEPs": list of EEG data in microvolt} 
+    #         # data = np.array(json.loads(msg)["TEPs"]).T  # [n_channels x n_samples]
             
-            # data = np.array(msg).T          # [n_channels x n_samples], n_channels = EEG_channels + 2 EMG_channels
+    #         # data = np.array(msg).T          # [n_channels x n_samples], n_channels = EEG_channels + 2 EMG_channels
 
-            # self._epochs.append(data)        # добавить в список хранимых эпох -> [n_epoch x n_channels x n_samples]
-            # self._ts.append(timestamp)       # только для сохранения таймстемпов резонанса в файлы
+    #         # self._epochs.append(data)        # добавить в список хранимых эпох -> [n_epoch x n_channels x n_samples]
+    #         # self._ts.append(timestamp)       # только для сохранения таймстемпов резонанса в файлы
 
-            if self._average_data:                    # если режим усреднения, обновить функции усреднения
-                TEPs = data[:-2, :] * 10**6           # выделить только TEPs и преобразовать в мкВ
-                TEPs2plot = self._transform(TEPs)     # нужные преобразования -> [n_channels x n_samples]
-                self._update_average_functions(TEPs2plot)
+    #         if self._average_data:                    # если режим усреднения, обновить функции усреднения
+    #             TEPs = data[:-2, :] * 10**6           # выделить только TEPs и преобразовать в мкВ
+    #             TEPs2plot = self._transform(TEPs)     # нужные преобразования -> [n_channels x n_samples]
+    #             self._update_average_functions(TEPs2plot)
 
-            self._update_plots()
+    #         self._update_plots()
     
-    def _update_average_functions(self, TEPs):
-        """обновление функций данными новой эпохи"""
-        for i, ch_data in enumerate(TEPs):
-            avg_funcs = self.average_functions[i]
-            for j in range(len(avg_funcs)):                    
-                avg_funcs[j].add(ch_data[j])        # обновить сохранённые функции усреднения
-    
-    def _calculate_avg_TEP(self):
-        data_aver = []
-        for avg_funcs in self.average_functions:
-            average_TEPs = [f.calculate() for f in avg_funcs]  # усреднённые TEPs
-            data_aver.append(average_TEPs)
-        return  np.array(data_aver)
-    
-    def _update_plots(self, update_emg=True): 
-        """TEPs"""
-        if self._average_data:
-            TEPs2plot = self._calculate_avg_TEP()
-        else:
-            TEPs = self._epochs[-1][:-2, :] * 10**6          # выделить только TEPs и преобразовать в мкВ
-            TEPs2plot = self._transform(TEPs)               # нужные преобразования -> [n_channels x n_samples]
-        
-        self._topo_teps_panel.figure.update_data(TEPs2plot)          # отобразить TEPs (центральные графики)
-        self._overview_panel.figure_TEP.update_TEPs(TEPs2plot)     # отобразить TEPs (усреднённый график)
-        
-        if self.params["TEP_suppl_plot"]["topoplot"]["draw"]:
-            timestamps = self.params["TEP_suppl_plot"]["timestamps_ms"]
-            for i, t_ms in enumerate(timestamps):
-                t = self._ms_to_sample(t_ms)
-                self._overview_panel.figure_topo[i].plot_topomap(TEPs2plot[:, t])
-        
-        """MEPs"""
-        if update_emg:
-            emg = self._baseline(self._epochs[-1][-2:, :] * 1E3)  # вычесть бейзлайн и перевести в мВ
-            emg = np.diff(emg, axis=0).flatten()                # посчитать разницу каналов
 
-            x_min, x_max = self._ms_to_sample(self.params["MEP_plot"]["xmin_ms"]), self._ms_to_sample(self.params["MEP_plot"]["xmax_ms"])
-            emg2plot = emg[self._time_shift+x_min:self._time_shift+x_max] 
-
-            self._meps_panel.figure.update_emg(emg2plot)
-
-            emg_epochs = np.array(self._epochs)[:, -2:] * 10**3
-            emg = np.mean(np.array([np.diff(self._baseline(emg), axis=0).flatten() for emg in emg_epochs]), axis=0)
-            self._overview_panel.figure_MEP.update_MEPs(emg)
     
     def _update_data(self):
         self._restart_plots()
@@ -355,116 +313,116 @@ class MainWindow(QWidget):
         if len(self._session_loaded) != 0 and not self._process_new_data:
             self._draw_loaded_data()
 
-    def _draw_loaded_data(self):
-        TEPs_sessions = []
-        MEPs_sessions = []
-        for data in self._session_loaded:
-            if self._average_data:
-                self._create_average_functions(data)
-                TEPs2plot = self._calculate_avg_TEP()         # -> [n_channels x n_samples]    units=[uV]
-            else:
-                TEPs = data[-1][:-2, :] * 1E6         # выделить только одну последнюю эпоху с TEPs и преобразовать в мкВ
-                TEPs2plot = self._transform(TEPs)             # нужные преобразования -> [n_channels x n_samples]   units=[uV]
-            TEPs_sessions.append(TEPs2plot)
+    # def _draw_loaded_data(self):
+    #     TEPs_sessions = []
+    #     MEPs_sessions = []
+    #     for data in self._session_loaded:
+    #         if self._average_data:
+    #             self._create_average_functions(data)
+    #             TEPs2plot = self._calculate_avg_TEP()         # -> [n_channels x n_samples]    units=[uV]
+    #         else:
+    #             TEPs = data[-1][:-2, :] * 1E6         # выделить только одну последнюю эпоху с TEPs и преобразовать в мкВ
+    #             TEPs2plot = self._transform(TEPs)             # нужные преобразования -> [n_channels x n_samples]   units=[uV]
+    #         TEPs_sessions.append(TEPs2plot)
 
-            emg_epochs = data[:, -2:, :] * 1E3        # -> [n_epoch x 2 x n_samples]    units=[mV]
-            emg_epochs = np.array([np.diff(self._baseline(emg), axis=0).flatten() for emg in emg_epochs])    # -> [n_epoch x 1 x n_samples]    
-            emg = np.mean(emg_epochs, axis=0)         # усреднённые по эпохам [1 x n_samples]
-            MEPs_sessions.append(emg)
+    #         emg_epochs = data[:, -2:, :] * 1E3        # -> [n_epoch x 2 x n_samples]    units=[mV]
+    #         emg_epochs = np.array([np.diff(self._baseline(emg), axis=0).flatten() for emg in emg_epochs])    # -> [n_epoch x 1 x n_samples]    
+    #         emg = np.mean(emg_epochs, axis=0)         # усреднённые по эпохам [1 x n_samples]
+    #         MEPs_sessions.append(emg)
 
-        # отобразить TEPs на центральном графике в режиме сравнения
-        self._topo_teps_panel.figure.draw_loaded_TEPs(TEPs_sessions, self._session_loaded_labels)
+    #     # отобразить TEPs на центральном графике в режиме сравнения
+    #     self._topo_teps_panel.figure.draw_loaded_TEPs(TEPs_sessions, self._session_loaded_labels)
 
-        # если загружен один файл
-        if len(TEPs_sessions) == 1:
-            self._overview_panel.figure_TEP.update_TEPs(TEPs_sessions[0])
-            self._overview_panel.figure_MEP.update_MEPs(MEPs_sessions[0])
+    #     # если загружен один файл
+    #     if len(TEPs_sessions) == 1:
+    #         self._overview_panel.figure_TEP.update_TEPs(TEPs_sessions[0])
+    #         self._overview_panel.figure_MEP.update_MEPs(MEPs_sessions[0])
 
-            if self.params["TEP_suppl_plot"]["topoplot"]["draw"]:
-                timestamps = self.params["TEP_suppl_plot"]["timestamps_ms"]
-                for i, t_ms in enumerate(timestamps):
-                    t = self._ms_to_sample(t_ms)
-                    self._overview_panel.figure_topo[i].plot_topomap(TEPs_sessions[0][:, t])
+    #         if self.params["TEP_suppl_plot"]["topoplot"]["draw"]:
+    #             timestamps = self.params["TEP_suppl_plot"]["timestamps_ms"]
+    #             for i, t_ms in enumerate(timestamps):
+    #                 t = self._ms_to_sample(t_ms)
+    #                 self._overview_panel.figure_topo[i].plot_topomap(TEPs_sessions[0][:, t])
                     
-            self._update_label_counter(self._session_loaded[0].shape[0])
+    #         self._update_label_counter(self._session_loaded[0].shape[0])
 
-        else:   # если загружено несколько файлов
-            self._overview_panel.figure_TEP.draw_loaded_multiple_sessions(TEPs_sessions, signal="TEP")
-            self._overview_panel.figure_MEP.draw_loaded_multiple_sessions(MEPs_sessions, signal="MEP")
+    #     else:   # если загружено несколько файлов
+    #         self._overview_panel.figure_TEP.draw_loaded_multiple_sessions(TEPs_sessions, signal="TEP")
+    #         self._overview_panel.figure_MEP.draw_loaded_multiple_sessions(MEPs_sessions, signal="MEP")
 
-            self._update_label_counter("")
+    #         self._update_label_counter("")
 
-    def _save_data(self, epoch, ts):
-        n = self._dset.shape[0]
-        self._dset.resize(n + epoch.shape[0], axis=0)
-        self._dset[n:] = epoch
+    # def _save_data(self, epoch, ts):
+    #     n = self._dset.shape[0]
+    #     self._dset.resize(n + epoch.shape[0], axis=0)
+    #     self._dset[n:] = epoch
  
-        self._tset.resize(self._tset.shape[0] + 1, axis=0)
-        self._tset[-1] = ts
+    #     self._tset.resize(self._tset.shape[0] + 1, axis=0)
+    #     self._tset[-1] = ts
 
-    def _on_button_save_click(self):
-        # открытие диалога для выбора названия и места хранения файла
-        file_path, _ = QFileDialog.getSaveFileName(
-            self,
-            "Задайте имя файла",
-            "data/exports",
-            "HDF5 Files (*.h5);;All Files (*)"
-        )
+    # def _on_button_save_click(self):
+    #     # открытие диалога для выбора названия и места хранения файла
+    #     file_path, _ = QFileDialog.getSaveFileName(
+    #         self,
+    #         "Задайте имя файла",
+    #         "data/exports",
+    #         "HDF5 Files (*.h5);;All Files (*)"
+    #     )
 
-         # пользователь нажал Cancel
-        if not file_path:
-            print("---> Сохранение отменено")
-            return None 
+    #      # пользователь нажал Cancel
+    #     if not file_path:
+    #         print("---> Сохранение отменено")
+    #         return None 
         
-        data2save = np.array(self._epochs[:]).transpose(0, 2, 1).reshape(-1, 66)      # (n_samples, n_channels)
-        ts2save = np.array(self._ts)
-        # если выбран файл
-        with h5py.File(file_path, "w") as h5f:
-            data = h5f.create_dataset("epochs", data=data2save, dtype='float32')      # для эпох (64 EEG + 2 EMG)
-            data.attrs["Fs"] = self.SPEED["Fs"]
-            data.attrs["n_samples"] = self._n_samples
-            data.attrs["n_epochs"] = len(self._epochs)
+    #     data2save = np.array(self._epochs[:]).transpose(0, 2, 1).reshape(-1, 66)      # (n_samples, n_channels)
+    #     ts2save = np.array(self._ts)
+    #     # если выбран файл
+    #     with h5py.File(file_path, "w") as h5f:
+    #         data = h5f.create_dataset("epochs", data=data2save, dtype='float32')      # для эпох (64 EEG + 2 EMG)
+    #         data.attrs["Fs"] = self.SPEED["Fs"]
+    #         data.attrs["n_samples"] = self._n_samples
+    #         data.attrs["n_epochs"] = len(self._epochs)
             
-            tdata = h5f.create_dataset("timestamps", data=ts2save, dtype='int64')      # для таймстемпов резонанса (в нс)
-            tdata.attrs["units"] = "ns"
+    #         tdata = h5f.create_dataset("timestamps", data=ts2save, dtype='int64')      # для таймстемпов резонанса (в нс)
+    #         tdata.attrs["units"] = "ns"
 
-    def _on_button_load_click(self):
-        # очистить стек подгруженных данных
-        self._session_loaded = []
-        self._session_loaded_labels = []
+    # def _on_button_load_click(self):
+    #     # очистить стек подгруженных данных
+    #     self._session_loaded = []
+    #     self._session_loaded_labels = []
 
-        # открыть диалог для выбора файла/файлов
-        paths, _ = QFileDialog.getOpenFileNames(
-            self,
-            "Выберите файлы",
-            "data/exports",                     # стартовая директория
-            "HDF5 (*.h5 *.hdf5);;Все файлы (*)"
-        )
+    #     # открыть диалог для выбора файла/файлов
+    #     paths, _ = QFileDialog.getOpenFileNames(
+    #         self,
+    #         "Выберите файлы",
+    #         "data/exports",                     # стартовая директория
+    #         "HDF5 (*.h5 *.hdf5);;Все файлы (*)"
+    #     )
         
-        # пользователь нажал Cancel
-        if not paths:
-            print("---> Подгрузка файлов отменена")
-            return None  
+    #     # пользователь нажал Cancel
+    #     if not paths:
+    #         print("---> Подгрузка файлов отменена")
+    #         return None  
         
-        # если выбран файл/файлы - загрузить в память данные
-        for file_path in paths:
-            with h5py.File(file_path, "r") as h5f:
-                stream = h5f['epochs'][:]
-                n_epochs = h5f['epochs'].attrs["n_epochs"]
-                n_samples = h5f['epochs'].attrs["n_samples"]
+    #     # если выбран файл/файлы - загрузить в память данные
+    #     for file_path in paths:
+    #         with h5py.File(file_path, "r") as h5f:
+    #             stream = h5f['epochs'][:]
+    #             n_epochs = h5f['epochs'].attrs["n_epochs"]
+    #             n_samples = h5f['epochs'].attrs["n_samples"]
 
-                epochs =  stream.reshape((n_epochs, n_samples, stream.shape[1])).transpose(0, 2, 1) # -> [n_epochs, n_channels, n_samples]
-                self._session_loaded.append(epochs)
+    #             epochs =  stream.reshape((n_epochs, n_samples, stream.shape[1])).transpose(0, 2, 1) # -> [n_epochs, n_channels, n_samples]
+    #             self._session_loaded.append(epochs)
 
-                name = os.path.splitext(os.path.basename(file_path))[0] # имя файла без разрешения
-                self._session_loaded_labels.append(name)
+    #             name = os.path.splitext(os.path.basename(file_path))[0] # имя файла без разрешения
+    #             self._session_loaded_labels.append(name)
 
-                print(f"> {name} : n_epoch = {n_epochs} <")
+    #             print(f"> {name} : n_epoch = {n_epochs} <")
         
-        # self._update_label_counter(self._n_epoch)
-        self._draw_loaded_data()
+    #     # self._update_label_counter(self._n_epoch)
+    #     self._draw_loaded_data()
 
-    def _on_restart_button_click(self):
+    # def _on_restart_button_click(self):
         self._n_epoch = 0
         self._update_label_counter(0)
 
@@ -593,151 +551,151 @@ class MainWindow(QWidget):
             self._player_window.update_volume(value)
 
 
-    def _on_show_epoch_button_click(self):
-        if self._specific_epoch: # если был режим показа отдельной эпохи - вернуться к стандартному отображению
-            self._update_data()
-            self._settings_panel.button_show_epoch.setText("Показать эпоху")
-        else:                   # если не был включён режим показа отдельной эпохи - показать её
-            n_show = self._settings_panel.spin_box_show_epoch.value()    # номер эпохи для просмотра
-            data = self._transform(np.array(self._epochs[n_show-1])[:-2, :])
-            self._update_plots(data)
-            self._settings_panel.button_show_epoch.setText("Стандартный режим")
+    # def _on_show_epoch_button_click(self):
+    #     if self._specific_epoch: # если был режим показа отдельной эпохи - вернуться к стандартному отображению
+    #         self._update_data()
+    #         self._settings_panel.button_show_epoch.setText("Показать эпоху")
+    #     else:                   # если не был включён режим показа отдельной эпохи - показать её
+    #         n_show = self._settings_panel.spin_box_show_epoch.value()    # номер эпохи для просмотра
+    #         data = self._transform(np.array(self._epochs[n_show-1])[:-2, :])
+    #         self._update_plots(data)
+    #         self._settings_panel.button_show_epoch.setText("Стандартный режим")
             
-        self._specific_epoch = not self._specific_epoch
+    #     self._specific_epoch = not self._specific_epoch
 
-    def _on_remove_epoch_button_click(self):  
-        self._n_epoch -= 1
-        self._update_label_counter(self._n_epoch)
+    # def _on_remove_epoch_button_click(self):  
+    #     self._n_epoch -= 1
+    #     self._update_label_counter(self._n_epoch)
 
-        n_delete = self._settings_panel.spin_box_remove_epoch.value()    # номер эпохи для удаления 
+    #     n_delete = self._settings_panel.spin_box_remove_epoch.value()    # номер эпохи для удаления 
 
-        del self._epochs[n_delete-1]                     # минус один для учёта нумерации с нуля
-        del self._ts[n_delete-1]
+    #     del self._epochs[n_delete-1]                     # минус один для учёта нумерации с нуля
+    #     del self._ts[n_delete-1]
         
-        self._update_data()
+    #     self._update_data()
 
-    def _on_update_averaging_signal(self):
-        """применение настроек для усреднения эпох"""
-        if self._average_data and self._process_new_data:         # если режим усреднения
-            data = self._epochs if self._n_epoch > 0 else None
-            self._create_average_functions(data)            # создать новые функции
+    # def _on_update_averaging_signal(self):
+    #     """применение настроек для усреднения эпох"""
+    #     if self._average_data and self._process_new_data:         # если режим усреднения
+    #         data = self._epochs if self._n_epoch > 0 else None
+    #         self._create_average_functions(data)            # создать новые функции
 
-        self._update_data()                     # отобразить изменения
+    #     self._update_data()                     # отобразить изменения
 
-    def _on_update_baseline_signal(self):
-        apply_baseline = self._settings_panel.check_box_baseline.isChecked()   # вычитать ли бейзлайн
-        if apply_baseline:
-            baseline_from = self._settings_panel.spin_box_baseline_from.value()
-            baseline_to  = self._settings_panel.spin_box_baseline_to.value()
-            ind_from = self._ms_to_sample(baseline_from - self.SPEED["window_start"])
-            ind_to = ind_from + self._ms_to_sample(baseline_to - baseline_from) + 1
-            mean_function = self._settings_panel.combo_box_baseline.currentText()
-            func = (lambda x: np.mean(x, axis=1)) if mean_function == 'mean' else (lambda x: np.median(x, axis=1))
-            calculate_baseline = lambda x: func(x[:, ind_from:ind_to]).reshape((-1, 1))
+    # def _on_update_baseline_signal(self):
+    #     apply_baseline = self._settings_panel.check_box_baseline.isChecked()   # вычитать ли бейзлайн
+    #     if apply_baseline:
+    #         baseline_from = self._settings_panel.spin_box_baseline_from.value()
+    #         baseline_to  = self._settings_panel.spin_box_baseline_to.value()
+    #         ind_from = self._ms_to_sample(baseline_from - self.SPEED["window_start"])
+    #         ind_to = ind_from + self._ms_to_sample(baseline_to - baseline_from) + 1
+    #         mean_function = self._settings_panel.combo_box_baseline.currentText()
+    #         func = (lambda x: np.mean(x, axis=1)) if mean_function == 'mean' else (lambda x: np.median(x, axis=1))
+    #         calculate_baseline = lambda x: func(x[:, ind_from:ind_to]).reshape((-1, 1))
         
-        self._baseline = (lambda x: x - calculate_baseline(x)) if apply_baseline else (lambda x: x)
-        # если усреднять и уже есть данные - создать новые функции
-        if self._average_data and self._n_epoch > 0 and self._process_new_data:  
-            self._create_average_functions(self._epochs)
+    #     self._baseline = (lambda x: x - calculate_baseline(x)) if apply_baseline else (lambda x: x)
+    #     # если усреднять и уже есть данные - создать новые функции
+    #     if self._average_data and self._n_epoch > 0 and self._process_new_data:  
+    #         self._create_average_functions(self._epochs)
         
-        self._update_data()         # отобразить изменения
+    #     self._update_data()         # отобразить изменения
     
-    def _on_update_lowpass_signal(self):
-        apply_filter = self._settings_panel.check_box_lowpass.isChecked()
-        if apply_filter:
-            f = self._settings_panel.spin_box_lowpass.value()
-            sos_lowpass = signal.butter(2, f/self.SPEED["Fs"]*2, btype='lowpass', output='sos')
-        self._lowpass_filter = (lambda x: signal.sosfilt(sos_lowpass, x, axis=0)) if apply_filter else (lambda x: x)    
-        # если усреднять и уже есть данные - создать новые функции
-        if self._average_data and self._n_epoch > 0 and self._process_new_data:  
-            self._create_average_functions(self._epochs)
+    # def _on_update_lowpass_signal(self):
+    #     apply_filter = self._settings_panel.check_box_lowpass.isChecked()
+    #     if apply_filter:
+    #         f = self._settings_panel.spin_box_lowpass.value()
+    #         sos_lowpass = signal.butter(2, f/self.SPEED["Fs"]*2, btype='lowpass', output='sos')
+    #     self._lowpass_filter = (lambda x: signal.sosfilt(sos_lowpass, x, axis=0)) if apply_filter else (lambda x: x)    
+    #     # если усреднять и уже есть данные - создать новые функции
+    #     if self._average_data and self._n_epoch > 0 and self._process_new_data:  
+    #         self._create_average_functions(self._epochs)
         
-        self._update_data()         # отобразить изменения
+    #     self._update_data()         # отобразить изменения
 
-    def _on_update_rereference_signal(self):
-        apply_reref = self._settings_panel.check_box_rereference.isChecked()
-        reref_channel = self._settings_panel.combo_box_rereference.checkedItems()[0] # канал для ререферентации
-        idx = np.where(CHANNELS == reref_channel)[0][0] # индекс канала для ререферентации
+    # def _on_update_rereference_signal(self):
+    #     apply_reref = self._settings_panel.check_box_rereference.isChecked()
+    #     reref_channel = self._settings_panel.combo_box_rereference.checkedItems()[0] # канал для ререферентации
+    #     idx = np.where(CHANNELS == reref_channel)[0][0] # индекс канала для ререферентации
 
-        n_channels = len(CHANNELS)  
-        e_r = np.zeros((n_channels, 1)); 
-        e_r[idx, 0] = 1.0
-        R = np.eye(n_channels) - np.ones((n_channels, 1)) @ e_r.T
+    #     n_channels = len(CHANNELS)  
+    #     e_r = np.zeros((n_channels, 1)); 
+    #     e_r[idx, 0] = 1.0
+    #     R = np.eye(n_channels) - np.ones((n_channels, 1)) @ e_r.T
 
-        self._referef = (lambda x: R @ x) if apply_reref else (lambda x: x)
-        # если усреднять и уже есть данные - создать новые функции
-        if self._average_data and self._n_epoch > 0 and self._process_new_data:  
-            self._create_average_functions(self._epochs)
+    #     self._referef = (lambda x: R @ x) if apply_reref else (lambda x: x)
+    #     # если усреднять и уже есть данные - создать новые функции
+    #     if self._average_data and self._n_epoch > 0 and self._process_new_data:  
+    #         self._create_average_functions(self._epochs)
         
-        self._update_data()         # отобразить изменения
+    #     self._update_data()         # отобразить изменения
 
-    def _on_update_CAR_signal(self):
-        apply_CAR = self._settings_panel.check_box_car.isChecked()   # применять ли CAR
-        if apply_CAR: 
-            CAR_channels = self._settings_panel.combo_box_channels.checkedItems()
-            n_sel = len(CAR_channels)
-            if n_sel == 0:
-                raise ValueError("Не отмечены каналы для построения CAR фильтра.")
-            is_selected = np.array([ch in CAR_channels for ch in CHANNELS])
-            n_channels = len(CHANNELS)
-            W = np.eye(n_channels) - (1/n_sel) * np.outer(np.ones(n_channels), is_selected.astype(float)) # матрица фильтра CAR                 
-        self._CAR = (lambda x: W @ x) if apply_CAR else (lambda x: x)           # функция для вычисления CAR
-        # если усреднять и уже есть данные - создать новые функции
-        if self._average_data and self._n_epoch > 0 and self._process_new_data:  
-            self._create_average_functions(self._epochs)
+    # def _on_update_CAR_signal(self):
+    #     apply_CAR = self._settings_panel.check_box_car.isChecked()   # применять ли CAR
+    #     if apply_CAR: 
+    #         CAR_channels = self._settings_panel.combo_box_channels.checkedItems()
+    #         n_sel = len(CAR_channels)
+    #         if n_sel == 0:
+    #             raise ValueError("Не отмечены каналы для построения CAR фильтра.")
+    #         is_selected = np.array([ch in CAR_channels for ch in CHANNELS])
+    #         n_channels = len(CHANNELS)
+    #         W = np.eye(n_channels) - (1/n_sel) * np.outer(np.ones(n_channels), is_selected.astype(float)) # матрица фильтра CAR                 
+    #     self._CAR = (lambda x: W @ x) if apply_CAR else (lambda x: x)           # функция для вычисления CAR
+    #     # если усреднять и уже есть данные - создать новые функции
+    #     if self._average_data and self._n_epoch > 0 and self._process_new_data:  
+    #         self._create_average_functions(self._epochs)
         
-        self._update_data()         # отобразить изменения
+    #     self._update_data()         # отобразить изменения
 
-    def _create_full_transform(self):
-        self._transform = lambda x: self._referef(
-            self._CAR(
-                self._baseline(
-                    self._lowpass_filter(
-                        x
-                        )
-                    )
-                )
-            )
+    # def _create_full_transform(self):
+    #     self._transform = lambda x: self._referef(
+    #         self._CAR(
+    #             self._baseline(
+    #                 self._lowpass_filter(
+    #                     x
+    #                     )
+    #                 )
+    #             )
+    #         )
 
-    def _create_average_functions(self, new_data=None):
-            """Создать функции для усреднения TEPs"""
-            function = self.aver_empty_func[self.aver_method]   # пустой трафарет
-            if new_data is not None:
-                data = np.array([self._transform(np.array(TEPs[:-2, :], dtype=float) * 1E6) for TEPs in new_data])
-                self.average_functions = [
-                    [function(data[:, i, j], self._n_aver_max, self._aver_all)
-                    for j in range(self._n_samples)]
-                    for i in range(len(CHANNELS))
-                ]
-            else:
-                self.average_functions = [
-                    [function([], self._n_aver_max, self._aver_all)
-                    for _ in range(self._n_samples)]
-                    for _ in range(len(CHANNELS))
-                ]
+    # def _create_average_functions(self, new_data=None):
+    #         """Создать функции для усреднения TEPs"""
+    #         function = self.aver_empty_func[self.aver_method]   # пустой трафарет
+    #         if new_data is not None:
+    #             data = np.array([self._transform(np.array(TEPs[:-2, :], dtype=float) * 1E6) for TEPs in new_data])
+    #             self.average_functions = [
+    #                 [function(data[:, i, j], self._n_aver_max, self._aver_all)
+    #                 for j in range(self._n_samples)]
+    #                 for i in range(len(CHANNELS))
+    #             ]
+    #         else:
+    #             self.average_functions = [
+    #                 [function([], self._n_aver_max, self._aver_all)
+    #                 for _ in range(self._n_samples)]
+    #                 for _ in range(len(CHANNELS))
+    #             ]
 
-    def _on_change_mode(self, idx):
-        self._average_data = True if idx == 0 else False      # из  ["Усреднение", "Одиночные пробы"]
-        if self._average_data:
-            self._create_average_functions()    # обновить функции усреднения
-        self._update_data() # отобразить изменения
+    # def _on_change_mode(self, idx):
+    #     self._average_data = True if idx == 0 else False      # из  ["Усреднение", "Одиночные пробы"]
+    #     if self._average_data:
+    #         self._create_average_functions()    # обновить функции усреднения
+    #     self._update_data() # отобразить изменения
 
-    def _on_change_mode_data(self, idx):        
-        self._process_new_data = True if idx == 0 else False  # из ["Новые данные", "Сравнение"]
+    # def _on_change_mode_data(self, idx):        
+    #     self._process_new_data = True if idx == 0 else False  # из ["Новые данные", "Сравнение"]
 
-        self._session_loaded = []                              # список с подгруженными датасетами
-        self._session_loaded_labels = []                       # список с названиями подгруженных файлов (для легенды)
+    #     self._session_loaded = []                              # список с подгруженными датасетами
+    #     self._session_loaded_labels = []                       # список с названиями подгруженных файлов (для легенды)
 
-        if self._average_data:
-            data = self._epochs if self._process_new_data and self._n_epoch > 0 else None
-            self._create_average_functions(data)    # обновить функции усреднения
+    #     if self._average_data:
+    #         data = self._epochs if self._process_new_data and self._n_epoch > 0 else None
+    #         self._create_average_functions(data)    # обновить функции усреднения
 
-        self._update_data()                         # отобразить изменения
+    #     self._update_data()                         # отобразить изменения
 
-    def _restart_plots(self):
-        self._topo_teps_panel.figure.refresh_plot()
-        self._overview_panel.figure_TEP.refresh_plot()
-        self._overview_panel.figure_MEP.refresh_plot()
+    # def _restart_plots(self):
+    #     self._topo_teps_panel.figure.refresh_plot()
+    #     self._overview_panel.figure_TEP.refresh_plot()
+    #     self._overview_panel.figure_MEP.refresh_plot()
         # TO BE ADDED:  mep plot refresh
         # TO BE ADDED:  topoplot refresh
     
@@ -760,6 +718,8 @@ class MainWindow(QWidget):
         self._on_update_averaging_signal()
 
         self._create_full_transform()
+
+        
 
         t5 = time.perf_counter()
         print(f"все предварительные рассчёты: {t5 - t0:.6f} сек")
@@ -825,8 +785,8 @@ class MainWindow(QWidget):
 
     # --- Финализация ---
     def _post_init(self):
-        self._overview_panel.figure_TEP.set_x_shift(-self._time_shift, self._n_samples, signal="TEP")
-        self._overview_panel.figure_MEP.set_x_shift(-self._time_shift, self._n_samples, signal="MEP")
+        # self._overview_panel.figure_TEP.set_x_shift(-self._time_shift, self._n_samples, signal="TEP")
+        # self._overview_panel.figure_MEP.set_x_shift(-self._time_shift, self._n_samples, signal="MEP")
 
         self._on_change_main_scale()
 
@@ -926,123 +886,3 @@ class MainWindow(QWidget):
     
     
 
-
-    def create_box_settings(self):
-        """Настройки отображения"""
-
-        self.label_n_epoch =  QLabel('Количество эпох: {}'.format(self._n_epoch), self)
-        font = QFont('Helvetica', 16)
-        font.setBold(True)
-        self.label_n_epoch.setFont(font)
-        text_width = QFontMetrics(font).horizontalAdvance('Количество эпох: 1000')  # ширина текста в пикселях
-        text_height = QFontMetrics(font).height()
-        self.label_n_epoch.setFixedSize(text_width, text_height)        # чтобы помещался текст с разным количеством эпох
-
-        """настройки SPEED"""
-        box_window = QFrame(self.box_settings)                         # window size
-        box_window.setFrameShape(QFrame.Box)        
-        box_window.setLineWidth(1) 
-        layout_window = QHBoxLayout(box_window)
-        layout_window.setSpacing(0)       # пробелы между виджетами
-        layout_window.setContentsMargins(2, 2, 2, 2)       # отступы от края
-        label = QLabel("Размер окна:", self)
-        start, end = self.SPEED["window_start"], self.SPEED["window_end"]
-        self.spin_box_window_start = self.spin_box(-1000, end, start, step=10, parent=box_window)
-        self.spin_box_window_end = self.spin_box(start, 1000, end, step=10, parent=box_window)
-        label_start = QLabel("от", box_window)
-        label_end = QLabel("до", box_window)
-        label_ms = QLabel("мс", box_window)
-        layout_window.addWidget(label)
-        layout_window.addWidget(label_start)
-        layout_window.addWidget(self.spin_box_window_start)
-        layout_window.addWidget(label_end)
-        layout_window.addWidget(self.spin_box_window_end)
-        layout_window.addWidget(label_ms)
-
-
-        box_artifact = QFrame(self.box_settings)                         # TMS artifact
-        box_artifact.setFrameShape(QFrame.Box)        
-        box_artifact.setLineWidth(1) 
-        layout_artifact = QGridLayout(box_artifact)
-        layout_artifact.setSpacing(0)       # пробелы между виджетами
-        layout_artifact.setContentsMargins(2, 2, 2, 2)       # отступы от края
-        self.combo_box_artifact = self.create_combobox(['linear interpolation', 'zeros'], parent=box_artifact)
-        self.check_box_artifact = self.check_box(self.SPEED['artifact'], 'ТМС артефакт', parent=box_artifact)
-        start, end = self.SPEED["artifact_start"], self.SPEED["artifact_end"]
-        self.spin_box_artifact_start = self.spin_box(self.SPEED["window_start"], end, start, step=1, parent=box_artifact)
-        self.spin_box_artifact_end = self.spin_box(start, self.SPEED["window_end"], end, step=1, parent=box_artifact)
-        label_start = QLabel("от", box_artifact)
-        label_end = QLabel("до", box_artifact)
-        label_ms = QLabel("мс", box_artifact)
-        layout_artifact.addWidget(self.check_box_artifact, 0, 0, 1, 3)
-        layout_artifact.addWidget(self.combo_box_artifact, 0, 3, 1, 2)
-        layout_artifact.addWidget(label_start, 1, 0)
-        layout_artifact.addWidget(self.spin_box_artifact_start, 1, 1)
-        layout_artifact.addWidget(label_end, 1, 2)
-        layout_artifact.addWidget(self.spin_box_artifact_end, 1, 3)
-        layout_artifact.addWidget(label_ms, 1, 4)
-
-        box_filtering = QFrame(self.box_settings)                            ## filtering
-        box_filtering.setFrameShape(QFrame.Box)       
-        box_filtering.setLineWidth(1)
-        layout_filtering = QGridLayout(box_filtering)
-        layout_filtering.setSpacing(0)
-        layout_filtering.setContentsMargins(2, 2, 2, 2)       # отступы от края
-        label = QLabel('Фильтрация', box_filtering)
-        label_hz1 = QLabel('Гц', box_filtering)
-        label_hz2 = QLabel('Гц', box_filtering)
-        label_hz3 = QLabel('Гц', box_filtering)
-        self.check_box_notch = self.check_box(self.SPEED["notch"], 'Notch', parent=box_filtering)
-        self.spin_box_notch_fr = self.spin_box(min=0, max=100, value=self.SPEED["notch_fr"], parent=box_filtering)
-        self.check_box_highpass = self.check_box(self.SPEED["highpass"], 'highpass', parent=box_filtering)
-        self.spin_box_highpass = self.spin_box(min=1, max=100, value=self.SPEED["low_freq"], parent=box_filtering)
-        self.check_box_lowpass = self.check_box(self.SPEED["lowpass"], 'lowpass', parent=box_filtering)
-        self.spin_box_lowpass = self.spin_box(min=1, max=100, value=self.SPEED["high_freq"], parent=box_filtering)
-        layout_filtering.addWidget(label, 0, 0, 1, 2)
-        layout_filtering.addWidget(self.check_box_notch, 1, 0)
-        layout_filtering.addWidget(self.spin_box_notch_fr, 1, 1)
-        layout_filtering.addWidget(label_hz1, 1, 2)
-        layout_filtering.addWidget(self.check_box_highpass, 2, 0)
-        layout_filtering.addWidget(self.spin_box_highpass, 2, 1)
-        layout_filtering.addWidget(label_hz2, 2, 2)
-        layout_filtering.addWidget(self.check_box_lowpass, 3, 0)
-        layout_filtering.addWidget(self.spin_box_lowpass, 3, 1)
-        layout_filtering.addWidget(label_hz3, 3, 2)
-
-        box_resampling = QFrame(self.box_settings)                               ## resampling
-        box_resampling.setFrameShape(QFrame.Box)        
-        box_resampling.setLineWidth(1) 
-        layout_resampling = QGridLayout(box_resampling)
-        layout_resampling.setSpacing(0)
-        layout_resampling.setContentsMargins(2, 2, 2, 2)
-        self.check_box_resampling = self.check_box(self.SPEED["resampling"], 'Ресемплинг', parent=box_resampling)
-        label_hz1 = QLabel('Гц', box_resampling)
-        label_hz2 = QLabel('Гц', box_resampling)
-        self.spin_box_fs = self.spin_box(1000, 50000, self.SPEED["Fs_orig"], step=1000, parent=box_resampling)
-        label_resample = QLabel('→', box_resampling)
-        self.spin_box_resampling = self.spin_box(250, 25000, self.SPEED["Fs"], step=250, parent=box_resampling)
-        layout_resampling.addWidget(self.check_box_resampling, 0, 0, 1, 3)
-        layout_resampling.addWidget(self.spin_box_fs, 1, 0)
-        layout_resampling.addWidget(label_hz1, 1, 1)
-        layout_resampling.addWidget(label_resample, 1, 2)
-        layout_resampling.addWidget(self.spin_box_resampling, 1, 3)
-        layout_resampling.addWidget(label_hz2, 1, 4)
-
-        box_SPEED = QFrame(self.box_settings)                            ## SPEED processing
-        layout_SPEED = QGridLayout(box_SPEED)
-        label = QLabel('SPEED settings', box_SPEED)
-        self.button_speed = self.create_button("Сохранить настройки", self.launch_speed, True, box_SPEED)
-        layout_SPEED.addWidget(label, 0, 0)
-        layout_SPEED.addWidget(self.button_speed, 0, 1)
-        layout_SPEED.addWidget(box_window, 1, 0, 1, 2)
-        layout_SPEED.addWidget(box_artifact, 2, 0, 1, 2)
-        layout_SPEED.addWidget(box_filtering, 3, 0, 1, 2)
-        layout_SPEED.addWidget(box_resampling, 4, 0, 1, 2)
-         
-
-
-        
-
-    
-       # def showEvent(self, event):
-        # QTimer.singleShot(10, self.initial_calculations)

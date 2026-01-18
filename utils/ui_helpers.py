@@ -1,7 +1,7 @@
 from PyQt5.QtWidgets import QPushButton, QSpinBox, QDoubleSpinBox, QCheckBox, QComboBox, QShortcut, QLineEdit
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QStandardItemModel, QStandardItem, QKeySequence, QFont, QFontMetrics
-from widgets.checkable_combo_box import CheckableComboBox
+from ui.widgets.checkable_combo_box import CheckableComboBox
 
 def create_lineedit(callback=None, disabled=False, parent=None, w=None):
     lineedit = QLineEdit(parent)
@@ -49,6 +49,7 @@ def create_check_box(state, text='', parent=None, function=None):
 
 def create_checkable_combobox(channels, bad_channels, status=False, w=None, h=None, parent=None):
     combobox = CheckableComboBox(parent)
+    
     for item in channels:
         checked = status if item in bad_channels else not status
         combobox.addItem(item, checked)

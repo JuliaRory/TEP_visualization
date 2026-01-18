@@ -1,0 +1,32 @@
+[
+	{
+		"attributes": {
+			"activeStream": {
+				"connections": [
+					"tcp-ip://10.0.85.2:59984"
+				],
+				"metaData": {},
+				"name": "message",
+				"serializedType": "DgA=",
+				"uid": "{c0d9777d-26a0-4e85-a508-25c7f458fa1d}"
+			},
+			"reconnect": true
+		},
+		"enabled": true,
+		"group": "default",
+		"index": 0,
+		"label": "epochs",
+		"name": "epochs",
+		"serialized": {
+			"desiredStream": {
+				"connections": [
+					"discover:///?stream=message&name=Generator"
+				],
+				"metaData": {},
+				"name": "message",
+				"serializedType": "DgA="
+			}
+		},
+		"type": "Resonance::Parameters::Stream"
+	}
+]

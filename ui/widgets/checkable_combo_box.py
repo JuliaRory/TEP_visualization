@@ -15,6 +15,7 @@ class CheckableComboBox(QComboBox):
         self._setup_connections()
 
     def addItem(self, text, checked=True):
+        
         item = QStandardItem(text)
         item.setFlags(Qt.ItemIsUserCheckable | Qt.ItemIsEnabled)
         state = Qt.Checked if checked else Qt.Unchecked

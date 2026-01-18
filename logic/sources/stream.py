@@ -1,4 +1,6 @@
 from .base import DataSource
+import numpy as np
+import json
 
 class StreamSource(DataSource):
     """
@@ -24,13 +26,16 @@ class StreamSource(DataSource):
                 timestamp(int): таймстемп по времени резонанса
             
             Signals:
-                dataReady(object, float): испускается с аргументами epoch и timestamp
+                dataReady(object, float): испускается с аргументами epoch и timestamp -> DataProcessor
         """
+        print("NEW EPOCH")
         self.n_epoch += 1
-        self.epochs.append(msg)                
-        self.timestamps.append(timestamp / 1E3)
 
-        self.dataReady.emit(msg, timestamp)  
+        data = np.array(json.loads(msg)["epoch"]).T  # [n_channels x n_samples]
+        # self.epochs.append(data)
+        # self.timestamps.append(timestamp / 1E3)
+
+        self.dataReady.emit(data, timestamp)  
 
     # добавить сохранение эпох в файл
     

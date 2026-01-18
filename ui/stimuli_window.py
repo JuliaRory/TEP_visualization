@@ -19,8 +19,8 @@ from PyQt5.QtGui import QKeyEvent
 
 from utils.video_helpers import *
 from utils.add_to_json import save_sequence_to_json, define_sequence, save_sequence
-from widgets.dragging_label import DraggableLabel, StimulusGroup
-from widgets.sequence_creation_dialog import SequenceDialog
+from ui.widgets.dragging_label import DraggableLabel, StimulusGroup
+from ui.widgets.sequence_creation_dialog import SequenceDialog
 
 from ui.video_player import StimuliPresentation_one_by_one
 

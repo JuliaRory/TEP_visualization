@@ -9,13 +9,13 @@ import pandas as pd
 
 from utils.ui_helpers import create_shortcut_scale, create_spin_box, fit_font_to_width_spinbox
 
-from widgets.teps_plot import TEPsPlot
+from ui.widgets.teps_plot import TEPsPlot
 MICROVOLT = "\u03BC"+"V"
 
 class TopoTEPsPanel(QFrame):
     scale_changed = pyqtSignal()  
 
-    def __init__(self, parent=None, params=None, init_size=(600, 800)):
+    def __init__(self, parent=None, settings=None, speed_settings=None, settings_handler=None, init_size=(600, 800)):
         super().__init__(parent)
 
         """Внешний вид виджета"""
@@ -23,7 +23,10 @@ class TopoTEPsPanel(QFrame):
         self.setMinimumWidth(300)
         
         """Параметры"""
-        self.params = params or {}
+        self.settings = settings 
+        self.speed_settings = speed_settings
+        self.settings_handler = settings_handler  
+
         self._init_state()
 
         """Визуальная часть виджета"""
@@ -42,12 +45,12 @@ class TopoTEPsPanel(QFrame):
         
         self.setObjectName("tep_main_panel")    # для привязки стиля
 
-        self.ymin, self.ymax = self.params["plot"]["ymin"], self.params["plot"]["ymax"]
-        self.xmin, self.xmax = self.params["plot"]["xmin"], self.params["plot"]["xmax"]
+        self.ymin, self.ymax = self.settings.ymin, self.settings.ymax
+        self.xmin, self.xmax = self.settings.xmin, self.settings.xmax
         
-        self.ms_to_sample = lambda x: int(x / 1000 * self.params["SPEED"]["Fs"])
-        self.n_samples = self.ms_to_sample(self.params["SPEED"]["window_end"] - self.params["SPEED"]["window_start"])       # длина одной эпохи в сэмплах
-        self.x_shift = self.ms_to_sample(0 - self.params["SPEED"]["window_start"])                                       # смещение относительно нуля для графиков в сэпмлах
+        self.ms_to_sample = lambda x: int(x / 1000 * self.speed_settings.Fs)
+        self.n_samples = self.ms_to_sample(self.speed_settings.window_end - self.speed_settings.window_start)       # длина одной эпохи в сэмплах
+        self.x_shift = self.ms_to_sample(0 - self.speed_settings.window_start)                                       # смещение относительно нуля для графиков в сэпмлах
 
         filename = r".\resources\mumeg_mks64.ced"
         self.df_orig = pd.read_csv(filename, sep="\t")
@@ -154,19 +157,20 @@ class TopoTEPsPanel(QFrame):
     
     def _update_inner_sizes(self):
 
-        self.figure.resize(self.width(), self.height())
-
         """Обновление позиций графика"""
         self._calculate_positions()                                                                  # рассчитать новые позиции графиков
-        self.scale_left, self.scale_bottom = int( self.df_pos['x'].min()+0.2*self.plot_width), int(self.df_pos['y'].max()+0.2*self.plot_height)                     #  позиция для пустых осей для задания масштаба
-        self._positions = np.concatenate([self.df_pos[['x', 'y']].values, np.array([[self.scale_left, self.scale_bottom]])], axis=0)      #  добавляем к списку позиций основных графиков позицию пустых осей
+        self.scale_left, self.scale_bottom = int( self.df_pos['x'].min()+0.2*self.plot_width), int(self.df_pos['y'].max()+0.2*self.plot_height)         #  позиция для пустых осей для задания масштаба
+        self._positions = np.concatenate([self.df_pos[['x', 'y']].values, np.array([[self.scale_left, self.scale_bottom]])], axis=0)                    #  добавляем к списку позиций основных графиков позицию пустых осей
 
         x_aver, y_aver = self.plot_width, self.plot_height                                            # новые размеры графиков
 
         self.xmax, self.xmin = self.spin_box_scale_xmax.value(), self.spin_box_scale_xmin.value()
         self.ymax, self.ymin = self.spin_box_scale_ymax.value(), self.spin_box_scale_ymin.value()
 
-        # self.figure.update_position(positions, single_w=x_aver, single_h=y_aver, w=self.width(), h=self.height())
+        self.figure.resize(self.width(), self.height())
+        self.figure.refresh_plots(self._positions, single_w=x_aver, single_h=y_aver)
+        self._update_scale()
+        # self.figure.update_position(self._positions, single_w=x_aver, single_h=y_aver, w=self.width(), h=self.height())
         #self.update_label_pos(x_aver, y_aver, xmin, xmax, ymin, ymax)
       
         """Обновление положения спинбоксов для масштабирования графиков"""
