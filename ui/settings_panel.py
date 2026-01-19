@@ -227,7 +227,7 @@ class SettingsPanel(QFrame):
         layout_stimuli_creation = create_hbox([self._label_stimuli, self.button_create_stimuli])
         layout_stimuli = create_hbox([self._label_stimuli_choose, self.combo_box_stimuli, self._button_update_stimuli])
         layout_monitor = create_hbox([self._label_monitor, self.spin_box_monitor, self.check_box_stimuli_record])
-        layout_stimuli_control = create_hbox([self.button_stimuli, self.button_stimuli_pause, self.label_stimuli_idx])
+        layout_stimuli_control = create_hbox([self.button_stimuli, self.button_stimuli_pause, self.button_stimuli_restart, self.label_stimuli_idx])
 
                                                                 # Vertical layout
         layout = QVBoxLayout()                                  # +-----------------------|
