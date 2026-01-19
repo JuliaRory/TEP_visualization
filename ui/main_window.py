@@ -123,18 +123,18 @@ class MainWindow(QWidget):
         # self._session_loaded = []                              # список с подгруженными датасетами
         # self._session_loaded_labels = []                       # список с названиями подгруженных файлов (для легенды)
 
-        # self._record_in_progress = False                    # флаг идёт ли запись
-        # if self.settings.record.activate_bat:
-        #     # Запуск батника с qml-файлом для управления резонансными модулями
+        self._record_in_progress = False                    # флаг идёт ли запись
+        if self.settings.record.activate_bat:
+            # Запуск батника с qml-файлом для управления резонансными модулями
             
-        #     try:
-        #         cwd = os.path.dirname(self.settings.record.bat_file) # cwd = папка с батником
-        #         subprocess.Popen([self.settings.record,bat_file], cwd=cwd)
-        #     except:
-        #         cwd = os.path.dirname(self.settings.record,bat_file_home) # cwd = папка с батником
-        #         subprocess.Popen([self.settings.record.bat_file_home], cwd=cwd)
+            try:
+                cwd = os.path.dirname(self.settings.record.bat_file) # cwd = папка с батником
+                subprocess.Popen([self.settings.record,bat_file], cwd=cwd)
+            except:
+                cwd = os.path.dirname(self.settings.record,bat_file_home) # cwd = папка с батником
+                subprocess.Popen([self.settings.record.bat_file_home], cwd=cwd)
 
-        # self._player_window = None
+        self._player_window = None
 
 
         # self.average_functions = []
@@ -248,7 +248,7 @@ class MainWindow(QWidget):
     # --- Connections ---
     def _setup_connections(self):
         self._settings_handler.setupUI(self._processing_panel, self._plot_updater)
-        self._settings_handler_plots.setupUI(self._plot_updater)
+        # self._settings_handler_plots.setupUI(self._plot_updater)
 
         self._input_stream.dataReady.connect(lambda epoch, ts: self._data_processor.add_epoch(epoch, ts))
         self._data_processor.newDataProcessed.connect(lambda: self._plot_updater.update_plots(self._data_processor))
@@ -431,14 +431,14 @@ class MainWindow(QWidget):
     #     self._draw_loaded_data()
 
     # def _on_restart_button_click(self):
-        self._n_epoch = 0
-        self._update_label_counter(0)
+        # self._n_epoch = 0
+        # self._update_label_counter(0)
 
-        self._epochs = []
-        self._ts = []
-        self._create_average_functions()
+        # self._epochs = []
+        # self._ts = []
+        # self._create_average_functions()
 
-        self._restart_plots()
+        # self._restart_plots()
     
     def _on_record_button_click(self):
         
