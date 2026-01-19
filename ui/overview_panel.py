@@ -12,7 +12,7 @@ import pandas as pd
 from utils.ui_helpers import create_shortcut_scale, create_spin_box, create_button
 from utils.layout_utils import create_hbox, create_vbox
 
-from ui.widgets.teps_suppl_plot import supplPlot
+from ui.widgets.butt_plots import buttPlot
 # from widgets.meps_suppl_plot import MEPsSupplPlot
 from ui.widgets.topoplot_plot import TopoPlot, ColorBar
 # from widgets.interactive_plot import PlotWindow
@@ -23,13 +23,9 @@ class overviewPanel(QFrame):
     """
     Для чего нужен
     Args: - параметры входные
-        video_files (list[str]): Пути к видеофайлам.
-        order (list[int]): Порядок воспроизведения (индексы video_files).
-        monitor (int): Номер монитора для полноэкранного вывода.
 
     Attributes: - что можно использовать извне
-        player (vlc.MediaPlayer): VLC-плеер для вывода видео.
-        current_index (int): Текущий индекс проигрываемого видео.
+
     """
     def __init__(self, parent=None, params=None, init_size=[600, 800]):
         super().__init__(parent)
@@ -62,13 +58,13 @@ class overviewPanel(QFrame):
         
     def _setup_ui(self):
         
-        self.figure_TEP = supplPlot(self, 
+        self.figure_TEP = buttPlot(self, 
                                         w=self.width(), h=(1-self._ratio)*self.height()//2, 
                                         params=self.params["TEP"],
                                         Fs=self.params["Fs"])
         self.figure_TEP.setAttribute(Qt.WA_TransparentForMouseEvents, True)
 
-        self.figure_MEP = supplPlot(self, 
+        self.figure_MEP = buttPlot(self, 
                                     w=self.width(), h=(1-self._ratio)*self.height()//2, 
                                     params=self.params["MEP"],
                                         Fs=self.params["Fs"])

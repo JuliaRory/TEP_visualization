@@ -15,7 +15,7 @@ MICROVOLT = "\u03BC"+"V"
 class TopoTEPsPanel(QFrame):
     scale_changed = pyqtSignal()  
 
-    def __init__(self, parent=None, settings=None, speed_settings=None, settings_handler=None, init_size=(600, 800)):
+    def __init__(self, parent=None, settings=None, speed_settings=None, settings_handler=None, processing_ui=None, init_size=(600, 800)):
         super().__init__(parent)
 
         """Внешний вид виджета"""
@@ -30,6 +30,9 @@ class TopoTEPsPanel(QFrame):
         self._init_state()
 
         """Визуальная часть виджета"""
+        self.processing_ui = processing_ui
+        self.processing_ui.setParent(self)
+
         self._setup_ui()
         self._setup_layout()
 
@@ -106,6 +109,7 @@ class TopoTEPsPanel(QFrame):
                                 # масштабирующие спинбоксы размещаем во время resize_event
         
         self.label_record.move(10, 10)
+
         
 
     # --- Сигналы ---
@@ -209,6 +213,8 @@ class TopoTEPsPanel(QFrame):
         self._label_scale_x.setFont(f_label)
         
         self.label_n_epoch.move(self.spin_box_scale_xmax.x()+width*2, self.top_pad//2)
+
+        self.processing_ui.move(self.width()-self.processing_ui.width(), 0)
 
     # --- Финализация ---
     def _post_init(self):

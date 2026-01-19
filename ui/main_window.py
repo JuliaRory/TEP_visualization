@@ -102,7 +102,7 @@ class MainWindow(QWidget):
         # == Визуальная часть интерфейса ==
         self._setup_ui()                                  # создание всех виджетов
 
-        self._plot_updater = PlotUpdater(self._topo_teps_panel, self._overview_panel, self._meps_panel, self.params)
+        self._plot_updater = PlotUpdater(self._topo_teps_panel, self._overview_panel, self._meps_panel, self.settings_plot)
 
         self._setup_main_grid()                           # расположение виджетов на экране
         
@@ -152,10 +152,10 @@ class MainWindow(QWidget):
 
         # self._specific_epoch = False                         # флаг для отслеживания режима показа определенной эпохи или стандартного
         
-        # self.SPEED = self.params['SPEED']
-        # self._ms_to_sample = lambda x: int(x / 1000 * self.SPEED["Fs"])                                  # функция для пересчёта мс в сэмплы
-        # self._n_samples = self._ms_to_sample(self.SPEED["window_end"] - self.SPEED["window_start"])       # длина эпохи в сэмплах
-        # self._time_shift = self._ms_to_sample(0 - self.SPEED["window_start"])                             # смещение относительно нуля для графиков в сэпмлах
+        self.SPEED = self.params['SPEED']
+        self._ms_to_sample = lambda x: int(x / 1000 * self.SPEED["Fs"])                                  # функция для пересчёта мс в сэмплы
+        self._n_samples = self._ms_to_sample(self.SPEED["window_end"] - self.SPEED["window_start"])       # длина эпохи в сэмплах
+        self._time_shift = self._ms_to_sample(0 - self.SPEED["window_start"])                             # смещение относительно нуля для графиков в сэпмлах
 
         # # --- создать и открыть файл для автоматической записи получаемых данных ---
         # cur_time = datetime.now().strftime("%Y.%m.%d_%H.%M")
@@ -174,25 +174,31 @@ class MainWindow(QWidget):
                                              settings=self.settings,
                                              settings_handler=self._settings_handler,
                                              channels=self.settings.channels)
-
+        
         self._processing_panel = ProcessingPanel(parent=self,
                                              settings=self.settings.processing_settings,
                                              settings_handler=self._settings_handler,
                                              channels=self.settings.channels)
         
+        
         self._topo_teps_panel = TopoTEPsPanel(parent=self,
                                          settings=self.settings_plot.topo_teps, 
                                          speed_settings=self.settings.speed,
                                          settings_handler=self._settings_handler,
+                                         processing_ui=self._processing_panel,
                                          init_size=[int(hor_ratio[1] * WIDTH_SET), int(cen_ratio*HEIGHT_SET)])
+        
+        self._meps_panel = MEPsPanel(parent=self,
+                                    Fs=self.settings.speed.Fs,
+                                    settings=self.settings_plot.single_meps,
+                                    settings_dl=self.settings_plot.meps_deeper_look,
+                                    init_size=[int(hor_ratio[1] * WIDTH_SET), int((1-cen_ratio)*HEIGHT_SET)])
         
         self._overview_panel = overviewPanel(parent=self,
                                          params=self.params["TEP_suppl_plot"], 
                                          init_size=[int(hor_ratio[2] * WIDTH_SET), HEIGHT_SET])
         
-        self._meps_panel = MEPsPanel(parent=self,
-                                    params=self.params["MEP_plot"], 
-                                    init_size=[int(hor_ratio[1] * WIDTH_SET), int((1-cen_ratio)*HEIGHT_SET)])
+        
         
         
     # --- UI: Layout ---
@@ -246,6 +252,8 @@ class MainWindow(QWidget):
 
         self._input_stream.dataReady.connect(lambda epoch, ts: self._data_processor.add_epoch(epoch, ts))
         self._data_processor.newDataProcessed.connect(lambda: self._plot_updater.update_plots(self._data_processor))
+
+        self._meps_panel.deeperLookActivate.connect(lambda: self._plot_updater.add_mep_deeper_look(self._meps_panel._deeper_look_window))
 
         # начальная замедленная инициализиация всех вычислений для уменьшения подтупливаний при запуске приложения
         # self.start_calc_signal.connect(self._initial_calculations)
@@ -785,8 +793,8 @@ class MainWindow(QWidget):
 
     # --- Финализация ---
     def _post_init(self):
-        # self._overview_panel.figure_TEP.set_x_shift(-self._time_shift, self._n_samples, signal="TEP")
-        # self._overview_panel.figure_MEP.set_x_shift(-self._time_shift, self._n_samples, signal="MEP")
+        self._overview_panel.figure_TEP.set_x_shift(-self._time_shift, self._n_samples, signal="TEP")
+        self._overview_panel.figure_MEP.set_x_shift(-self._time_shift, self._n_samples, signal="MEP")
 
         self._on_change_main_scale()
 

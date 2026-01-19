@@ -4,6 +4,9 @@ from scipy import signal
 
 from settings.settings import Settings
 
+from utils.averaging_math import RollingMean, RollingMedian, RollingTrimMean
+
+
 class DataProcessor(QObject):
     """
     Базовый класс для источника данных.
@@ -55,6 +58,17 @@ class DataProcessor(QObject):
         self._aver_all = getattr(settings, "aver_all", True)
         self.aver_method = "mean"  # default, можно менять
 
+        self._ms_to_sample = lambda x: int(x / 1000 * settings.speed.Fs)                                  # функция для пересчёта мс в сэмплы
+        self._n_samples = self._ms_to_sample(settings.speed.window_end - settings.speed.window_start)      # длина эпохи в сэмплах
+        self._time_shift = self._ms_to_sample(0 - settings.speed.window_start)                             # смещение относительно нуля для графиков в сэпмлах
+
+        self.aver_empty_func = {                                        # dict с функциями для усреднения
+            "mean": lambda x, y, z: RollingMean(x, y, z), 
+            "median": lambda x, y, z: RollingMedian(x, y, z), 
+            "trimmean": lambda x, y, z: RollingTrimMean(x, y, z)
+        }
+
+
     @pyqtSlot(object, float)
     def add_epoch(self, epoch, ts):
         """
@@ -73,9 +87,9 @@ class DataProcessor(QObject):
             self._timestamps.append(ts)
             self._n_epoch += 1
 
-            # if self.average_data:
-            #     TEPs2plot = self._transform(data[:-2, :] * 1e6)     # without emg channels
-            #     self.update_average_functions(TEPs2plot)
+            if self.average_data:
+                TEPs2plot = self._transform(epoch[:-2, :] * 1e6)     # without emg channels
+                self.update_average_functions(TEPs2plot)
 
             self.newDataProcessed.emit()        # --> plot_updater
 
@@ -151,16 +165,27 @@ class DataProcessor(QObject):
 
     # --- Усреднение ---
 
-    def create_average_functions(self, new_data=None):
-        if new_data is not None:
-            self._epochs = new_data
+    def create_average_functions(self):
+        """Создать функции для усреднения TEPs"""
+        function = self.aver_empty_func[self.aver_method]   # пустой трафарет
+        if len(self._epochs) != 0:
+            data = np.array([self._transform(np.array(TEPs[:-2, :] * 1e6, dtype=float)) for TEPs in self._epochs])
+            self.average_functions = [
+                [function(data[:, i, j], self._n_aver_max, self._aver_all)
+                for j in range(self._n_samples)]
+                for i in range(len(self.settings.channels))
+            ]
+        else:
+            self.average_functions = [
+                [function([], self._n_aver_max, self._aver_all)
+                for _ in range(self._n_samples)]
+                for _ in range(len(self.settings.channels))
+            ]
+    
 
-        n_samples = self._epochs.shape[1] if self._epochs is not None else 1
-        n_channels = len(self.settings.channels)
-        self.average_functions = [
-            [self._transform(np.zeros((1, n_samples))) for _ in range(n_samples)]
-            for _ in range(n_channels)
-        ]
+    def cut_mep_epoch(self, mep_epoch, xmin_ms, xmax_ms):
+        x_min, x_max = self._ms_to_sample(xmin_ms), self._ms_to_sample(xmax_ms)
+        return mep_epoch[self._time_shift+x_min:self._time_shift+x_max] 
 
     # --- Применение трансформации к данным ---
 

@@ -2,7 +2,7 @@ from PyQt5.QtWidgets import (
     QFrame, QGridLayout, QHBoxLayout, QLabel, QScrollArea, QWidget, QSplitter, QVBoxLayout, QSizePolicy
 )
 from PyQt5.QtGui import QFont, QFontMetrics
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, pyqtSignal
 
 import numpy as np
 import pandas as pd
@@ -11,22 +11,26 @@ from utils.ui_helpers import create_shortcut_scale, create_spin_box, create_butt
 from utils.layout_utils import create_hbox, create_vbox
 from ui.widgets.mep_plot import MEPPlot
 
+from ui.widgets.mep_deeper_look import MEPsDeeperLook
+
 MICROVOLT = "\u03BC"+"V"
 
 class MEPsPanel(QFrame):
     """
     
     """
-    def __init__(self, parent=None,  params=None, init_size=[600, 800]):
+    deeperLookActivate = pyqtSignal()
+    def __init__(self, parent=None,   Fs=5000, settings=None, settings_dl=None, init_size=[600, 800]):
         super().__init__(parent)
         """Внешний вид виджета"""
         self.resize(init_size[0], init_size[1])
-        
-        
         self.setMinimumHeight(50)
 
         """Параметры"""
-        self.params = params or {}
+        self.Fs = Fs
+        self.settings = settings
+        self.settings_dl = settings_dl
+
         self._init_state()
 
         """Визуальная часть виджета"""
@@ -45,13 +49,13 @@ class MEPsPanel(QFrame):
         
         self.setObjectName("mep_main_panel")    # для привязки стиля
 
-        self.ratio = self.params["set_plot_ratio"]
+        self.ratio = self.settings.set_plot_ratio
         self.n5_5, self.n5_10 = 0, 0
         self.n10_5, self.n10_10 = 0, 0
         
     # --- Widgets ---
     def _setup_ui(self):
-        self.figure = MEPPlot(self, w=(1-self.ratio)*self.width(), h=self.height(), params=self.params)
+        self.figure = MEPPlot(self, w=(1-self.ratio)*self.width(), h=self.height(), settings=self.settings, Fs=self.Fs)
         self.figure.setAttribute(Qt.WA_TransparentForMouseEvents, True)
 
         self._label = QLabel("MEP", self)
@@ -65,33 +69,37 @@ class MEPsPanel(QFrame):
 
         label1 = QLabel("Макс:", self)
         label2 = QLabel("мВ", self)
-        self._spinbox_max_amp = create_spin_box(0, 1000, self.params["max_amp_mV"], parent=self, w=50)
+        self._spinbox_max_amp = create_spin_box(0, 1000, self.settings.max_amp_mV, parent=self, w=50)
         self._max_amp = create_hbox([label1, self._spinbox_max_amp, label2])
 
         label = QLabel("N:    ", self)
         label_epmty = QLabel("", self)
-        self._spinbox_n_plots = create_spin_box(1, 10, self.params["n_plots"], parent=self, w=50)
+        self._spinbox_n_plots = create_spin_box(1, 10, self.settings.n_plots, parent=self, w=50)
         self._n_plots = create_hbox([label, self._spinbox_n_plots, label_epmty])
 
         label1 = QLabel("от:   ", self)
         label3 = QLabel("мс", self)
-        self._spinbox_min_time = create_spin_box(-300, 0, self.params["xmin_ms"], parent=self, w=50)
+        self._spinbox_min_time = create_spin_box(-300, 0, self.settings.xmin_ms, parent=self, w=50)
         self._time_range_min = create_hbox([label1, self._spinbox_min_time, label3])
 
         label2 = QLabel("до:   ", self)
         label3 = QLabel("мс", self)
-        self._spinbox_max_time = create_spin_box(0, 500, self.params["xmax_ms"], parent=self, w=50)
+        self._spinbox_max_time = create_spin_box(0, 500, self.settings.xmax_ms, parent=self, w=50)
         self._time_range_max = create_hbox([label2, self._spinbox_max_time, label3])
 
         self._button_apply = create_button('Применить', disabled=False, parent=self, w=150)
 
         self._frame_settings = QFrame(self)
 
+        self._button_deeper_look = create_button("new window", parent=self, w=150)
+
     # --- Layout ---
     def _setup_layout(self):
         layout_settings = QVBoxLayout(self._frame_settings)
+        layout_settings.addWidget(self._button_deeper_look)
         layout_settings.addWidget(self._label)
         layout_settings.addWidget(self._label_counter)
+
         # for layout in [self._max_amp, self._n_plots, self._time_range_min, self._time_range_max]:
         #     layout_settings.addLayout(layout)
         # layout_settings.addWidget(self._button_apply)
@@ -116,9 +124,18 @@ class MEPsPanel(QFrame):
     # --- Сигналы ---
     def _setup_connections(self):
         self.figure.amp_counter.connect(self._on_change_amp_counter)
+        self._button_deeper_look.clicked.connect(self._on_deeper_look_button_clicked)
     
     def _on_change_amp_counter(self, value):
         self._label_counter.setText(f"≥ 0.5 mV: \n    {value} / 5.  ")
+
+    def _on_deeper_look_button_clicked(self):
+        self._deeper_look_window = MEPsDeeperLook(self.settings_dl, self.Fs)
+
+        self._deeper_look_window.show()
+        self._deeper_look_window.raise_()
+
+        self.deeperLookActivate.emit() # --> MainWindow --> plot_updater
 
     # --- Финализация ---
     def _post_init(self):
@@ -129,3 +146,4 @@ class MEPsPanel(QFrame):
     def resizeEvent(self, event):
         super().resizeEvent(event)
         self.figure.resize(self.width(), self.height())
+        # self.figure.refresh_plots()

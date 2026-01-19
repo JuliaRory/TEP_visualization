@@ -86,6 +86,12 @@ QFrame#mep_main_panel {
     font-family: "Helvetica";
 }
 
+#label_thr_counter 
+{
+    font-size: 20pt;
+    font-family: "Helvetica";
+}
+
 #label_record  {
     color: #FF0000;
     font-size: 12pt;

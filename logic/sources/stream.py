@@ -28,10 +28,10 @@ class StreamSource(DataSource):
             Signals:
                 dataReady(object, float): испускается с аргументами epoch и timestamp -> DataProcessor
         """
-        print("NEW EPOCH")
         self.n_epoch += 1
 
-        data = np.array(json.loads(msg)["epoch"]).T  # [n_channels x n_samples]
+        # data = np.array(json.loads(msg)["epoch"]).T  # [n_channels x n_samples]
+        data = np.array(msg).T
         # self.epochs.append(data)
         # self.timestamps.append(timestamp / 1E3)
 

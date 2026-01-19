@@ -18,16 +18,27 @@ class TopoTEPsPlot:
     ymin: int = -100
     ymax: int = 100
 
-# @dataclass
-# class SingleMEPsPlot:
-#     xmin_ms: int = -20
-#     xmax_ms: int = 60
-#     max_amp_mV: float = 1
-#     Fs: int = 5000
-#     n_plots: int = 5
-#     set_plot_ratio: float = 0.15
-#     amp_start_ms: int = 10
-#     amp_end_ms: int = 40
+@dataclass
+class SingleMEPsPlot:
+    xmin_ms: int = -20
+    xmax_ms: int = 60
+    max_amp_mV: float = 1
+    n_plots: int = 5
+    set_plot_ratio: float = 0.15
+    amp_start_ms: int = 10
+    amp_end_ms: int = 40
+
+@dataclass
+class SingleMEPsPlotDeeperLook:
+    xmin_ms: int = -20
+    xmax_ms: int = 60
+    max_amp_mV: float = 1
+    n_plots: int = 10
+    set_plot_ratio: float = .15
+    amp_start_ms: int = 10
+    amp_end_ms: int = 40
+    thr: float = .5
+    n_plots_thr: int = 10
 
 # @dataclass
 # class ButtTEPsPlot:
@@ -78,7 +89,8 @@ class PlotSettings:
 
     topo_teps: TopoTEPsPlot = field(default_factory=TopoTEPsPlot)
     # butt_teps: ButtTEPsPlot = field(default_factory=ButtTEPsPlot)
-    # single_meps: SingleMEPsPlot = field(default_factory=SingleMEPsPlot)
+    single_meps: SingleMEPsPlot = field(default_factory=SingleMEPsPlot)
+    meps_deeper_look: SingleMEPsPlotDeeperLook = field(default_factory=SingleMEPsPlotDeeperLook)
     # butt_meps: ButtMEPsPlot = field(default_factory=ButtMEPsPlot)
     # topoplots = TopoPlot = field(default_factory=TopoPlot)
 

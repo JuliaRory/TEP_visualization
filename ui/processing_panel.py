@@ -19,7 +19,7 @@ class ProcessingPanel(QFrame):
     def __init__(self, settings, settings_handler, channels, parent=None):
         super().__init__(parent)
 
-        self.setObjectName("settings_panel")    # для привязки стиля
+        # self.setObjectName("settings_panel")    # для привязки стиля
         self.setMinimumWidth(150)
 
         self.settings = settings

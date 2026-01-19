@@ -12,7 +12,7 @@ from utils.helpers import get_time_ticks, get_voltage_ticks
 
 MICROVOLT = "\u03BC"+"V"
 
-class supplPlot(FigureCanvas):
+class buttPlot(FigureCanvas):
     def __init__(self, parent=None, w=1000, h=700, params=None, Fs=5000, dpi=100):
         self._figsize = (w/dpi, h/dpi)
         self.fig = Figure(figsize=self._figsize, dpi=dpi)
