@@ -34,6 +34,7 @@ class RecordSettings:
     bat_file_home: str = "C:/Users/hodor/Documents/lab-MSU/Works/2025.10_TMS/dist_2024_11_13_imp/control.bat"
     activate_bat: bool = True
     service_name: str = "nvx136"
+    stream_name: str = "eeg"
     records_folder: str = "C:/Users/hodor/Documents/lab-MSU/Works/2025.10_TMS/TEP_visualization/data/records"
 
 
@@ -47,80 +48,12 @@ class StimuliSettings:
     video_folder: str = "resources/videoSamples"
     volume: int = 60
 
-
-# --- Plots ---
-
-@dataclass
-class Scale:
-    xmin: int = -10
-    xmax: int = 30
-    ymin: int = -100
-    ymax: int = 100
-
-@dataclass
-class TopoTEPsPlotSettings:
-    scale: Scale = field(default_factory=Scale)
-
-@dataclass
-class MEPPlotSettings:
-    xmin_ms: int = -20
-    xmax_ms: int = 60
-    max_amp_mV: float = 1
-    Fs: int = 5000
-    n_plots: int = 5
-    set_plot_ratio: float = 0.15
-    amp_start_ms: int = 10
-    amp_end_ms: int = 40
-
-@dataclass
-class TEPBlock:
-    amp: float = 100
-    units: str = "uV"
-    title: str = "Averaged TEP"
-    round: int = 0
-    channels_nearest_n: List[int] = field(default_factory=lambda: [9, 36, 42, 38, 37])
-    n_channels: int = 64
-
-
-@dataclass
-class MEPBlock:
-    amp: float = 1
-    units: str = "mV"
-    title: str = "Averaged MEP"
-    round: int = 1
-
-
-@dataclass
-class TopoplotSettings:
-    draw: bool = True
-    vmin: int = -15
-    vmax: int = 15
-    countours: int = 6
-    image_interp: str = "cubic"
-    sensors: bool = True
-    sphere: float = 0.5
-
-
-@dataclass
-class TEPSupplPlotSettings:
-    xmin_ms: int = -10
-    xmax_ms: int = 50
-    TEP: TEPBlock = field(default_factory=TEPBlock)
-    MEP: MEPBlock = field(default_factory=MEPBlock)
-    Fs: int = 5000
-    topo_butt_ratio: float = 0.4
-    n_plots: int = 3
-    timestamps_ms: List[int] = field(default_factory=lambda: [30, 55, 80])
-    channels_nearest: List[str] = field(default_factory=lambda: ["C3", "C5", "C1", "CP3", "FC3"])
-    topoplot: TopoplotSettings = field(default_factory=TopoplotSettings)
-
-
     
 # --- Layout ---
 
 @dataclass
 class LayoutSettings:
-    horizontal_ratios: List[float] = field(default_factory=lambda: [0.10, 0.60, 0.30])
+    horizontal_ratios: List[float] = field(default_factory=lambda: [0.15, 0.60, 0.25])
     center_ratio: float = 0.75
     right_ratio: float = 0.5
 
@@ -176,8 +109,8 @@ class Settings:
     rereference_channel: List[str] = field(default_factory=lambda: ["Fz"])
 
     processing_settings: ProcessingSettings = field(default_factory=ProcessingSettings)
-    record: RecordSettings = field(default_factory=RecordSettings)
-    stimuli: StimuliSettings = field(default_factory=StimuliSettings)
+    nvx_control: RecordSettings = field(default_factory=RecordSettings)
+    stimuli_control: StimuliSettings = field(default_factory=StimuliSettings)
     # topo_teps_plot: TopoTEPsPlotSettings = field(default_factory=TopoTEPsPlotSettings)
     layout: LayoutSettings = field(default_factory=LayoutSettings)
     # MEP_plot: MEPPlotSettings = field(default_factory=MEPPlotSettings)

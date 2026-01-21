@@ -1,9 +1,6 @@
 import sys
 import random
-from PyQt5.QtWidgets import (
-    QApplication, QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QComboBox,
-    QLabel, QFrame, QLineEdit, QDialog, QFormLayout, QSpinBox, QDialogButtonBox
-)
+from PyQt5.QtWidgets import QVBoxLayout, QHBoxLayout, QPushButton, QLabel,  QLineEdit, QDialog, QFormLayout, QSpinBox
 from PyQt5.QtCore import Qt
 
 

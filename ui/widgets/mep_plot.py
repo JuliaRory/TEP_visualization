@@ -123,9 +123,9 @@ class MEPPlot(FigureCanvas):
         """расположение графиков"""
         # --- размеры в пикселях ---
         fig_w_px, fig_h_px = self.fig.get_size_inches() * self.fig.dpi                # px
-        width_px, height_px = 0.8*fig_w_px/self.n_plots, 0.7*fig_h_px                           # px 
-        d_width = (1-0.7-0.01) * fig_w_px / self.n_plots                                       # px : расстояние между графиками по горизонтали
-        left0_px, bottom_px = 0.01*fig_w_px, 0.1*fig_h_px                             # px : положение первого графика (лево, низ)
+        width_px, height_px = 0.7*fig_w_px/self.n_plots, 0.7*fig_h_px                           # px 
+        d_width = (1-0.7-0.1) * fig_w_px / self.n_plots                                       # px : расстояние между графиками по горизонтали
+        left0_px, bottom_px = 0.1*fig_w_px, 0.1*fig_h_px                             # px : положение первого графика (лево, низ)
         
         # --- отнормированные размеры ---
         width, height = width_px / fig_w_px, height_px / fig_h_px    # ширина и высота одного графика

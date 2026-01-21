@@ -1,7 +1,8 @@
-from PyQt5.QtWidgets import QPushButton, QSpinBox, QDoubleSpinBox, QCheckBox, QComboBox, QShortcut, QLineEdit
-from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QStandardItemModel, QStandardItem, QKeySequence, QFont, QFontMetrics
+from PyQt5.QtWidgets import QPushButton, QSpinBox, QDoubleSpinBox, QCheckBox, QComboBox, QShortcut, QLineEdit, QLabel
+from PyQt5.QtCore import Qt, QObject, QEvent, QPoint
+from PyQt5.QtGui import QKeySequence, QFont, QFontMetrics
 from ui.widgets.checkable_combo_box import CheckableComboBox
+from PyQt5.QtWidgets import QToolTip, QStyledItemDelegate
 
 def create_lineedit(callback=None, disabled=False, parent=None, w=None):
     lineedit = QLineEdit(parent)
@@ -59,15 +60,18 @@ def create_checkable_combobox(channels, bad_channels, status=False, w=None, h=No
         combobox.setFixedHeight(h)
     return combobox
 
-def create_combo_box(items, curr_item=None, curr_item_idx=None, parent=None):
+    
+def create_combo_box(items, curr_item=None, curr_item_idx=None, parent=None, tooltips=False):
     combo_box = QComboBox(parent)
     combo_box.addItems(items)
     if curr_item is not None:
         combo_box.setCurrentText(curr_item)
     if curr_item_idx is not None:
         combo_box.setCurrentIndex(curr_item_idx)
+
     return combo_box
 
+    
 def create_shortcut_button(keyword, function, enabled=True, parent=None):
     shortcut = QShortcut(QKeySequence(keyword), parent)
     shortcut.activated.connect(function)

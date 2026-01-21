@@ -1,6 +1,4 @@
-from PyQt5.QtWidgets import (
-    QFrame, QGridLayout, QHBoxLayout, QLabel, QScrollArea, QWidget
-)
+from PyQt5.QtWidgets import QFrame,  QLabel
 from PyQt5.QtGui import QFont, QFontMetrics
 from PyQt5.QtCore import Qt, pyqtSignal
 
@@ -8,8 +6,8 @@ import numpy as np
 import pandas as pd
 
 from utils.ui_helpers import create_shortcut_scale, create_spin_box, fit_font_to_width_spinbox
-
 from ui.widgets.teps_plot import TEPsPlot
+
 MICROVOLT = "\u03BC"+"V"
 
 class TopoTEPsPanel(QFrame):

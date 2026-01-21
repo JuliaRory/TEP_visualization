@@ -1,11 +1,11 @@
-from PyQt5.QtCore import Qt, QTimer, pyqtSignal,  QEvent, QPoint
-from PyQt5.QtGui import QFont, QFontMetrics, QMouseEvent
-from PyQt5.QtWidgets import (QWidget, QGridLayout, QLabel, qApp, QFrame, QHBoxLayout, QVBoxLayout,QSizePolicy, 
-                             QSplitter, QApplication, QFileDialog, QMessageBox)
+from PyQt5.QtCore import Qt
+from PyQt5.QtWidgets import QWidget, QGridLayout, QLabel,  QFrame,  QVBoxLayout
 
-from utils.ui_helpers import create_shortcut_scale, create_spin_box, create_button
-from utils.layout_utils import create_hbox, create_vbox
+from utils.ui_helpers import create_spin_box, create_button
+from utils.layout_utils import create_hbox
 from ui.widgets.mep_plot import MEPPlot
+
+from utils.widget_placement import place_widget
 
 
 class MEPsDeeperLook(QWidget):
@@ -15,6 +15,8 @@ class MEPsDeeperLook(QWidget):
 
         self.setWindowTitle("Motor Evoked Potentials")
         self.resize(1700, 500)
+        
+        place_widget(self, monitor=1, coordinates=(10, 1080-600))
 
         self.Fs = Fs
         self.settings = settings # single mep plot settings
@@ -27,7 +29,7 @@ class MEPsDeeperLook(QWidget):
     def _init_state(self):
         n_line = 3
 
-        self.ratio = 0.05
+        self.ratio = 0.0
         self.line_w = (1-self.ratio) * self.width()
         self.line_h = (1-self.ratio) * self.height() //2
 
@@ -39,6 +41,9 @@ class MEPsDeeperLook(QWidget):
     
     def _setup_thr_widgets(self):
         self._frame_thr = QFrame(self)
+        self._frame_thr.setContentsMargins(0, 0, 0, 0)
+        self._frame_thr.setFixedHeight(int(0.5 * self.line_h))
+
         self.spinbox_thr = create_spin_box(0, 100, self.settings.thr, data_type="float", decimals=2, step=.1, parent=self._frame_thr, w=50)
         self.spinbox_thr_n_plots = create_spin_box(0, 20, self.settings.n_plots_thr, parent=self._frame_thr, w=50)
         
@@ -48,19 +53,15 @@ class MEPsDeeperLook(QWidget):
 
 
     def _setup_figures_widgets(self):
-        self._frame_figures = QFrame(self)
-        
         n = self.settings.n_plots
-        self.figure_1 = MEPPlot(self._frame_figures, w=self.line_w, h=self.line_h, settings=self.settings, Fs=self.Fs, titles=[f"# {i+1}" for i in range(n)], emphasize_first=True)
-        self.figure_1.setAttribute(Qt.WA_TransparentForMouseEvents, True)
-        # self.figure_2 = MEPPlot(self._frame_figures, w=self.line_w, h=self.line_h, settings=self.settings, Fs=self.Fs, titles=[f"# {i+1+n}" for i in range(n)], emphasize_first=False)
-        # self.figure_2.setAttribute(Qt.WA_TransparentForMouseEvents, True)
-        # self.figure_3 = MEPPlot(self._frame_figures, w=self.line_w, h=self.line_h, settings=self.settings, Fs=self.Fs, titles=[f"# {i+1+n*2}" for i in range(n)], emphasize_first=False)
-        # self.figure_3.setAttribute(Qt.WA_TransparentForMouseEvents, True)
-        
+        self.figure = MEPPlot(self, w=self.line_w, h=self.line_h, settings=self.settings, Fs=self.Fs, titles=[f"# {i+1}" for i in range(n)], emphasize_first=True)
+        self.figure.setAttribute(Qt.WA_TransparentForMouseEvents, True)
+
     
     def _setup_mep_settings_widgets(self):
         self._frame_mep_settings = QFrame(self)
+        self._frame_mep_settings.setContentsMargins(0, 0, 0, 0)
+        self._frame_mep_settings.setFixedHeight(int(self.line_h))
 
         label1 = QLabel("Макс:", self._frame_mep_settings)
         label2 = QLabel("мВ", self._frame_mep_settings)
@@ -89,7 +90,8 @@ class MEPsDeeperLook(QWidget):
         self._setup_thr_settings()
 
         grid = QGridLayout(self)
-
+        grid.setRowStretch(0, 0)   # верхняя строка — минимальная
+        grid.setRowStretch(1, 0)   # верхняя строка — минимальная
         #    1               5
         #  +---+----------------------------------+
         #  |   |    thr settings & labels         |
@@ -99,17 +101,24 @@ class MEPsDeeperLook(QWidget):
         #  |   |    ongoing EMG                   |
         #  +---+----------------------------------+                      
 
+        # self._frame_thr.setStyleSheet("border: 1px solid green;")
+        # self._frame_mep_settings.setStyleSheet("border: 1px solid red;")
+        # self.figure.setStyleSheet("border: 1px solid blue;")
+
         row = 0 
-        grid.addLayout(self.grid_thr, row, 1, 1, 2)
+        grid.addWidget(self._frame_thr, row, 1, 1, 2)
         row = 1
-        grid.addLayout(self.layout_settings, row, 0, 1, 1)
-        grid.addWidget(self.figure_1, row, 1, 1, 5)
+        grid.addWidget(self._frame_mep_settings, row, 0, 1, 1)
+        grid.addWidget(self.figure, row, 1, 1, 5)
+        
         row = 2   
         # grid.addLayout(self.layout_settings, 0, 0, 1, 1) ## emg filters
         
 
     def _setup_thr_settings(self):
-        self.grid_thr = QGridLayout()
+        self.grid_thr = QGridLayout(self._frame_thr)
+        self.grid_thr.setRowStretch(0, 0)
+        self.grid_thr.setRowStretch(1, 0)
         
         layout_thr_value = create_hbox([QLabel("Порог: "), self.spinbox_thr, QLabel("mV")])
         layout_n_plots_value = create_hbox([QLabel("Кол-во попыток: "), self.spinbox_thr_n_plots])
@@ -125,15 +134,11 @@ class MEPsDeeperLook(QWidget):
     def _setup_firuges(self):
         self.layout_figures = QVBoxLayout()
         self.layout_figures.addWidget(self.figure_1)
-        # for figure in [self.figure_1, self.figure_2, self.figure_3]:
-        #     self.layout_figures.addWidget(figure)
-
     
     def _setup_mep_settings(self):
-        self.layout_settings = QVBoxLayout()
+        self.layout_settings = QVBoxLayout(self._frame_mep_settings)
         for layout in [self._max_amp, self._n_plots, self._time_range_min, self._time_range_max]:
             self.layout_settings.addLayout(layout)
-
         self.layout_settings.addWidget(self._button_apply)
 
         self.layout_settings.addStretch()
@@ -150,4 +155,4 @@ class MEPsDeeperLook(QWidget):
 
 
     def _setup_connections(self):
-        self.figure_1.amp_counter.connect(lambda value: self._label_thr.setText(f"Выше порога: {value}/{self.settings.n_plots_thr}"))
+        self.figure.amp_counter.connect(lambda value: self._label_thr.setText(f"Выше порога: {value}/{self.settings.n_plots_thr}"))

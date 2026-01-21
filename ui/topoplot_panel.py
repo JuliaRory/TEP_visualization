@@ -1,11 +1,4 @@
-from PyQt5.QtWidgets import (
-    QFrame, QGridLayout, QHBoxLayout, QLabel, QScrollArea, QWidget
-)
-from PyQt5.QtGui import QFont, QFontMetrics
-from PyQt5.QtCore import Qt
-
-import numpy as np
-import pandas as pd
+from PyQt5.QtWidgets import QFrame
 
 # from utils.ui_helpers import shortcut_scale, spin_box
 from ui.widgets.topoplot_plot import TopoCanvas

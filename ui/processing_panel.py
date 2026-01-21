@@ -1,15 +1,8 @@
-from PyQt5.QtWidgets import (
-    QFrame, QGridLayout, QHBoxLayout, QVBoxLayout, QLabel, QScrollArea, QSizePolicy, QSlider
-)
-from PyQt5.QtGui import QFont, QFontMetrics
-from PyQt5.QtCore import Qt, pyqtSignal
+from PyQt5.QtWidgets import QFrame,   QVBoxLayout, QLabel, QSizePolicy
 
-import json
 
-from utils.ui_helpers import (
-    create_button, create_spin_box, create_check_box, create_combo_box, create_checkable_combobox, create_lineedit
-)
-from utils.layout_utils import create_hbox, create_vbox
+from utils.ui_helpers import create_button, create_spin_box, create_check_box, create_combo_box, create_checkable_combobox
+from utils.layout_utils import create_hbox
 from utils.logic_helpers import are_equal
 
 

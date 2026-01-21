@@ -1,4 +1,4 @@
-from PyQt5.QtWidgets import QWidget, QVBoxLayout, QFrame
+from PyQt5.QtWidgets import QVBoxLayout, QFrame
 from PyQt5.QtCore import Qt, QPoint, QRect
 from PyQt5.QtGui import QPainter, QColor, QPen
 
@@ -11,7 +11,7 @@ from mne.viz.topomap import _make_head_outlines, _setup_interp
 from mne.viz.topomap import _plot_topomap
 import numpy as np
 import pandas as pd
-from scipy.interpolate import LinearNDInterpolator, griddata
+from scipy.interpolate import griddata
 
 from matplotlib import colormaps as cm
 from matplotlib.colors import ListedColormap

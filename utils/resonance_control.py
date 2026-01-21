@@ -37,6 +37,10 @@ class ServiceProxy:
         # stream должен иметь метод send(), который шлёт JSON в QML
         self._stream(json.dumps(message))
         print(f"[Proxy] Sent to {self.name}: command={command}")
+    
+    def checkState(self):
+        self._stream(json.dumps({"service": self.name, "type": "check"}))
+        print(f"[Proxy] Sent to {self.name}: get state")
 
 class ResonanceAppProxy:
     """Псевдо-ResonanceApp для Python"""

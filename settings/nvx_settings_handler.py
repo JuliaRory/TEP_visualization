@@ -3,7 +3,7 @@ from dataclasses import is_dataclass
 import json
 from dataclasses import asdict
 
-class SettingsHandler:
+class NVXSettingsHandler:
     """
     «Связующее звено» между UI и логикой:
     -- Слушает изменения в UI.
@@ -17,15 +17,12 @@ class SettingsHandler:
         ui(QWidget):
 
     """
-    def __init__(self, settings, data_processor):
-        self.data_processor = data_processor
+    def __init__(self, settings):
         self.settings = settings
-        self.plot_updater = None
         self.ui = None
 
-    def setupUI(self, processing_panel, plot_updater):
-        self.ui = processing_panel
-        self.plot_updater = plot_updater
+    def setupUI(self, nvx_control_panel):
+        self.ui = nvx_control_panel
 
         self.configure_data_processor()
 

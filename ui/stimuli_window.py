@@ -1,26 +1,12 @@
-import sys, os, time, tempfile, subprocess
-import time
-
-import subprocess
-
-from PyQt5.QtWidgets import (
-    QFrame, QGridLayout, QHBoxLayout, QVBoxLayout, QLabel, QScrollArea, QSizePolicy
-)
-from PyQt5.QtGui import QFont, QFontMetrics
-from PyQt5.QtCore import Qt
-
-from utils.ui_helpers import create_button, create_spin_box, create_check_box, create_combo_box, create_lineedit
-from utils.layout_utils import create_hbox, create_vbox
-
-from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QDialog
-from PyQt5.QtCore import Qt, pyqtSignal, QTimer
-from PyQt5.QtCore import Qt, QPoint, QEvent
-from PyQt5.QtGui import QKeyEvent
+import sys, os
+from PyQt5.QtWidgets import QFrame, QVBoxLayout, QLabel, QApplication, QWidget, QVBoxLayout, QDialog
 
 from utils.video_helpers import *
 from utils.add_to_json import save_sequence_to_json, define_sequence, save_sequence
 from ui.widgets.dragging_label import DraggableLabel, StimulusGroup
 from ui.widgets.sequence_creation_dialog import SequenceDialog
+from utils.ui_helpers import create_button, create_spin_box,  create_combo_box, create_lineedit
+from utils.layout_utils import create_hbox, create_vbox
 
 from ui.video_player import StimuliPresentation_one_by_one
 

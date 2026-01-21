@@ -50,6 +50,7 @@ ApplicationWindow {
             let service = ResonanceApp.getService(msg.service)
 
             print(text)
+
             if (msg.type === "command") {
                 if (msg.command == "!terminate") {service.sendTransition(msg.command)};
                 
@@ -71,6 +72,13 @@ ApplicationWindow {
             if (msg.type == "parameter") {
                 print("parameter"); 
                 service.sendParameter(msg.parameter, msg.value);
+            }
+
+            if (msg.type == "check") {
+                print("check");
+                if (service) {print("YES");}
+                else {print("NO");}
+
             }
             
         }

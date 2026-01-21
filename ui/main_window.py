@@ -1,29 +1,17 @@
-from PyQt5.QtCore import Qt, QTimer, pyqtSignal,  QEvent, QPoint
-from PyQt5.QtGui import QFont, QFontMetrics, QMouseEvent
-from PyQt5.QtWidgets import (QWidget, QGridLayout, QLabel, qApp, QFrame, QHBoxLayout, QSizePolicy, 
-                             QSplitter, QApplication, QFileDialog, QMessageBox)
+from PyQt5.QtCore import Qt, QTimer, pyqtSignal,  QEvent
+from PyQt5.QtGui import QGuiApplication
+from PyQt5.QtGui import  QMouseEvent
+from PyQt5.QtWidgets import QWidget, qApp, QSizePolicy, QSplitter, QApplication
+                             
 import numpy as np
 import pandas as pd
 
 import os
 import json
-import h5py
-from scipy import signal
 import time
-from datetime import datetime
-from collections import deque
-import subprocess
 
-from .settings_panel import SettingsPanel
-from .processing_panel import ProcessingPanel
-from .topo_teps_panel import TopoTEPsPanel
-from .overview_panel import overviewPanel
-from .meps_panel import MEPsPanel
-from .video_player import StimuliPresentation_one_by_one
-from .stimuli_window import StimuliCreation
-
-from utils.averaging_math import RollingMean, RollingMedian, RollingTrimMean
-from utils.concat_videos import concat_videos_by_order
+from ui import (SettingsPanel, ProcessingPanel, NVXControlPanel, StimuliControlPanel,
+                TopoTEPsPanel, overviewPanel, MEPsPanel)
  
 from logic.sources.stream import StreamSource
 from logic.data_processor import DataProcessor
@@ -35,6 +23,8 @@ from settings.settings_handler import SettingsHandler
 from settings.plot_settings_handler import PlotSettingsHandler
 
 from logic.plot_updater import PlotUpdater
+
+from utils.widget_placement import place_widget
 
 WIDTH_SET, HEIGHT_SET = 1850, 900  # параметры изначального окна интерфейса
 MICROVOLT = "\u03BC"+"V"
@@ -78,6 +68,8 @@ class MainWindow(QWidget):
     def __init__(self, input_stream, resonance, output_stream, filename_params):
         super().__init__()
 
+        place_widget(self, monitor=1, coordinates=(50, 50))
+
         # == Параметры и структуры данных ==
 
         self._resonance = resonance                       # прокси для управления резонансными модулями
@@ -97,6 +89,7 @@ class MainWindow(QWidget):
 
         self._settings_handler = SettingsHandler(self.settings, self._data_processor)                      # Обработчик настроек
         self._settings_handler_plots = PlotSettingsHandler(self.settings_plot)                      # Обработчик настроек
+        # self._settings_handler_nvx = NVXSettingsHandler(self.settings.nvx_control)                      # Обработчик настроек
         
         self._init_state()                                # инициализация начального состояния переменных
         
@@ -123,34 +116,6 @@ class MainWindow(QWidget):
         self._session_loaded = []                              # список с подгруженными датасетами
         self._session_loaded_labels = []                       # список с названиями подгруженных файлов (для легенды)
 
-        self._restart_stimuli = False
-
-        self._record_in_progress = False                    # флаг идёт ли запись
-        if self.settings.record.activate_bat:
-            # Запуск батника с qml-файлом для управления резонансными модулями
-            try:
-                cwd = os.path.dirname(self.settings.record.bat_file) # cwd = папка с батником
-                subprocess.Popen([self.settings.record.bat_file], cwd=cwd)
-            except:
-                cwd = os.path.dirname(self.settings.record.bat_file_home) # cwd = папка с батником
-                subprocess.Popen([self.settings.record.bat_file_home], cwd=cwd)
-
-        self._player_window = None
-
-
-        # self.average_functions = []
-
-        # self.aver_empty_func = {                                        # dict с функциями для усреднения
-        #     "mean": lambda x, y, z: RollingMean(x, y, z), 
-        #     "median": lambda x, y, z: RollingMedian(x, y, z), 
-        #     "trimmean": lambda x, y, z: RollingTrimMean(x, y, z)
-        # }
-        # self.aver_method = self.settings.aver_methods[0]
-        # self._n_aver_max = self.settings.n_aver
-        # self._aver_all = self.settings.aver_all
-
-        # self._transform = lambda x: x
-
         # self._specific_epoch = False                         # флаг для отслеживания режима показа определенной эпохи или стандартного
         
         self.SPEED = self.params['SPEED']
@@ -171,10 +136,20 @@ class MainWindow(QWidget):
         hor_ratio = self.params["layout"]["horizontal_ratios"]
         cen_ratio = self.params["layout"]["center_ratio"]
 
+        self._nvx_control_panel = NVXControlPanel(parent=self,
+                                                settings=self.settings.nvx_control,
+                                                resonance=self._resonance)
+    
+        self._stimuli_control_panel = StimuliControlPanel(parent=self,
+                                                settings=self.settings.stimuli_control,
+                                                output_stream=self._output_stream)
+
         self._settings_panel = SettingsPanel(parent=self,
                                              settings=self.settings,
                                              settings_handler=self._settings_handler,
-                                             channels=self.settings.channels)
+                                             channels=self.settings.channels,
+                                             control_nvx_panel=self._nvx_control_panel,
+                                             control_stimuli_panel=self._stimuli_control_panel)
         
         self._processing_panel = ProcessingPanel(parent=self,
                                              settings=self.settings.processing_settings,
@@ -215,7 +190,7 @@ class MainWindow(QWidget):
         # |       |                         |         |
         # +-------+-------------------------+---------+
 
-        ratio = self.params["layout"]["center_ratio"]
+        ratio = self.settings.layout.center_ratio
         splitter_center = QSplitter(Qt.Vertical, parent=self)        # позволяет изменять размер
         splitter_center.addWidget(self._topo_teps_panel)
         splitter_center.addWidget(self._meps_panel)
@@ -234,7 +209,7 @@ class MainWindow(QWidget):
         self.splitter.setCollapsible(0, False)
         self.splitter.setOpaqueResize(False)
         
-        ratio = self.params["layout"]["horizontal_ratios"]
+        ratio = self.settings.layout.horizontal_ratios
         self.splitter.setSizes([int(ratio[0] * WIDTH_SET), int(ratio[1] * WIDTH_SET), int(ratio[2] * WIDTH_SET)])   # Можно задать начальные пропорции
         self.splitter.setStretchFactor(0, 2)
         self.splitter.setStretchFactor(1, 5) # растягивается в два раза сильнее
@@ -243,8 +218,6 @@ class MainWindow(QWidget):
 
         # фильтр событий на splitter
         self.splitter.installEventFilter(self)
-
-
 
     # --- Connections ---
     def _setup_connections(self):
@@ -265,54 +238,35 @@ class MainWindow(QWidget):
         # self._settings_panel.button_load.clicked.connect(self._on_button_load_click)
         # self._settings_panel.button_restart.clicked.connect(self._on_restart_button_click)
         # self._settings_panel.button_remove_epoch.clicked.connect(self._on_remove_epoch_button_click)
-
-        # работа с nvx
-        self._settings_panel.button_nvx_record.clicked.connect(self._on_record_button_click)
-
-        # работа со стимулами
-        self._settings_panel.button_create_stimuli.clicked.connect(self._on_create_stimuli_button_click)
-        self._settings_panel.button_stimuli.clicked.connect(self._on_stimuli_button_click)
-        self._settings_panel.button_stimuli_pause.clicked.connect(self._on_pause_stimuli_button_click)
-        self._settings_panel.button_stimuli_restart.clicked.connect(self._on_restart_stimuli_presentation)
-
         # self._settings_panel.button_show_epoch.clicked.connect(self._on_show_epoch_button_click)
+
+        # сигнал для обновления состояния надписи REC в центральных графиках
+        self._nvx_control_panel.recording.connect(self._on_recording_status_changed_signal)
+
+        # сигнал для управления записью nvx одновременно с показом стимулов
+        self._stimuli_control_panel.stimuliPresentation.connect(self._on_stimuli_presenation_status_changed_signal)
+       
                
         # изменение масштаба для визуализации 
         for spin_box in self._overview_panel.spinbox_ts:
             spin_box.valueChanged.connect(self._update_topoplots)
         self._topo_teps_panel.scale_changed.connect(self._on_change_main_scale)
 
-        # self._settings_panel.volume_slider.slider.valueChanged.connect(self._on_change_volume)
-        self._settings_panel.volume_slider.valueChanged.connect(self._on_change_volume)
+        
+        
         
 
     # --- Логика ---
-
-    # def _get_data(self, msg, timestamp):
-    #     # если режим обработки новых данных
-    #     if self._process_new_data:
-    #         self._save_data(msg, timestamp)     # сохранить новые данные
-            
-    #         # self._n_epoch += 1                   # обновить счётчик количества эпох
-    #         self._update_label_counter(self._n_epoch)
-
-    #         # распаковать "сообщение" в формате {"TEPs": list of EEG data in microvolt} 
-    #         # data = np.array(json.loads(msg)["TEPs"]).T  # [n_channels x n_samples]
-            
-    #         # data = np.array(msg).T          # [n_channels x n_samples], n_channels = EEG_channels + 2 EMG_channels
-
-    #         # self._epochs.append(data)        # добавить в список хранимых эпох -> [n_epoch x n_channels x n_samples]
-    #         # self._ts.append(timestamp)       # только для сохранения таймстемпов резонанса в файлы
-
-    #         if self._average_data:                    # если режим усреднения, обновить функции усреднения
-    #             TEPs = data[:-2, :] * 10**6           # выделить только TEPs и преобразовать в мкВ
-    #             TEPs2plot = self._transform(TEPs)     # нужные преобразования -> [n_channels x n_samples]
-    #             self._update_average_functions(TEPs2plot)
-
-    #         self._update_plots()
     
-
+    def _on_recording_status_changed_signal(self, recording_status):
+        status_label = "🔴REC" if recording_status else ""
+        self._topo_teps_panel.label_record.setText(status_label)
     
+    def _on_stimuli_presenation_status_changed_signal(self, presentation_status):
+        if self._nvx_control_panel.record_in_progress:
+            self._nvx_control_panel._on_record_button_click()
+        
+
     def _update_data(self):
         self._restart_plots()
         # если есть что нарисовать и режим отображения "новых данных"
@@ -440,136 +394,8 @@ class MainWindow(QWidget):
         # self._create_average_functions()
 
         # self._restart_plots()
-    
-    def _on_record_button_click(self):
-        
-        if not self._record_in_progress:    # если запись не была начата
-            print("start nvx record")
-            self._record_in_progress = True
-            
-            self._service = self._resonance.getService(self.params["record"]["service_name"])     # Берем сервис
-            self._service.sendTransition('start', stream="eeg")
-
-            self._service_stimuli = self._resonance.getService("TEP_visual")     # Берем сервис
-            self._service_stimuli.sendTransition('start', stream="stimuli")
-
-            self._topo_teps_panel.label_record.setText("🔴REC")
-            self._settings_panel.button_nvx_record.setText("Остановить")
-        else:                               # если запись уже идёт
-            print("finish nvx record")
-            self._record_in_progress = False
-
-            self._service.sendTransition('stop')
-            self._service_stimuli.sendTransition('stop')
-
-            self._topo_teps_panel.label_record.setText("")
-            self._settings_panel.button_nvx_record.setText("Начать запись")
-
-    def _change_button_pause_stimuli_text(self):
-        status = "▶" if self._player_window.is_paused else "⏸"
-        self._settings_panel.button_stimuli_pause.setText(status)
-        self._settings_panel.button_stimuli_restart.setEnabled(self._player_window.is_paused)        # можно начать заново
-
-    def _on_pause_stimuli_button_click(self):
-        pw = getattr(self, "_player_window", None)
-        if isinstance(pw, QWidget) and not pw.isHidden():
-            self._player_window.pause_video()
-            self._change_button_pause_stimuli_text()
-        
-    def _on_restart_stimuli_presentation(self):
-        self._restart_stimuli = True
-        self._on_stimuli_button_click()
-
-    def _on_finish_stimuli(self):
-        if self._record_in_progress:
-            self._on_record_button_click()
-        
-        self._settings_panel.label_stimuli_idx.setText(f"")
-        self._settings_panel.button_stimuli_restart.setEnabled(True)
-    
-    def _on_start_stimuli(self):
-        if self._settings_panel.check_box_stimuli_record.isChecked():
-            self._on_record_button_click()  # начать запись
-        self._settings_panel.button_stimuli_pause.setText("⏸")
-        self._settings_panel.button_stimuli_restart.setEnabled(False)        # можно начать заново
-
-    def _on_create_stimuli_button_click(self):
-        self._create_stimuli_window = StimuliCreation()
-        self._create_stimuli_window.show()
-    
-    def _on_stimuli_idx_changed(self, idx):
-        self._settings_panel.label_stimuli_idx.setText(f"#{idx}")
-
-    def _on_stimuli_order_changed(self, order):
-        message = {"stimulus": order}
-        # stream должен иметь метод send(), который шлёт JSON в QML
-        self._output_stream(json.dumps(message))
 
 
-    def _on_stimuli_button_click(self):
-        # если стимул-презентейшн уже открыт -> хотим закрыть
-        pw = getattr(self, "_player_window", None)
-        if isinstance(pw, QWidget) and not pw.isHidden() and not self._restart_stimuli:
-            self._settings_panel.button_stimuli.setText("Запуск")               # опять можно начать презентацию
-            self._settings_panel.button_stimuli_restart.setEnabled(True)       # опять нельзя начать заново
-            self._player_window.finish()                                        # like Escape
-        # если не открыт -> хотим начать презентацию и возможно запись нвх
-        else:
-            
-            seq_name = self._settings_panel.combo_box_stimuli.currentText()
-            if not seq_name:
-                return
-
-            try:
-                with open(self.params["stimuli"]["stimuli_filename"], "r", encoding="utf-8") as f:
-                    data = json.load(f)
-            except (FileNotFoundError, json.JSONDecodeError):
-                data = {}
-
-            sequence = data.get(seq_name)
-
-            n_monitor = self._settings_panel.spin_box_monitor.value()
-            volume = self._settings_panel.volume_slider.slider.value()
-            if not self._restart_stimuli:
-                self._player_window = StimuliPresentation_one_by_one(n_monitor, volume=volume)
-
-                self._player_window.show()
-                self._player_window.raise_()
-
-                self._player_window.stimuliStarted.connect(self._on_start_stimuli)
-                self._player_window.stimuliPaused.connect(self._change_button_pause_stimuli_text)
-                self._player_window.stimuliFinished.connect(self._on_finish_stimuli)                     # !!! настроить чтобы это было в коннекшенс остальных
-            
-                self._player_window.currIdxChanged.connect(self._on_stimuli_idx_changed)
-                self._player_window.stimulus.connect(self._on_stimuli_order_changed)
-
-                # self._player_window.activateWindow()
-                self._player_window.volumeChanged.connect(self._on_player_volume_changed)
-                self._player_window.playerIsMuted.connect(self._on_player_muted)
-            
-            self._player_window.set_sequence(sequence, seq_name)
-            # меняем кнопки
-            self._settings_panel.button_stimuli_pause.setEnabled(True)
-
-            self._settings_panel.button_stimuli.setText("Завершить")
-            self._restart_stimuli = False
-
-    def _on_player_volume_changed(self, value):
-        self._settings_panel.volume_slider.slider.setValue(value)
-    
-    def _on_player_muted(self):
-        cur_volume = self._settings_panel.volume_slider.slider.value()
-        if cur_volume == 0:
-            volume = self._player_window.get_last_volume()
-        else:
-            volume = 0
-        self._settings_panel.volume_slider.slider.setValue(volume)
-
-    def _on_change_volume(self, value):
-        # changes from slider
-        pw = getattr(self, "_player_window", None)
-        if isinstance(pw, QWidget) and not pw.isHidden():
-            self._player_window.update_volume(value)
 
 
     # def _on_show_epoch_button_click(self):
@@ -594,124 +420,6 @@ class MainWindow(QWidget):
     #     del self._ts[n_delete-1]
         
     #     self._update_data()
-
-    # def _on_update_averaging_signal(self):
-    #     """применение настроек для усреднения эпох"""
-    #     if self._average_data and self._process_new_data:         # если режим усреднения
-    #         data = self._epochs if self._n_epoch > 0 else None
-    #         self._create_average_functions(data)            # создать новые функции
-
-    #     self._update_data()                     # отобразить изменения
-
-    # def _on_update_baseline_signal(self):
-    #     apply_baseline = self._settings_panel.check_box_baseline.isChecked()   # вычитать ли бейзлайн
-    #     if apply_baseline:
-    #         baseline_from = self._settings_panel.spin_box_baseline_from.value()
-    #         baseline_to  = self._settings_panel.spin_box_baseline_to.value()
-    #         ind_from = self._ms_to_sample(baseline_from - self.SPEED["window_start"])
-    #         ind_to = ind_from + self._ms_to_sample(baseline_to - baseline_from) + 1
-    #         mean_function = self._settings_panel.combo_box_baseline.currentText()
-    #         func = (lambda x: np.mean(x, axis=1)) if mean_function == 'mean' else (lambda x: np.median(x, axis=1))
-    #         calculate_baseline = lambda x: func(x[:, ind_from:ind_to]).reshape((-1, 1))
-        
-    #     self._baseline = (lambda x: x - calculate_baseline(x)) if apply_baseline else (lambda x: x)
-    #     # если усреднять и уже есть данные - создать новые функции
-    #     if self._average_data and self._n_epoch > 0 and self._process_new_data:  
-    #         self._create_average_functions(self._epochs)
-        
-    #     self._update_data()         # отобразить изменения
-    
-    # def _on_update_lowpass_signal(self):
-    #     apply_filter = self._settings_panel.check_box_lowpass.isChecked()
-    #     if apply_filter:
-    #         f = self._settings_panel.spin_box_lowpass.value()
-    #         sos_lowpass = signal.butter(2, f/self.SPEED["Fs"]*2, btype='lowpass', output='sos')
-    #     self._lowpass_filter = (lambda x: signal.sosfilt(sos_lowpass, x, axis=0)) if apply_filter else (lambda x: x)    
-    #     # если усреднять и уже есть данные - создать новые функции
-    #     if self._average_data and self._n_epoch > 0 and self._process_new_data:  
-    #         self._create_average_functions(self._epochs)
-        
-    #     self._update_data()         # отобразить изменения
-
-    # def _on_update_rereference_signal(self):
-    #     apply_reref = self._settings_panel.check_box_rereference.isChecked()
-    #     reref_channel = self._settings_panel.combo_box_rereference.checkedItems()[0] # канал для ререферентации
-    #     idx = np.where(CHANNELS == reref_channel)[0][0] # индекс канала для ререферентации
-
-    #     n_channels = len(CHANNELS)  
-    #     e_r = np.zeros((n_channels, 1)); 
-    #     e_r[idx, 0] = 1.0
-    #     R = np.eye(n_channels) - np.ones((n_channels, 1)) @ e_r.T
-
-    #     self._referef = (lambda x: R @ x) if apply_reref else (lambda x: x)
-    #     # если усреднять и уже есть данные - создать новые функции
-    #     if self._average_data and self._n_epoch > 0 and self._process_new_data:  
-    #         self._create_average_functions(self._epochs)
-        
-    #     self._update_data()         # отобразить изменения
-
-    # def _on_update_CAR_signal(self):
-    #     apply_CAR = self._settings_panel.check_box_car.isChecked()   # применять ли CAR
-    #     if apply_CAR: 
-    #         CAR_channels = self._settings_panel.combo_box_channels.checkedItems()
-    #         n_sel = len(CAR_channels)
-    #         if n_sel == 0:
-    #             raise ValueError("Не отмечены каналы для построения CAR фильтра.")
-    #         is_selected = np.array([ch in CAR_channels for ch in CHANNELS])
-    #         n_channels = len(CHANNELS)
-    #         W = np.eye(n_channels) - (1/n_sel) * np.outer(np.ones(n_channels), is_selected.astype(float)) # матрица фильтра CAR                 
-    #     self._CAR = (lambda x: W @ x) if apply_CAR else (lambda x: x)           # функция для вычисления CAR
-    #     # если усреднять и уже есть данные - создать новые функции
-    #     if self._average_data and self._n_epoch > 0 and self._process_new_data:  
-    #         self._create_average_functions(self._epochs)
-        
-    #     self._update_data()         # отобразить изменения
-
-    # def _create_full_transform(self):
-    #     self._transform = lambda x: self._referef(
-    #         self._CAR(
-    #             self._baseline(
-    #                 self._lowpass_filter(
-    #                     x
-    #                     )
-    #                 )
-    #             )
-    #         )
-
-    # def _create_average_functions(self, new_data=None):
-    #         """Создать функции для усреднения TEPs"""
-    #         function = self.aver_empty_func[self.aver_method]   # пустой трафарет
-    #         if new_data is not None:
-    #             data = np.array([self._transform(np.array(TEPs[:-2, :], dtype=float) * 1E6) for TEPs in new_data])
-    #             self.average_functions = [
-    #                 [function(data[:, i, j], self._n_aver_max, self._aver_all)
-    #                 for j in range(self._n_samples)]
-    #                 for i in range(len(CHANNELS))
-    #             ]
-    #         else:
-    #             self.average_functions = [
-    #                 [function([], self._n_aver_max, self._aver_all)
-    #                 for _ in range(self._n_samples)]
-    #                 for _ in range(len(CHANNELS))
-    #             ]
-
-    # def _on_change_mode(self, idx):
-    #     self._average_data = True if idx == 0 else False      # из  ["Усреднение", "Одиночные пробы"]
-    #     if self._average_data:
-    #         self._create_average_functions()    # обновить функции усреднения
-    #     self._update_data() # отобразить изменения
-
-    # def _on_change_mode_data(self, idx):        
-    #     self._process_new_data = True if idx == 0 else False  # из ["Новые данные", "Сравнение"]
-
-    #     self._session_loaded = []                              # список с подгруженными датасетами
-    #     self._session_loaded_labels = []                       # список с названиями подгруженных файлов (для легенды)
-
-    #     if self._average_data:
-    #         data = self._epochs if self._process_new_data and self._n_epoch > 0 else None
-    #         self._create_average_functions(data)    # обновить функции усреднения
-
-    #     self._update_data()                         # отобразить изменения
 
     # def _restart_plots(self):
     #     self._topo_teps_panel.figure.refresh_plot()

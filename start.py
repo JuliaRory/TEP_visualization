@@ -33,8 +33,8 @@ output_stream = driver.outputMessageStream("controlSignal")           # созд
 output_stream_stimuli = driver.outputMessageStream("stimuli")           # создание выходного потока данных типа Message
 resonance = ResonanceAppProxy(output_stream)                             # Создаем прокси резонанса
 
-# driver.loadConfig(r'resonance_settings.json')          # вгрузить настройки с потоком в резонансе
-driver.loadConfig(r'resonance_settings_main.json')   # вгрузить настройки с потоком в резонансе
+driver.loadConfig(r'resonance_settings.json')          # вгрузить настройки с потоком в резонансе
+# driver.loadConfig(r'resonance_settings_main.json')   # вгрузить настройки с потоком в резонансе
 # driver.loadConfig(r'stream_Generator@message__to__TEP_visual@epochs.json')   # вгрузить настройки с потоком в резонансе
 
 # == Запуск приложения ==
