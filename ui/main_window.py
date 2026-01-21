@@ -115,14 +115,15 @@ class MainWindow(QWidget):
 
     # --- Инициализация ---
     def _init_state(self):
-        """Инициализирует начальное состояние"""
-        # == Внешний вид окна == 
-        self.setWindowTitle("TEP visualization")
-        self.resize(WIDTH_SET, HEIGHT_SET)
-        #self.setWindowIcon(QtGui.QIcon(r"./pictures/icon.png"))
-    
-        # self._session_loaded = []                              # список с подгруженными датасетами
-        # self._session_loaded_labels = []                       # список с названиями подгруженных файлов (для легенды)
+        """Инициализирует начальное состояние переменных"""
+        self._n_epoch = 0                                   # счётчик количества хранимых в памяти эпох
+        self._epochs = []                                   # список для хранения всех signle-trial TEPs
+        self._ts = []                                       # список для хранения таймстемпов (от резонанса) -- для сохранения эпох only
+
+        self._session_loaded = []                              # список с подгруженными датасетами
+        self._session_loaded_labels = []                       # список с названиями подгруженных файлов (для легенды)
+
+        self._restart_stimuli = False
 
         self._record_in_progress = False                    # флаг идёт ли запись
         if self.settings.record.activate_bat:
@@ -467,6 +468,7 @@ class MainWindow(QWidget):
     def _change_button_pause_stimuli_text(self):
         status = "▶" if self._player_window.is_paused else "⏸"
         self._settings_panel.button_stimuli_pause.setText(status)
+        self._settings_panel.button_stimuli_restart.setEnabled(self._player_window.is_paused)        # можно начать заново
 
     def _on_pause_stimuli_button_click(self):
         pw = getattr(self, "_player_window", None)
@@ -475,21 +477,21 @@ class MainWindow(QWidget):
             self._change_button_pause_stimuli_text()
         
     def _on_restart_stimuli_presentation(self):
-        pw = getattr(self, "_player_window", None)
-        if isinstance(pw, QWidget) and not pw.isHidden():
-            self._player_window.restart_sequence()
-            self._settings_panel.button_stimuli_pause.setEnabled(True)
+        self._restart_stimuli = True
+        self._on_stimuli_button_click()
 
     def _on_finish_stimuli(self):
         if self._record_in_progress:
             self._on_record_button_click()
         
         self._settings_panel.label_stimuli_idx.setText(f"")
+        self._settings_panel.button_stimuli_restart.setEnabled(True)
     
     def _on_start_stimuli(self):
         if self._settings_panel.check_box_stimuli_record.isChecked():
             self._on_record_button_click()  # начать запись
         self._settings_panel.button_stimuli_pause.setText("⏸")
+        self._settings_panel.button_stimuli_restart.setEnabled(False)        # можно начать заново
 
     def _on_create_stimuli_button_click(self):
         self._create_stimuli_window = StimuliCreation()
@@ -507,14 +509,13 @@ class MainWindow(QWidget):
     def _on_stimuli_button_click(self):
         # если стимул-презентейшн уже открыт -> хотим закрыть
         pw = getattr(self, "_player_window", None)
-        if isinstance(pw, QWidget) and not pw.isHidden():
+        if isinstance(pw, QWidget) and not pw.isHidden() and not self._restart_stimuli:
             self._settings_panel.button_stimuli.setText("Запуск")               # опять можно начать презентацию
-            self._settings_panel.button_stimuli_restart.setEnabled(False)       # опять нельзя начать заново
+            self._settings_panel.button_stimuli_restart.setEnabled(True)       # опять нельзя начать заново
             self._player_window.finish()                                        # like Escape
         # если не открыт -> хотим начать презентацию и возможно запись нвх
         else:
             
-
             seq_name = self._settings_panel.combo_box_stimuli.currentText()
             if not seq_name:
                 return
@@ -529,28 +530,29 @@ class MainWindow(QWidget):
 
             n_monitor = self._settings_panel.spin_box_monitor.value()
             volume = self._settings_panel.volume_slider.slider.value()
-            self._player_window = StimuliPresentation_one_by_one(sequence, n_monitor, volume=volume)
+            if not self._restart_stimuli:
+                self._player_window = StimuliPresentation_one_by_one(n_monitor, volume=volume)
 
-            self._player_window.show()
-            self._player_window.raise_()
+                self._player_window.show()
+                self._player_window.raise_()
 
+                self._player_window.stimuliStarted.connect(self._on_start_stimuli)
+                self._player_window.stimuliPaused.connect(self._change_button_pause_stimuli_text)
+                self._player_window.stimuliFinished.connect(self._on_finish_stimuli)                     # !!! настроить чтобы это было в коннекшенс остальных
             
-            self._player_window.stimuliStarted.connect(self._on_start_stimuli)
-            self._player_window.stimuliPaused.connect(self._change_button_pause_stimuli_text)
-            self._player_window.stimuliFinished.connect(self._on_finish_stimuli)                     # !!! настроить чтобы это было в коннекшенс остальных
+                self._player_window.currIdxChanged.connect(self._on_stimuli_idx_changed)
+                self._player_window.stimulus.connect(self._on_stimuli_order_changed)
+
+                # self._player_window.activateWindow()
+                self._player_window.volumeChanged.connect(self._on_player_volume_changed)
+                self._player_window.playerIsMuted.connect(self._on_player_muted)
             
-            self._player_window.currIdxChanged.connect(self._on_stimuli_idx_changed)
-            self._player_window.stimulus.connect(self._on_stimuli_order_changed)
-
-            # self._player_window.activateWindow()
-            self._player_window.volumeChanged.connect(self._on_player_volume_changed)
-            self._player_window.playerIsMuted.connect(self._on_player_muted)
-
+            self._player_window.set_sequence(sequence, seq_name)
             # меняем кнопки
-            self._settings_panel.button_stimuli_restart.setEnabled(True)        # можно начать заново
             self._settings_panel.button_stimuli_pause.setEnabled(True)
 
             self._settings_panel.button_stimuli.setText("Завершить")
+            self._restart_stimuli = False
 
     def _on_player_volume_changed(self, value):
         self._settings_panel.volume_slider.slider.setValue(value)

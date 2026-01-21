@@ -43,7 +43,7 @@ class StimuliPresentation_one_by_one(QWidget):
 
     stimulus = pyqtSignal(str)
     
-    def __init__(self, stimuli_sequence, monitor=1, volume=80):
+    def __init__(self, monitor=1, volume=80):
         super().__init__()  
 
         self._volume = volume
@@ -52,8 +52,7 @@ class StimuliPresentation_one_by_one(QWidget):
         self._finished = False               # остановлен т.к. закончилась последовательность
         self._sequence_started = False      # последовательность началась
         self._is_paused = False             # и не на паузе
-        self._cross_dur_ms = stimuli_sequence["cross"]["dur_ms"]      # проигрвать крест 
-        self.placeholder_path = os.path.join(r"resources\crossFigures", stimuli_sequence["cross"]["filename"])
+        
 
         # self.final_pic_path = os.path.join(r"resources\crossFigures", "final_picture.png")
         final_fig_files = os.listdir(r"resources\final_fig")
@@ -68,16 +67,7 @@ class StimuliPresentation_one_by_one(QWidget):
         target_monitor = screens[monitor - 1].geometry()
         self.setGeometry(target_monitor)
         self.showFullScreen()
-
-        # Видео
-        self.order = stimuli_sequence["order"]
-        self.video_names = list(stimuli_sequence["set"].values())
-        path = r"resources\videoSamples"
-        self.video_names_full = [os.path.join(path, file) for file in self.video_names]
-        self.video_files = [self.video_names_full[i-1] for i in self.order]
-        self._current_index = 0
-        self.currIdxChanged.emit(self._current_index)
-        self.stimulus.emit(self.video_names[self.order[self._current_index]-1])
+      
 
         # VLC
         self._instance = vlc.Instance(
@@ -110,11 +100,7 @@ class StimuliPresentation_one_by_one(QWidget):
 
         # === Placeholder widget поверх всего ===
         self._placeholder_widget = QLabel(self)
-        
-
-        self._main_cross_pic = QPixmap(self.placeholder_path).scaled(
-                self.size(), Qt.KeepAspectRatio, Qt.SmoothTransformation
-            )
+                
         self._final_pic = QPixmap(self.final_pic_path).scaled(
                 self.size(), Qt.KeepAspectRatio, Qt.SmoothTransformation
             )
@@ -129,11 +115,39 @@ class StimuliPresentation_one_by_one(QWidget):
         self._placeholder_widget.setAlignment(Qt.AlignCenter)
         self._placeholder_widget.setStyleSheet("background-color: black;")
         self._placeholder_widget.show()
+        
+
+    def set_sequence(self, stimuli_sequence, seq_name=None):
+        if seq_name is None:
+            seq_name = "a new"
+        print(f'[VLC player]: set {seq_name} stimuli sequence.')
+        self._placeholder_widget.setPixmap(self._intro_pic)
+        self._placeholder_widget.show()
+
+        self._cross_dur_ms = stimuli_sequence["cross"]["dur_ms"]      # проигрвать крест 
+        self.placeholder_path = os.path.join(r"resources\crossFigures", stimuli_sequence["cross"]["filename"])
+
+        self._cross_dur_ms = stimuli_sequence["cross"]["dur_ms"]      # проигрвать крест 
+        self.placeholder_path = os.path.join(r"resources\crossFigures", stimuli_sequence["cross"]["filename"])
+        
+        # Видео
+        self.order = stimuli_sequence["order"]
+        video_names = list(stimuli_sequence["set"].values())
+        path = r"resources\videoSamples"
+        self.video_names = [os.path.join(path, file) for file in video_names]
+        self.video_files = [self.video_names[i-1] for i in self.order]
+        self._current_index = 0
+        self.currIdxChanged.emit(self._current_index)
+        self.stimulus.emit(self.video_names[self.order[self._current_index]-1])
+
+        self._main_cross_pic = QPixmap(self.placeholder_path).scaled(
+                self.size(), Qt.KeepAspectRatio, Qt.SmoothTransformation
+            )
 
         # Запуск воспроизведения
         self._prepare_next_video()
         print('[VLC player]: press Space to start.')
-        
+
     def _show_placeholder_then_play(self):
         """Показываем placeholder, затем запускаем видео через короткую задержку"""
         self._placeholder_widget.show()
