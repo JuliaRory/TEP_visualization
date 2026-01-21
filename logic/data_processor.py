@@ -26,6 +26,7 @@ class DataProcessor(QObject):
         
     """
     newDataProcessed = pyqtSignal()
+    updateCounter = pyqtSignal(int)
  
     def __init__(self, settings):
         super().__init__()
@@ -86,6 +87,7 @@ class DataProcessor(QObject):
             self._epochs.append(epoch)
             self._timestamps.append(ts)
             self._n_epoch += 1
+            self.updateCounter.emit(self._n_epoch)
 
             if self.average_data:
                 TEPs2plot = self._transform(epoch[:-2, :] * 1e6)     # without emg channels

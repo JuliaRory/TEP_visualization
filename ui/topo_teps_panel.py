@@ -17,8 +17,7 @@ class TopoTEPsPanel(QFrame):
         super().__init__(parent)
 
         """Внешний вид виджета"""
-        self.resize(init_size[0], init_size[1])
-        self.setMinimumWidth(300)
+        # self.resize(init_size[0], init_size[1])
         
         """Параметры"""
         self.settings = settings 

@@ -129,12 +129,20 @@ class MainWindow(QWidget):
         # self._dset = self.autosave_file.create_dataset("epochs", (0, 66), maxshape=(None, 66), dtype='float32')  # для эпох (64 EEG + 2 EMG)
         # self._tset = self.autosave_file.create_dataset("timestamps", (0, ), maxshape=(None, ), dtype='int64')    # для таймстемпов резонанса (в нс)
 
+        hor_ratio = self.settings.layout.horizontal_ratios
+        cen_ratio = self.settings.layout.center_ratio
+
+        self._center_plots_width = int(hor_ratio[1] * WIDTH_SET)
+        self._center_plots_height = int(cen_ratio*HEIGHT_SET)
+        self._center_meps_height = int((1-cen_ratio)*HEIGHT_SET)
+
+        self._right_panel_width = int(hor_ratio[2] * WIDTH_SET)
+
     # --- UI: WIDGETS---
     def _setup_ui(self):
         """Создаёт все элементы интерфейса"""
 
-        hor_ratio = self.params["layout"]["horizontal_ratios"]
-        cen_ratio = self.params["layout"]["center_ratio"]
+        
 
         self._nvx_control_panel = NVXControlPanel(parent=self,
                                                 settings=self.settings.nvx_control,
@@ -162,21 +170,18 @@ class MainWindow(QWidget):
                                          speed_settings=self.settings.speed,
                                          settings_handler=self._settings_handler,
                                          processing_ui=self._processing_panel,
-                                         init_size=[int(hor_ratio[1] * WIDTH_SET), int(cen_ratio*HEIGHT_SET)])
+                                         init_size=[self._center_plots_width, self._center_plots_height])
         
         self._meps_panel = MEPsPanel(parent=self,
                                     Fs=self.settings.speed.Fs,
                                     settings=self.settings_plot.single_meps,
                                     settings_dl=self.settings_plot.meps_deeper_look,
-                                    init_size=[int(hor_ratio[1] * WIDTH_SET), int((1-cen_ratio)*HEIGHT_SET)])
+                                    init_size=[self._center_plots_width, self._center_meps_height])
         
         self._overview_panel = overviewPanel(parent=self,
                                          params=self.params["TEP_suppl_plot"], 
-                                         init_size=[int(hor_ratio[2] * WIDTH_SET), HEIGHT_SET])
-        
-        
-        
-        
+                                         init_size=[self._right_panel_width, HEIGHT_SET])
+         
     # --- UI: Layout ---
     def _setup_main_grid(self):
         # Grid layout (all widgets in splitters):
@@ -190,30 +195,39 @@ class MainWindow(QWidget):
         # |       |                         |         |
         # +-------+-------------------------+---------+
 
-        ratio = self.settings.layout.center_ratio
-        splitter_center = QSplitter(Qt.Vertical, parent=self)        # позволяет изменять размер
+        # === центральная часть - вертикальный === 
+
+        splitter_center = QSplitter(Qt.Vertical, parent=self)        
+
         splitter_center.addWidget(self._topo_teps_panel)
         splitter_center.addWidget(self._meps_panel)
+
         splitter_center.setCollapsible(0, False)
         splitter_center.setOpaqueResize(False)
-        splitter_center.setSizes([int(ratio*HEIGHT_SET), int((1-ratio)*HEIGHT_SET)])   # Можно задать начальные пропорции
+
+        splitter_center.setSizes([self._center_plots_height, self._center_meps_height])   # Можно задать начальные пропорции
         splitter_center.setStretchFactor(0, 7)
-        splitter_center.setStretchFactor(1, 3) # растягивается в два раза сильнее
+        splitter_center.setStretchFactor(1, 3) 
+
         splitter_center.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
 
-        self.splitter = QSplitter(Qt.Horizontal, parent=self)        # позволяет изменять размер
-        # splitter.addWidget(self._settings_panel)
+        # === основной - горизонтальный === 
+
+        self.splitter = QSplitter(Qt.Horizontal, parent=self)       
+
         self.splitter.addWidget(self._settings_panel.scroll)
         self.splitter.addWidget(splitter_center)
         self.splitter.addWidget(self._overview_panel)
+
         self.splitter.setCollapsible(0, False)
         self.splitter.setOpaqueResize(False)
         
         ratio = self.settings.layout.horizontal_ratios
-        self.splitter.setSizes([int(ratio[0] * WIDTH_SET), int(ratio[1] * WIDTH_SET), int(ratio[2] * WIDTH_SET)])   # Можно задать начальные пропорции
+        self.splitter.setSizes([int(ratio[0] * WIDTH_SET), self._center_plots_width, self._right_panel_width])   
         self.splitter.setStretchFactor(0, 2)
         self.splitter.setStretchFactor(1, 5) # растягивается в два раза сильнее
         self.splitter.setStretchFactor(2, 3)
+        
         self.splitter.setGeometry(0, 0, WIDTH_SET, HEIGHT_SET)  #  вручную задаём положение и размер
 
         # фильтр событий на splitter
@@ -225,7 +239,9 @@ class MainWindow(QWidget):
         # self._settings_handler_plots.setupUI(self._plot_updater)
 
         self._input_stream.dataReady.connect(lambda epoch, ts: self._data_processor.add_epoch(epoch, ts))
+    
         self._data_processor.newDataProcessed.connect(lambda: self._plot_updater.update_plots(self._data_processor))
+        self._data_processor.updateCounter.connect(lambda n: self._update_label_counter(n))
 
         self._meps_panel.deeperLookActivate.connect(lambda: self._plot_updater.add_mep_deeper_look(self._meps_panel._deeper_look_window))
 
@@ -245,36 +261,51 @@ class MainWindow(QWidget):
 
         # сигнал для управления записью nvx одновременно с показом стимулов
         self._stimuli_control_panel.stimuliPresentation.connect(self._on_stimuli_presenation_status_changed_signal)
-       
-               
+                      
         # изменение масштаба для визуализации 
         for spin_box in self._overview_panel.spinbox_ts:
             spin_box.valueChanged.connect(self._update_topoplots)
         self._topo_teps_panel.scale_changed.connect(self._on_change_main_scale)
 
-        
-        
-        
+    def _on_stimuli_presenation_status_changed_signal(self, presentation_status):
+        """связь между показом стимулов и записью nvx"""
+        if self._nvx_control_panel.record_in_progress:
+            self._nvx_control_panel._on_record_button_click()
 
     # --- Логика ---
     
+    # === обновление надписей на центральных графиках === 
     def _on_recording_status_changed_signal(self, recording_status):
         status_label = "🔴REC" if recording_status else ""
         self._topo_teps_panel.label_record.setText(status_label)
     
-    def _on_stimuli_presenation_status_changed_signal(self, presentation_status):
-        if self._nvx_control_panel.record_in_progress:
-            self._nvx_control_panel._on_record_button_click()
-        
+    def _update_label_counter(self, n_epoch):
+        self._topo_teps_panel.label_n_epoch.setText('Количество эпох: {}'.format(n_epoch))
+        qApp.processEvents()    # для обновления отображения в Qt-приложении
 
-    def _update_data(self):
-        self._restart_plots()
-        # если есть что нарисовать и режим отображения "новых данных"
-        if self._n_epoch > 0 and self._process_new_data:
-            self._update_plots()
-        # если есть что нарисовать и режим отобраения "загруженных данных"
-        if len(self._session_loaded) != 0 and not self._process_new_data:
-            self._draw_loaded_data()
+        # если эпохи есть, то разрешить их очистку из памяти по нажатию кнопки 
+        
+        active_status = True if n_epoch > 0 else False      
+        self._settings_panel.button_restart.setEnabled(active_status)
+        # self._settings_panel.shortcut_restart.setEnabled(active_status)
+        self._settings_panel.button_remove_epoch.setEnabled(active_status)
+        #self.shortcut_remove_epoch.setEnabled(True)
+        self._settings_panel.button_show_epoch.setEnabled(active_status)
+        self._settings_panel.button_save.setEnabled(active_status)
+        
+        self._settings_panel.spin_box_show_epoch.setMaximum(n_epoch)
+        self._settings_panel.spin_box_show_epoch.setValue(n_epoch)
+        self._settings_panel.spin_box_remove_epoch.setMaximum(n_epoch)
+        self._settings_panel.spin_box_remove_epoch.setValue(n_epoch)
+
+    # def _update_data(self):
+    #     self._restart_plots()
+    #     # если есть что нарисовать и режим отображения "новых данных"
+    #     if self._n_epoch > 0 and self._process_new_data:
+    #         self._update_plots()
+    #     # если есть что нарисовать и режим отобраения "загруженных данных"
+    #     if len(self._session_loaded) != 0 and not self._process_new_data:
+    #         self._draw_loaded_data()
 
     # def _draw_loaded_data(self):
     #     TEPs_sessions = []
@@ -395,9 +426,6 @@ class MainWindow(QWidget):
 
         # self._restart_plots()
 
-
-
-
     # def _on_show_epoch_button_click(self):
     #     if self._specific_epoch: # если был режим показа отдельной эпохи - вернуться к стандартному отображению
     #         self._update_data()
@@ -453,24 +481,7 @@ class MainWindow(QWidget):
         t5 = time.perf_counter()
         print(f"все предварительные рассчёты: {t5 - t0:.6f} сек")
     
-    def _update_label_counter(self, n_epoch):
-        self._topo_teps_panel.label_n_epoch.setText('Количество эпох: {}'.format(n_epoch))
-        qApp.processEvents()    # для обновления отображения в Qt-приложении
-
-        # если эпохи есть, то разрешить их очистку из памяти по нажатию кнопки 
-        
-        active_status = True if self._n_epoch > 0 else False      
-        self._settings_panel.button_restart.setEnabled(active_status)
-        # self._settings_panel.shortcut_restart.setEnabled(active_status)
-        self._settings_panel.button_remove_epoch.setEnabled(active_status)
-        #self.shortcut_remove_epoch.setEnabled(True)
-        self._settings_panel.button_show_epoch.setEnabled(active_status)
-        self._settings_panel.button_save.setEnabled(active_status)
-        
-        self._settings_panel.spin_box_show_epoch.setMaximum(self._n_epoch)
-        self._settings_panel.spin_box_show_epoch.setValue(self._n_epoch)
-        self._settings_panel.spin_box_remove_epoch.setMaximum(self._n_epoch)
-        self._settings_panel.spin_box_remove_epoch.setValue(self._n_epoch)
+    
 
     def _update_topoplots(self):
         plot = False
