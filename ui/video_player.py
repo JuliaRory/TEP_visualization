@@ -40,6 +40,8 @@ class StimuliPresentation_one_by_one(QWidget):
     playerIsMuted = pyqtSignal()
     currIdxChanged = pyqtSignal(int)
     _videoEnded = pyqtSignal()
+
+    stimulus = pyqtSignal(str)
     
     def __init__(self, stimuli_sequence, monitor=1, volume=80):
         super().__init__()  
@@ -69,12 +71,13 @@ class StimuliPresentation_one_by_one(QWidget):
 
         # Видео
         self.order = stimuli_sequence["order"]
-        video_names = list(stimuli_sequence["set"].values())
+        self.video_names = list(stimuli_sequence["set"].values())
         path = r"resources\videoSamples"
-        video_names = [os.path.join(path, file) for file in video_names]
-        self.video_files = [video_names[i-1] for i in self.order]
+        self.video_names_full = [os.path.join(path, file) for file in self.video_names]
+        self.video_files = [self.video_names_full[i-1] for i in self.order]
         self._current_index = 0
         self.currIdxChanged.emit(self._current_index)
+        self.stimulus.emit(self.video_names[self.order[self._current_index]-1])
 
         # VLC
         self._instance = vlc.Instance(
@@ -178,6 +181,8 @@ class StimuliPresentation_one_by_one(QWidget):
 
         self._current_index += 1
         self.currIdxChanged.emit(self._current_index)
+        if self._current_index < len(self.order):
+            self.stimulus.emit(self.video_names[self.order[self._current_index]-1])
         self._prepare_next_video()
         self._is_paused = False
 
@@ -241,6 +246,8 @@ class StimuliPresentation_one_by_one(QWidget):
 
         self._current_index = 0
         self.currIdxChanged.emit(self._current_index)
+        self.stimulus.emit(self.video_names[self.order[self._current_index]-1])
+
         self._is_paused = False
         self._sequence_started = False
         self._stopped = False

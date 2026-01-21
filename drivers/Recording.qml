@@ -33,6 +33,7 @@ DSM.StateMachine {
         id: st_initial
 		
 		onEntered: {
+            print(stream_name, service_name)
             recorder.openFile(root.hdfFileName)
 		}
 		

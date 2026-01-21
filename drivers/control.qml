@@ -43,13 +43,12 @@ ApplicationWindow {
         onMessage: {
             // message — это JSON вида:
             // {"service": "service_name", "type": "parameter", "parameter": "parameter_name", "value": "200"}
-            // {"service": "service_name", "type": "command", "command": "command_name"}
+            // {"service": "service_name", "type": "command", "command": "command_name", "stream": "stream_name"}
             
             var msg = JSON.parse(text);
 
             let service = ResonanceApp.getService(msg.service)
-            //service.sendParameter(msg.parameter, msg.value)
-            //service.sendTransition(msg.command)
+
             print(text)
             if (msg.type === "command") {
                 if (msg.command == "!terminate") {service.sendTransition(msg.command)};
@@ -57,8 +56,9 @@ ApplicationWindow {
                 if (msg.command == "start") {
                     //rec_filename = "C:/Users/hodor/Documents/lab-MSU/Works/2025.10_TMS/TEP_visualization/data/records/rec-$$$.h5"; //msg.filename;
                     //print(rec_filename.text);
-                    //service_name.value = msg.
-                    recorder.start(); 
+                    service_name.value = msg.service
+                    stream_name.value = msg.stream
+                    recorder.start();
                     print("--- start the record --- ");
                     };
 
@@ -67,9 +67,11 @@ ApplicationWindow {
                     print("--- finish the record --- ");
                     };
                 }
-            if (msg.type == "parameter") 
-                {print("parameter"); 
-                }
+
+            if (msg.type == "parameter") {
+                print("parameter"); 
+                service.sendParameter(msg.parameter, msg.value);
+            }
             
         }
     }

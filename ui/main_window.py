@@ -75,12 +75,13 @@ class MainWindow(QWidget):
     
     start_calc_signal = pyqtSignal()
 
-    def __init__(self, input_stream, resonance, filename_params):
+    def __init__(self, input_stream, resonance, output_stream, filename_params):
         super().__init__()
 
         # == Параметры и структуры данных ==
 
         self._resonance = resonance                       # прокси для управления резонансными модулями
+        self._output_stream = output_stream
 
         with open(filename_params) as json_data:          # вгрузить настройки приложения
             self.params = json.load(json_data)  
@@ -126,12 +127,11 @@ class MainWindow(QWidget):
         self._record_in_progress = False                    # флаг идёт ли запись
         if self.settings.record.activate_bat:
             # Запуск батника с qml-файлом для управления резонансными модулями
-            
             try:
                 cwd = os.path.dirname(self.settings.record.bat_file) # cwd = папка с батником
-                subprocess.Popen([self.settings.record,bat_file], cwd=cwd)
+                subprocess.Popen([self.settings.record.bat_file], cwd=cwd)
             except:
-                cwd = os.path.dirname(self.settings.record,bat_file_home) # cwd = папка с батником
+                cwd = os.path.dirname(self.settings.record.bat_file_home) # cwd = папка с батником
                 subprocess.Popen([self.settings.record.bat_file_home], cwd=cwd)
 
         self._player_window = None
@@ -266,7 +266,7 @@ class MainWindow(QWidget):
         # self._settings_panel.button_remove_epoch.clicked.connect(self._on_remove_epoch_button_click)
 
         # работа с nvx
-        # self._settings_panel.button_nvx_record.clicked.connect(self._on_record_button_click)
+        self._settings_panel.button_nvx_record.clicked.connect(self._on_record_button_click)
 
         # работа со стимулами
         self._settings_panel.button_create_stimuli.clicked.connect(self._on_create_stimuli_button_click)
@@ -447,7 +447,10 @@ class MainWindow(QWidget):
             self._record_in_progress = True
             
             self._service = self._resonance.getService(self.params["record"]["service_name"])     # Берем сервис
-            self._service.sendTransition('start')
+            self._service.sendTransition('start', stream="eeg")
+
+            self._service_stimuli = self._resonance.getService("TEP_visual")     # Берем сервис
+            self._service_stimuli.sendTransition('start', stream="stimuli")
 
             self._topo_teps_panel.label_record.setText("🔴REC")
             self._settings_panel.button_nvx_record.setText("Остановить")
@@ -456,6 +459,7 @@ class MainWindow(QWidget):
             self._record_in_progress = False
 
             self._service.sendTransition('stop')
+            self._service_stimuli.sendTransition('stop')
 
             self._topo_teps_panel.label_record.setText("")
             self._settings_panel.button_nvx_record.setText("Начать запись")
@@ -494,6 +498,12 @@ class MainWindow(QWidget):
     def _on_stimuli_idx_changed(self, idx):
         self._settings_panel.label_stimuli_idx.setText(f"#{idx}")
 
+    def _on_stimuli_order_changed(self, order):
+        message = {"stimulus": order}
+        # stream должен иметь метод send(), который шлёт JSON в QML
+        self._output_stream(json.dumps(message))
+
+
     def _on_stimuli_button_click(self):
         # если стимул-презентейшн уже открыт -> хотим закрыть
         pw = getattr(self, "_player_window", None)
@@ -530,6 +540,7 @@ class MainWindow(QWidget):
             self._player_window.stimuliFinished.connect(self._on_finish_stimuli)                     # !!! настроить чтобы это было в коннекшенс остальных
             
             self._player_window.currIdxChanged.connect(self._on_stimuli_idx_changed)
+            self._player_window.stimulus.connect(self._on_stimuli_order_changed)
 
             # self._player_window.activateWindow()
             self._player_window.volumeChanged.connect(self._on_player_volume_changed)

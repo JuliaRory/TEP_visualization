@@ -29,16 +29,17 @@ dispatcher = CallDispatcher()                                            # пу�
 driver.inputDataStream("epochs", dispatcher)                             # создание входного потока данных типа Stream
 # driver.inputMessageStream("epochs", dispatcher)                             # создание входного потока данных типа Stream
 
-output_stream = driver.outputMessageStream("controlSignal")           # создание выходного потока данных типа Stream
+output_stream = driver.outputMessageStream("controlSignal")           # создание выходного потока данных типа Message
+output_stream_stimuli = driver.outputMessageStream("stimuli")           # создание выходного потока данных типа Message
 resonance = ResonanceAppProxy(output_stream)                             # Создаем прокси резонанса
 
-driver.loadConfig(r'resonance_settings.json')          # вгрузить настройки с потоком в резонансе
-# driver.loadConfig(r'resonance_settings_main.json')   # вгрузить настройки с потоком в резонансе
+# driver.loadConfig(r'resonance_settings.json')          # вгрузить настройки с потоком в резонансе
+driver.loadConfig(r'resonance_settings_main.json')   # вгрузить настройки с потоком в резонансе
 # driver.loadConfig(r'stream_Generator@message__to__TEP_visual@epochs.json')   # вгрузить настройки с потоком в резонансе
 
 # == Запуск приложения ==
 filename_params = r'data/TEP_visual_settings.json'     # файл с настройками приложения
-main = MainWindow(dispatcher, resonance, filename_params)         # открыть Qt-окно приложения
+main = MainWindow(dispatcher, resonance, output_stream_stimuli, filename_params)         # открыть Qt-окно приложения
 
 sys.exit(app.exec_())
 
