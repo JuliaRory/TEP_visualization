@@ -42,7 +42,7 @@ class StimuliControlPanel(QFrame):
 
         # Создаем аудиоплеер
         audio_file = os.path.join(r"resources\noise", "TAAC_CN2_coil_42MSO.wav")  # Укажите путь к вашему файлу
-        self._audio_player = AudioPlayer(audio_file, initial_volume=50)
+        self._audio_player = AudioPlayer(audio_file, initial_volume=self.settings.noise_volume)
 
     # =======================
     # =====     UI      =====
@@ -229,7 +229,8 @@ class StimuliControlPanel(QFrame):
             self._on_noise_button_click()   # остановить проигрывание шума
     
     def _on_start_stimuli(self):
-        self.stimuliPresentation.emit(True)
+        if self.check_box_stimuli_record:
+            self.stimuliPresentation.emit(True)
 
         self.button_stimuli_pause.setText(STOP_LABEL)
         self.button_stimuli_restart.setEnabled(False)        # можно начать заново

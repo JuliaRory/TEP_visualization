@@ -48,7 +48,7 @@ class StimuliSettings:
     stimuli_filename: str = "resources/saved_stimuli.json"
     video_folder: str = "resources/videoSamples"
     stimuli_volume: int = 60
-    noise_volume: int = 40
+    noise_volume: int = 10
     
 # --- Layout ---
 

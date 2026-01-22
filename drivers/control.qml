@@ -34,6 +34,7 @@ ApplicationWindow {
             value: "C:\\Users\\hodor\\Documents\\lab-MSU\\Works\\2025.10_TMS\\TEP_visualization\\data\\records\\rec-$$$.h5"
         }
 
+
     }
 
     MessageReceiver {  
@@ -57,8 +58,8 @@ ApplicationWindow {
                 if (msg.command == "start") {
                     //rec_filename = "C:/Users/hodor/Documents/lab-MSU/Works/2025.10_TMS/TEP_visualization/data/records/rec-$$$.h5"; //msg.filename;
                     //print(rec_filename.text);
-                    service_name.value = msg.service
-                    stream_name.value = msg.stream
+                    //service_name.value = msg.service
+                    //stream_name.value = msg.stream
                     recorder.start();
                     print("--- start the record --- ");
                     };

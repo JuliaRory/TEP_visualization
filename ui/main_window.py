@@ -269,8 +269,7 @@ class MainWindow(QWidget):
 
     def _on_stimuli_presenation_status_changed_signal(self, presentation_status):
         """связь между показом стимулов и записью nvx"""
-        if self._nvx_control_panel.record_in_progress:
-            self._nvx_control_panel._on_record_button_click()
+        self._nvx_control_panel.change_record_status(stimuli=True)
 
     # --- Логика ---
     

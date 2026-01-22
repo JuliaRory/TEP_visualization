@@ -28,6 +28,7 @@ class NVXControlPanel(QFrame):
 
     def _init_state(self):
         self.record_in_progress = False
+        self._add_stimuli_stream = False
 
         if self.settings.activate_bat:
             # Запуск батника с qml-файлом для управления резонансными модулями
@@ -110,12 +111,14 @@ class NVXControlPanel(QFrame):
         if not self.record_in_progress:    # если запись не была начата
             print("START NVX136 RECORDING")
             self.record_in_progress = True
+
+            comments = "true" if self._add_stimuli_stream else "false"
             
             self._service = self.resonance.getService(self.settings.service_name)     # Берем сервис
-            self._service.sendTransition('start', stream=self.settings.stream_name)
+            self._service.sendTransition('start', stream=self.settings.stream_name, add_stimuli=comments)
 
-            self._service_stimuli = self.resonance.getService("TEP_visual")     # Берем сервис
-            self._service_stimuli.sendTransition('start', stream="stimuli")
+            # self._service_stimuli = self.resonance.getService("TEP_visual")     # Берем сервис
+            # self._service_stimuli.sendTransition('start', stream="stimuli")
 
             self.recording.emit(True)
             
@@ -124,7 +127,7 @@ class NVXControlPanel(QFrame):
             self.record_in_progress = False
 
             self._service.sendTransition('stop')
-            self._service_stimuli.sendTransition('stop')
+            # self._service_stimuli.sendTransition('stop')
 
             self.recording.emit(False)
         
@@ -132,3 +135,6 @@ class NVXControlPanel(QFrame):
         self.button_nvx_record.setText(button_label)
     
 
+    def change_record_status(self, stimuli=False):
+        self._add_stimuli_stream = stimuli
+        self._on_nvx_record_button_click()

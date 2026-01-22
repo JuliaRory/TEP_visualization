@@ -12,7 +12,7 @@ class VerticalSliderWithLabel(QWidget):
         self.slider.setMinimum(0)
         self.slider.setMaximum(100)
         self.slider.setValue(50)
-        self.slider.setTickInterval(10)
+        self.slider.setTickInterval(5)
         self.slider.setTickPosition(QSlider.TicksRight)
 
         # Подпись текущего значения
@@ -51,7 +51,7 @@ class HorizontalSliderWithLabel(QWidget):
         self.slider.setMinimum(0)
         self.slider.setMaximum(100)
         self.slider.setValue(50)
-        self.slider.setTickInterval(10)
+        self.slider.setTickInterval(5)
         self.slider.setTickPosition(QSlider.TicksRight)
 
         # Подпись текущего значения
