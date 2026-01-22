@@ -44,10 +44,11 @@ class RecordSettings:
 class StimuliSettings:
     monitor: int = 3
     stimuli_with_record: bool = True
+    use_noise: bool = True
     stimuli_filename: str = "resources/saved_stimuli.json"
     video_folder: str = "resources/videoSamples"
-    volume: int = 60
-
+    stimuli_volume: int = 60
+    noise_volume: int = 40
     
 # --- Layout ---
 

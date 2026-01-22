@@ -30,7 +30,7 @@ class TEPsPlot(FigureCanvas):
 
         self.ax = self.fig.add_axes([0, 0, 1, 1])   # создаём ось на всё пространство графика [left, bottom, width, height]
         
-        self.refresh_plots( positions, single_w, single_h)
+        self.refresh_plots(positions, single_w, single_h)
        
         self._xdata = []
         self._ydata = None

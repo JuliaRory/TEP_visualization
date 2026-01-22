@@ -63,10 +63,9 @@ class StimuliPresentation_one_by_one(QWidget):
         self._is_paused = False             # и не на паузе
         
         self.intro_pic_path = os.path.join(r"resources\crossFigures", "cross_image_black_photomark.png")
-
         final_fig_files = os.listdir(r"resources\final_fig")
-        self.final_pic_path = os.path.join(r"resources\final_fig", random.choice(final_fig_files))       
-      
+        self.final_pic_path = os.path.join(r"resources\final_fig", random.choice(final_fig_files))
+
         self._configure_player()
                
     def _configure_player(self):

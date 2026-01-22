@@ -49,6 +49,27 @@ QSplitter::handle {
     width: 6px;                                 /* ширина разделителя */
 }
 
+QSlider {
+        min-height: 50px;
+        max-height: 60px;
+        min-width: 10px;
+        max-width: 10px;
+    }
+    
+    QSlider::groove:horizontal {
+        height: 8px;
+        background: #cccccc;
+        border-radius: 2px;
+    }
+    
+    QSlider::handle:vertical {
+        background: #0078d7;
+        width: 20px;
+        height: 20px;
+        margin: -6px 0;
+        border-radius: 10px;
+    }
+
 /* ===== Left Panel ===== */
 QFrame#settings_panel {
     background-color: $panel_left_background;
@@ -99,6 +120,7 @@ QFrame#mep_main_panel {
     font-weight: normal;  /* можно normal, bold */
     font-style: normal; /* normal или italic */
 }
+
 
 
 
