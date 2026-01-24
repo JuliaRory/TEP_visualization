@@ -54,6 +54,7 @@ class TEPsPlot(FigureCanvas):
         self.ax.patch.set_visible(False)            # убираем фон осей
         for spine in self.ax.spines.values():       # убираем рамку
             spine.set_visible(False)
+
         self.create_axes(positions, single_w, single_h)
 
         self.fig.canvas.draw()      # отрисовка
@@ -111,19 +112,19 @@ class TEPsPlot(FigureCanvas):
             self.texts.append(txt)
 
 
-    # def update_position(self, positions=None, single_w=300, single_h=200, w=1000, h=700, dpi=100):
-    #     fig_w, fig_h = self.fig.get_size_inches() * self.fig.dpi  # ширина и высота в пикселях
+    def update_position(self, positions=None, single_w=300, single_h=200, w=1000, h=700, dpi=100):
+        fig_w, fig_h = self.fig.get_size_inches() * self.fig.dpi  # ширина и высота в пикселях
 
-    #     def px_to_norm(x_px, y_px, w_px, h_px):
-    #         return [x_px / fig_w, y_px / fig_h, w_px / fig_w, h_px / fig_h]
+        def px_to_norm(x_px, y_px, w_px, h_px):
+            return [x_px / fig_w, y_px / fig_h, w_px / fig_w, h_px / fig_h]
 
-    #     for i, (x_px, y_px) in enumerate(positions):  # создаём оси по заданным пиксельным координатам
-    #         self.axes[i].set_position(px_to_norm(x_px, y_px, single_w, single_h))
+        for i, (x_px, y_px) in enumerate(positions):  # создаём оси по заданным пиксельным координатам
+            self.axes[i].set_position(px_to_norm(x_px, y_px, single_w, single_h))
         
-    #     self.fig.set_size_inches(w/dpi, h/dpi, forward=True)
+        self.fig.set_size_inches(w/dpi, h/dpi, forward=True)
 
-    #     self.fig.canvas.draw_idle()
-    #     self.backgrounds = [self.fig.canvas.copy_from_bbox(ax.bbox) for ax in self.axes]
+        self.fig.canvas.draw_idle()
+        self.backgrounds = [self.fig.canvas.copy_from_bbox(ax.bbox) for ax in self.axes]
 
     def set_x_shift(self, x_shift, window_dur):
         self._x = np.linspace(x_shift, window_dur+x_shift, window_dur)

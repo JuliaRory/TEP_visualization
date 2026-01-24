@@ -1,4 +1,4 @@
-{   
+{
     "1triple750_audio0_TMS_300_-300_0_ms": {
         "set": {
             "1": "audio_countdown_3.mkv",
@@ -358,7 +358,7 @@
             "dur_ms": 3000,
             "filename": "cross_image_white_photomark.png"
         }
-    }, 
+    },
     "1triple750_audio0_TMS_300_-300_0_NaN_ms": {
         "set": {
             "1": "audio_countdown_3.mkv",
@@ -606,6 +606,44 @@
             "dur_ms": 1000,
             "filename": "cross_image_white_photomark.png"
         }
+    },
+    "triplets_20": {
+        "set": {
+            "1": "audio_countdown_3.mkv",
+            "2": "triple_white_black_750_onlyTriplet_+300_audio0.mkv",
+            "3": "triple_white_black_750_onlyTriplet_-300_audio0.mkv",
+            "4": "triple_white_black_750_onlyTriplet_0_audio0.mkv"
+        },
+        "order": [
+            1,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4,
+            4
+        ],
+        "cross": {
+            "dur_ms": 3000,
+            "filename": "cross_image_white_photomark.png"
+        }
     }
-    
 }

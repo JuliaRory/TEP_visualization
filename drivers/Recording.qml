@@ -70,7 +70,7 @@ DSM.StateMachine {
                     let service = ResonanceApp.getService("TEP_visual");
                     if (service) {recorder.addStream('discover:///?stream=stimuli&name=TEP_visual', 'stimuli');}
 
-                    recorder.addStream('discover:///?stream=eeg&name=nvx136', 'eeg')
+                    //recorder.addStream('discover:///?stream=eeg&name=nvx136', 'eeg')
 
                     //if (root.use_speed) {recorder.addStream('discover:///?stream=naive_probability&name=SPEED')}
 					

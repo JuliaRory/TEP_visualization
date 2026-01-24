@@ -96,6 +96,7 @@ class TopoTEPsPanel(QFrame):
 
         """Создаём полотно для графиков"""
         self.figure = TEPsPlot(self, self._positions, single_w=self.plot_width, single_h=self.plot_height, w=self.width(), h=self.height(), channels=self.channels)
+        self._update_inner_sizes()
         
         self.figure.setAttribute(Qt.WA_TransparentForMouseEvents, True)                                               # делаем фигуру "прозрачной", чтобы она не перекрывала другие виджеты
     

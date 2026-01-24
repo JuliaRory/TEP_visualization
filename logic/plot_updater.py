@@ -68,4 +68,4 @@ class PlotUpdater:
         emg2plot = processor.cut_mep_epoch(emg, self.settings.single_meps.xmin_ms, self.settings.single_meps.xmax_ms)
 
         # self.mep_deeper_look_window.update_emg(emg2plot)
-        self.mep_deeper_look_window.figure_1.update_emg(emg2plot)
+        self.mep_deeper_look_window.figure.update_emg(emg2plot)
