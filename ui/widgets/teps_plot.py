@@ -41,7 +41,6 @@ class TEPsPlot(FigureCanvas):
         # self.fig.canvas.restore_region(self.background) # восстанавливаем чистый фон
 
         self.ticks = []
-        
         self.lines = []       # список с линиями
         self.axes_lines = []  # список с псевдоосями
         self.texts = []       # список с надписями (названия графиков)
@@ -67,7 +66,7 @@ class TEPsPlot(FigureCanvas):
     def create_axes(self, positions, single_w, single_h, channels=None):
         fig_w_px, fig_h_px = self.fig.get_size_inches() * self.fig.dpi  # ширина и высота в пикселях
         width, height = single_w / fig_w_px, single_h / fig_h_px   # размеры для одного графика
-        
+
         channels = [f"CH{i+1}" for i in range(len(positions)-1)] if self.channels is None else self.channels.tolist()
         titles = channels + ['']   # последнее без названия - для осей с указанием масштаба  
 
@@ -255,8 +254,9 @@ class TEPsPlot(FigureCanvas):
         self.fig.canvas.blit(self.ax.bbox)
                 
     def refresh_plot(self):
-        self.fig.canvas.restore_region(self.background_axes) # восстанавливаем чистый фон
-        self.fig.canvas.blit(self.ax.bbox)
+        data_size = (len(self.channels), len(self._x))
+        empty_lines = np.full(shape=data_size, fill_value=np.nan)
+        self.update_data(empty_lines)
 
     def _normalize(self, x, axis='x'):
         assert hasattr(self, "_last_xlim"), f"Границы графика ещё не заданы -> невозможно нормализовать данные по оси {axis}."

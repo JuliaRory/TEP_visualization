@@ -15,6 +15,7 @@ os.environ['QT_QPA_PLATFORM_PLUGIN_PATH'] = r'.\venv\Lib\site-packages\PyQt5\Qt5
 os.environ['PATH'] += r';~qgis directoryqt\apps\qgis\bin;~qgis directory\apps\Qt5\bin'
 
 # == Создание главный объект приложения Qt == 
+
 app = QApplication(sys.argv)    
 
 style = load_qss(r"styles/theme.qss", r"styles/palette.json")   # подгрузка стиля
@@ -27,6 +28,7 @@ driver = Driver("TEP_visual")
 
 
 dispatcher = CallDispatcher()                                            # пустая функция-обработчик
+
 driver.inputDataStream("epochs", dispatcher)                             # создание входного потока данных типа Stream
 # driver.inputMessageStream("epochs", dispatcher)                             # создание входного потока данных типа Stream
 
@@ -34,8 +36,8 @@ output_stream = driver.outputMessageStream("controlSignal")           # созд
 output_stream_stimuli = driver.outputMessageStream("stimuli")           # создание выходного потока данных типа Message
 resonance = ResonanceAppProxy(output_stream)                             # Создаем прокси резонанса
 
-# driver.loadConfig(r'resonance_settings.json')          # вгрузить настройки с потоком в резонансе
-driver.loadConfig(r'resonance_settings_main.json')   # вгрузить настройки с потоком в резонансе
+driver.loadConfig(r'resonance_settings.json')          # вгрузить настройки с потоком в резонансе
+# driver.loadConfig(r'resonance_settings_main.json')   # вгрузить настройки с потоком в резонансе
 # driver.loadConfig(r'stream_Generator@message__to__TEP_visual@epochs.json')   # вгрузить настройки с потоком в резонансе
 
 # == Запуск приложения ==

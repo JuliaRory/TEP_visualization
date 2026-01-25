@@ -75,7 +75,7 @@ class SettingsHandler:
             self.data_processor.create_average_functions()
 
         if apply:
-            self._apply()
+            self._apply(topoteps_draw=True, avg_teps_draw=True)
 
     # --- Baseline ---
 
@@ -95,7 +95,7 @@ class SettingsHandler:
         )
 
         if apply:
-            self._apply()
+            self._apply(topoteps_draw=True, avg_teps_draw=True)
 
     # --- Lowpass ---
 
@@ -110,7 +110,7 @@ class SettingsHandler:
         )
 
         if apply:
-            self._apply()
+            self._apply(topoteps_draw=True, avg_teps_draw=True)
 
     # --- Rereference ---
 
@@ -125,7 +125,7 @@ class SettingsHandler:
         )
 
         if apply:
-            self._apply()
+            self._apply(topoteps_draw=True, avg_teps_draw=True)
 
     # --- CAR ---
 
@@ -140,7 +140,7 @@ class SettingsHandler:
         )
 
         if apply:
-            self._apply()
+            self._apply(topoteps_draw=True, avg_teps_draw=True)
 
     # --- Modes ---
 
@@ -150,7 +150,7 @@ class SettingsHandler:
         if self.data_processor.average_data:
             self.data_processor.create_average_functions()
         if apply:
-            self._apply()
+            self._apply(topoteps_draw=True)
 
     def update_mode_data(self, idx=0, apply=True):
         # ["Новые данные", "Сравнение"]
@@ -161,14 +161,23 @@ class SettingsHandler:
             self.data_processor.create_average_functions()
 
         if apply:
-            self._apply()
+            self._apply(topoteps_draw=True)
 
     # --- Common apply ---
 
-    def _apply(self):
+    def _apply(self, topoteps_draw=False, single_meps_draw=False, avg_teps_draw=False, avg_meps_draw=False):
         self.data_processor.create_full_transform()
+        if self.data_processor.average_tep_data:
+            self.data_processor.create_average_functions()
         if len(self.data_processor._epochs) != 0:
-            self.plot_updater.update_plots(self.data_processor)
+            if topoteps_draw:
+                self.plot_updater.update_topoteps(self.data_processor)
+            if single_meps_draw:
+                self.plot_updater.update_meps(self.data_processor)
+            if avg_teps_draw:
+                self.plot_updater.update_avg_teps(self.data_processor)
+            if avg_meps_draw:
+                self.plot_updater.update_avg_meps(self.data_processor)
 
 
     def load_from_json(self, path):

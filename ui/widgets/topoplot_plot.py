@@ -44,12 +44,12 @@ class ColorBar(QFrame):
 
 
 class TopoPlot(QFrame):
-    def __init__(self, parent=None, w=40, timestamp=20, params=None):
+    def __init__(self, parent=None, w=40, timestamp=20, settings=None):
         super().__init__(parent)
         self.resize(w, w)
 
         self.timestamp = timestamp
-        self.params = params
+        self.settings = settings
 
         self._init_state()
         self._setup_ui()
@@ -70,7 +70,7 @@ class TopoPlot(QFrame):
         self._pos = df[['x', 'y']].values
         
         # --- подготовка графика ---
-        self._vlim = (self.params["vmin"], self.params["vmax"])
+        self._vlim = (self.settings.vmin, self.settings.vmax)
         viridisBig = cm.get_cmap('jet')
         self._cmap = ListedColormap(viridisBig(np.linspace(0, 1, 15)))
         # self._cmap = viridisBig
@@ -118,11 +118,11 @@ class TopoPlot(QFrame):
                 cmap=self._cmap,
                 vlim=self._vlim,
                 sphere=0.5,
-                contours=self.params["countours"],
+                contours=self.settings.countours,
                 ch_type='eeg', 
                 extrapolate='head',
-                sensors=self.params["sensors"],
-                image_interp=self.params["image_interp"]  
+                sensors=self.settings.sensors,
+                image_interp=self.settings.image_interp 
             )
         
         self.im = im
@@ -181,11 +181,11 @@ class TopoPlot(QFrame):
                 cmap=self._cmap,
                 vlim=self._vlim,
                 sphere=0.5,
-                contours=self.params["countours"],
+                contours=self.settings.countours,
                 ch_type='eeg', 
                 extrapolate='head',
-                sensors=self.params["sensors"],
-                image_interp=self.params["image_interp"]  
+                sensors=self.settings.sensors,
+                image_interp=self.settings.image_interp 
             )
         self.ax.set_title(f"{self.timestamp} ms", loc='right')
         # self.ax.draw_artist(im)

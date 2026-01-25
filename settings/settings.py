@@ -32,7 +32,7 @@ class ProcessingSettings:
 class RecordSettings:
     bat_file: str = "D:/Resonance/distro-dual/msvc/control.bat"
     bat_file_home: str = "C:/Users/hodor/Documents/lab-MSU/Works/2025.10_TMS/dist_2024_11_13_imp/control.bat"
-    activate_bat: bool = True
+    activate_bat: bool = False
     service_name: str = "nvx136"
     stream_name: str = "eeg"
     records_folder: str = "C:/Users/hodor/Documents/lab-MSU/Works/2025.10_TMS/TEP_visualization/data/records"
@@ -54,9 +54,9 @@ class StimuliSettings:
 
 @dataclass
 class LayoutSettings:
-    horizontal_ratios: List[float] = field(default_factory=lambda: [0.15, 0.60, 0.25])
+    horizontal_ratios: List[float] = field(default_factory=lambda: [0.10, 0.60, 0.30])
     center_ratio: float = 0.75
-    right_ratio: float = 0.5
+    right_ratio: float = 0.50
 
 
 

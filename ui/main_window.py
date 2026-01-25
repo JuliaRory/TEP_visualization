@@ -1,7 +1,7 @@
 from PyQt5.QtCore import Qt, QTimer, pyqtSignal,  QEvent
 from PyQt5.QtGui import QGuiApplication
 from PyQt5.QtGui import  QMouseEvent
-from PyQt5.QtWidgets import QWidget, qApp, QSizePolicy, QSplitter, QApplication
+from PyQt5.QtWidgets import QWidget, qApp, QSizePolicy, QSplitter, QApplication, QHBoxLayout
                              
 import numpy as np
 import pandas as pd
@@ -87,7 +87,9 @@ class MainWindow(QWidget):
         self._data_processor = DataProcessor(self.settings)                                       # Обработчик данных (эпох)
       
 
-        self._settings_handler = SettingsHandler(self.settings, self._data_processor)                      # Обработчик настроек
+        self._settings_handler = SettingsHandler(self.settings, 
+                                                 self._data_processor)                      # Обработчик настроек
+        
         self._settings_handler_plots = PlotSettingsHandler(self.settings_plot)                      # Обработчик настроек
         # self._settings_handler_nvx = NVXSettingsHandler(self.settings.nvx_control)                      # Обработчик настроек
         
@@ -109,14 +111,12 @@ class MainWindow(QWidget):
     # --- Инициализация ---
     def _init_state(self):
         """Инициализирует начальное состояние переменных"""
-        self._n_epoch = 0                                   # счётчик количества хранимых в памяти эпох
-        self._epochs = []                                   # список для хранения всех signle-trial TEPs
-        self._ts = []                                       # список для хранения таймстемпов (от резонанса) -- для сохранения эпох only
 
         self._session_loaded = []                              # список с подгруженными датасетами
         self._session_loaded_labels = []                       # список с названиями подгруженных файлов (для легенды)
 
-        # self._specific_epoch = False                         # флаг для отслеживания режима показа определенной эпохи или стандартного
+        # отображение эпох
+        self._specific_epoch = False                         # флаг для отслеживания режима показа определенной эпохи или стандартного
         
         self.SPEED = self.params['SPEED']
         self._ms_to_sample = lambda x: int(x / 1000 * self.SPEED["Fs"])                                  # функция для пересчёта мс в сэмплы
@@ -137,12 +137,11 @@ class MainWindow(QWidget):
         self._center_meps_height = int((1-cen_ratio)*HEIGHT_SET)
 
         self._right_panel_width = int(hor_ratio[2] * WIDTH_SET)
+        self._left_panel_width = int(hor_ratio[0] * WIDTH_SET)
 
     # --- UI: WIDGETS---
     def _setup_ui(self):
         """Создаёт все элементы интерфейса"""
-
-        
 
         self._nvx_control_panel = NVXControlPanel(parent=self,
                                                 settings=self.settings.nvx_control,
@@ -179,7 +178,8 @@ class MainWindow(QWidget):
                                     init_size=[self._center_plots_width, self._center_meps_height])
         
         self._overview_panel = overviewPanel(parent=self,
-                                         params=self.params["TEP_suppl_plot"], 
+                                         settings=self.settings_plot.overview_panel, 
+                                         Fs=self.settings.speed.Fs,
                                          init_size=[self._right_panel_width, HEIGHT_SET])
          
     # --- UI: Layout ---
@@ -211,6 +211,9 @@ class MainWindow(QWidget):
 
         splitter_center.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
 
+        self._overview_panel.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        self._settings_panel.scroll.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+
         # === основной - горизонтальный === 
 
         self.splitter = QSplitter(Qt.Horizontal, parent=self)       
@@ -222,11 +225,10 @@ class MainWindow(QWidget):
         self.splitter.setCollapsible(0, False)
         self.splitter.setOpaqueResize(False)
         
-        ratio = self.settings.layout.horizontal_ratios
-        self.splitter.setSizes([int(ratio[0] * WIDTH_SET), self._center_plots_width, self._right_panel_width])   
-        self.splitter.setStretchFactor(0, 2)
-        self.splitter.setStretchFactor(1, 5) # растягивается в два раза сильнее
-        self.splitter.setStretchFactor(2, 3)
+        self.splitter.setSizes([self._left_panel_width, self._center_plots_width, self._right_panel_width])   
+        self.splitter.setStretchFactor(0, 1)
+        self.splitter.setStretchFactor(1, 1) # растягивается в два раза сильнее
+        self.splitter.setStretchFactor(2, 1)
         
         self.splitter.setGeometry(0, 0, WIDTH_SET, HEIGHT_SET)  #  вручную задаём положение и размер
 
@@ -235,14 +237,14 @@ class MainWindow(QWidget):
 
     # --- Connections ---
     def _setup_connections(self):
-        self._settings_handler.setupUI(self._processing_panel, self._plot_updater)
-        # self._settings_handler_plots.setupUI(self._plot_updater)
-
+        # работа с потоками данных
         self._input_stream.dataReady.connect(lambda epoch, ts: self._data_processor.add_epoch(epoch, ts))
-    
         self._data_processor.newDataProcessed.connect(lambda: self._plot_updater.update_plots(self._data_processor))
+
+        # отрисовка изменений в количестве эпох
         self._data_processor.updateCounter.connect(lambda n: self._update_label_counter(n))
 
+        # подключение окна MEPDeeperLook
         self._meps_panel.deeperLookActivate.connect(lambda: self._plot_updater.add_mep_deeper_look(self._meps_panel._deeper_look_window))
 
         # начальная замедленная инициализиация всех вычислений для уменьшения подтупливаний при запуске приложения
@@ -252,9 +254,9 @@ class MainWindow(QWidget):
         # self._settings_panel.combo_box_mode_data.currentIndexChanged[int].connect(self._on_change_mode_data)
         # self._settings_panel.button_save.clicked.connect(self._on_button_save_click)
         # self._settings_panel.button_load.clicked.connect(self._on_button_load_click)
-        # self._settings_panel.button_restart.clicked.connect(self._on_restart_button_click)
-        # self._settings_panel.button_remove_epoch.clicked.connect(self._on_remove_epoch_button_click)
-        # self._settings_panel.button_show_epoch.clicked.connect(self._on_show_epoch_button_click)
+        self._settings_panel.button_restart.clicked.connect(self._on_restart_button_click)
+        self._settings_panel.button_remove_epoch.clicked.connect(self._on_remove_epoch_button_click)
+        self._settings_panel.button_show_epoch.clicked.connect(self._on_show_epoch_button_click)
 
         # сигнал для обновления состояния надписи REC в центральных графиках
         self._nvx_control_panel.recording.connect(self._on_recording_status_changed_signal)
@@ -273,13 +275,49 @@ class MainWindow(QWidget):
 
     # --- Логика ---
     
+    # === работа с эпохами === 
+    def _on_restart_button_click(self):
+        """обновить все графики и удалить всё из памяти"""
+        self._data_processor.reset_sessions()
+        self._plot_updater.clear_plots()
+
+    def _on_show_epoch_button_click(self):
+        if self._specific_epoch: # если был режим показа отдельной эпохи - вернуться к стандартному отображению
+            self._plot_updater.set_show_epoch_mode(not self._specific_epoch)
+            """отрисовать заново графики"""
+            self._plot_updater.update_topoteps(self._data_processor)
+            self._plot_updater.update_avg_teps(self._data_processor)
+            self._plot_updater.update_avg_meps(self._data_processor)
+
+            self._settings_panel.button_show_epoch.setText("Показать эпоху")
+            self._add_specific_epoch_on_label(None)
+        else:                   # если не был включён режим показа отдельной эпохи - показать её
+            self._plot_updater.set_show_epoch_mode(not self._specific_epoch)
+            n_show = self._settings_panel.spin_box_show_epoch.value()    # номер эпохи для просмотра
+            self._plot_updater.plot_epoch(n_show, self._data_processor)
+            
+            self._settings_panel.button_show_epoch.setText("Стандартный режим")
+            self._add_specific_epoch_on_label(n_show)
+        
+        self._specific_epoch = not self._specific_epoch
+        
+
+    def _on_remove_epoch_button_click(self):
+        n_delete = self._settings_panel.spin_box_remove_epoch.value()    # номер эпохи для удаления 
+        if n_delete == 1:
+            self._on_restart_button_click()
+        else:
+            self._data_processor.delete_epoch(n_delete)
+        
+
     # === обновление надписей на центральных графиках === 
     def _on_recording_status_changed_signal(self, recording_status):
         status_label = "🔴REC" if recording_status else ""
         self._topo_teps_panel.label_record.setText(status_label)
     
     def _update_label_counter(self, n_epoch):
-        self._topo_teps_panel.label_n_epoch.setText('Количество эпох: {}'.format(n_epoch))
+        self._topo_teps_panel.label_n_epoch.setText('Количество эпох: {}. '.format(n_epoch))
+        
         qApp.processEvents()    # для обновления отображения в Qt-приложении
 
         # если эпохи есть, то разрешить их очистку из памяти по нажатию кнопки 
@@ -297,6 +335,10 @@ class MainWindow(QWidget):
         self._settings_panel.spin_box_remove_epoch.setMaximum(n_epoch)
         self._settings_panel.spin_box_remove_epoch.setValue(n_epoch)
 
+    def _add_specific_epoch_on_label(self, n_epoch):
+        new_label = f"Показана эпоха #{n_epoch}." if n_epoch is not None else ""
+        self._topo_teps_panel.label_n_epoch_specific.setText(new_label)
+        qApp.processEvents()    # для обновления отображения в Qt-приложении
     # def _update_data(self):
     #     self._restart_plots()
     #     # если есть что нарисовать и режим отображения "новых данных"
@@ -415,38 +457,10 @@ class MainWindow(QWidget):
     #     # self._update_label_counter(self._n_epoch)
     #     self._draw_loaded_data()
 
-    # def _on_restart_button_click(self):
-        # self._n_epoch = 0
-        # self._update_label_counter(0)
+    
 
-        # self._epochs = []
-        # self._ts = []
-        # self._create_average_functions()
 
-        # self._restart_plots()
-
-    # def _on_show_epoch_button_click(self):
-    #     if self._specific_epoch: # если был режим показа отдельной эпохи - вернуться к стандартному отображению
-    #         self._update_data()
-    #         self._settings_panel.button_show_epoch.setText("Показать эпоху")
-    #     else:                   # если не был включён режим показа отдельной эпохи - показать её
-    #         n_show = self._settings_panel.spin_box_show_epoch.value()    # номер эпохи для просмотра
-    #         data = self._transform(np.array(self._epochs[n_show-1])[:-2, :])
-    #         self._update_plots(data)
-    #         self._settings_panel.button_show_epoch.setText("Стандартный режим")
-            
-    #     self._specific_epoch = not self._specific_epoch
-
-    # def _on_remove_epoch_button_click(self):  
-    #     self._n_epoch -= 1
-    #     self._update_label_counter(self._n_epoch)
-
-    #     n_delete = self._settings_panel.spin_box_remove_epoch.value()    # номер эпохи для удаления 
-
-    #     del self._epochs[n_delete-1]                     # минус один для учёта нумерации с нуля
-    #     del self._ts[n_delete-1]
-        
-    #     self._update_data()
+    
 
     # def _restart_plots(self):
     #     self._topo_teps_panel.figure.refresh_plot()
@@ -473,14 +487,10 @@ class MainWindow(QWidget):
         self._on_update_rereference_signal()
         self._on_update_averaging_signal()
 
-        self._create_full_transform()
-
-        
+        self._create_full_transform()      
 
         t5 = time.perf_counter()
         print(f"все предварительные рассчёты: {t5 - t0:.6f} сек")
-    
-    
 
     def _update_topoplots(self):
         plot = False
@@ -524,13 +534,18 @@ class MainWindow(QWidget):
 
     # --- Финализация ---
     def _post_init(self):
+        
+        self._settings_handler.setupUI(self._processing_panel, self._plot_updater)
+
+        self._settings_handler_plots.setup_plot_updater(self._data_processor, self._plot_updater)
+        self._settings_handler_plots.setup_overview_panel(self._overview_panel)
+        # self._settings_handler_plots.setupUI(self._plot_updater)
+
         self._overview_panel.figure_TEP.set_x_shift(-self._time_shift, self._n_samples, signal="TEP")
         self._overview_panel.figure_MEP.set_x_shift(-self._time_shift, self._n_samples, signal="MEP")
 
         self._on_change_main_scale()
 
-        # self.setWindowTitle("Demo App")
-        # self.resize(400, 200)
         self.show()
 
    

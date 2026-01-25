@@ -1,7 +1,7 @@
 from PyQt5.QtWidgets import QFrame,  QLabel, QVBoxLayout
 from PyQt5.QtCore import Qt
 
-from utils.ui_helpers import create_spin_box, create_button
+from utils.ui_helpers import create_spin_box, create_button, create_check_box
 from utils.layout_utils import create_hbox
 
 from ui.widgets.butt_plots import buttPlot
@@ -17,17 +17,18 @@ class overviewPanel(QFrame):
     Attributes: - что можно использовать извне
 
     """
-    def __init__(self, parent=None, params=None, init_size=[600, 800]):
+    def __init__(self, parent=None, settings=None, Fs=5000, init_size=[600, 800]):
         super().__init__(parent)
         """Внешний вид виджета"""
         self.resize(init_size[0], init_size[1])
-        # self.setMinimumWidth(300)
-
+        
         """Параметры"""
-        self.params = params or {}
-        self.parent = parent
+        self.settings = settings # plot_settings.overview_panel
+        
+        self.Fs = Fs
+        
         self._init_state()
-
+      
         """Визуальная часть виджета"""
         self._setup_ui()
         self._setup_layout()
@@ -39,66 +40,73 @@ class overviewPanel(QFrame):
         self._post_init()
 
     def _init_state(self):
+        self.h = self.height()
+        self.w = self.width()
         
         self.setObjectName("tep_suppl_panel")    # для привязки стиля
-        self.ms_to_sample = lambda x: int(x / 1000 * self.params["Fs"])
+        self.ms_to_sample = lambda x: int(x / 1000 * self.Fs)
 
-        self._ratio = self.params["topo_butt_ratio"]
+        self._ratio = self.settings.topo_butt_ratio
+        self._butt_plot_height = int((1-self._ratio)*self.h//2)
 
         
     def _setup_ui(self):
+        self.figure_TEP = self._create_butt_plot(settings=self.settings.butts_plot.TEP)
+        self.figure_MEP = self._create_butt_plot(settings=self.settings.butts_plot.MEP)
+
+        if self.settings.topoplot.draw:     
+            self._create_topoplots()        # --> create self.figure_topo [list]
         
-        self.figure_TEP = buttPlot(self, 
-                                        w=self.width(), h=(1-self._ratio)*self.height()//2, 
-                                        params=self.params["TEP"],
-                                        Fs=self.params["Fs"])
-        self.figure_TEP.setAttribute(Qt.WA_TransparentForMouseEvents, True)
+        self._setup_settings_widgets()
 
-        self.figure_MEP = buttPlot(self, 
-                                    w=self.width(), h=(1-self._ratio)*self.height()//2, 
-                                    params=self.params["MEP"],
-                                        Fs=self.params["Fs"])
-        self.figure_MEP.setAttribute(Qt.WA_TransparentForMouseEvents, True)
+    def _create_butt_plot(self, settings):
+        figure = buttPlot(self, 
+                            w=self.w, h=self._butt_plot_height, 
+                            settings=settings,
+                            Fs=self.Fs)
+        figure.setAttribute(Qt.WA_TransparentForMouseEvents, True)
+        return figure
 
-        if self.params["topoplot"]["draw"]:
-            n = self.params['n_plots']
-            w_available = 0.8 * self.width()
-            w_topo = int(w_available // n)
-            self.figure_topo = [TopoPlot(self, w=w_topo, timestamp=self.params["timestamps_ms"][i], params=self.params["topoplot"]) for i in range(n)]
-            
-            self.colorbar = ColorBar(self, image=self.figure_topo[0].im)
+    def _create_topoplots(self):
+        n = self.settings.topoplot.n_plots
+        w_available = 0.8 * self.width()
+        w_topo = int(w_available // n)
+        self.figure_topo = [TopoPlot(self, w=w_topo, timestamp=self.settings.topoplot.timestamps_ms[i], settings=self.settings.topoplot) for i in range(n)]
+        
+        self.colorbar = ColorBar(self, image=self.figure_topo[0].im)
 
-        label1 = QLabel("Макс:", self)
-        label2 = QLabel(MICROVOLT, self)
-        self._spinbox_max_amp = create_spin_box(0, 10000, self.params["TEP"]["amp"], parent=self, w=50, step=10)
-        self._max_amp = create_hbox([label1, self._spinbox_max_amp, label2])
-
-        label1 = QLabel("от:   ", self)
-        label2 = QLabel("до:   ", self)
-        label3 = QLabel("мс", self)
-        self._spinbox_min_time = create_spin_box(-300, 0, self.params["xmin_ms"], parent=self, w=50, step=5)
-        self._spinbox_max_time = create_spin_box(0, 500, self.params["xmax_ms"], parent=self, w=50, step=5)
-        self._time_range = create_hbox([label1, self._spinbox_min_time, label2, self._spinbox_max_time, label3])
-
+    def _setup_settings_widgets(self):
+        # time range
+        self._spinbox_min_time = create_spin_box(-300, 0, self.settings.butts_plot.xmin_ms, parent=self, w=50, step=5)
+        self._spinbox_max_time = create_spin_box(0, 500, self.settings.butts_plot.xmax_ms, parent=self, w=50, step=5)
+    
+        # TEPs
+        self._spinbox_max_amp_tep = create_spin_box(0, 10000, self.settings.butts_plot.TEP.amp, parent=self, w=50, step=10)
         self._button_interactive_plot = create_button(text="Интерактив", disabled=True)
+        self.checkbox_average_teps = create_check_box(self.settings.butts_plot.TEP.do_averaging, text="Усреднение", parent=self)
 
-        """Для топоплотов"""
-        ts = self.params["timestamps_ms"]
-        
-        self.spinbox_ts_1 = create_spin_box(-20, 1000, ts[0], parent=self, w=50, step=1)
-        self.spinbox_ts_2 = create_spin_box(-20, 1000, ts[1], parent=self, w=50, step=1)
-        self.spinbox_ts_3 = create_spin_box(-20, 1000, ts[2], parent=self, w=50, step=1)
-        self.spinbox_ts = [self.spinbox_ts_1, self.spinbox_ts_2, self.spinbox_ts_3]
+        # MEPs 
+        self.checkbox_average_meps = create_check_box(self.settings.butts_plot.MEP.do_averaging, text="Усреднение", parent=self)
+
+        # Для топоплотов
+        if self.settings.topoplot.draw:   
+            ts = self.settings.topoplot.timestamps_ms
+            
+            self.spinbox_ts_1 = create_spin_box(-20, 1000, ts[0], parent=self, w=50, step=1)
+            self.spinbox_ts_2 = create_spin_box(-20, 1000, ts[1], parent=self, w=50, step=1)
+            self.spinbox_ts_3 = create_spin_box(-20, 1000, ts[2], parent=self, w=50, step=1)
+            self.spinbox_ts = [self.spinbox_ts_1, self.spinbox_ts_2, self.spinbox_ts_3]
 
         # self._button_apply = create_button('Применить', checkable=True, parent=self, w=150)
 
         self._frame_settings = QFrame(self)
     
     def _setup_layout(self):
-        if self.params["topoplot"]["draw"]:
-            n = self.params['n_plots']
-            d_width = (1-0.8-0.1) * self.width() / n
-            left = int(0.1 * self.width())
+
+        if self.settings.topoplot.draw:
+            n = self.settings.topoplot.n_plots
+            d_width = (1-0.8-0.1) * self.w / n
+            left = int(0.1 * self.w)
             for i, topoplot in enumerate(self.figure_topo):
                 left_new = int(left+(topoplot.width() + d_width)*i)
                 topoplot.move(left_new, left)
@@ -106,22 +114,39 @@ class overviewPanel(QFrame):
             
             self.colorbar.move(0, 0)
 
-        butt_pos = int((1-self._ratio)*self.height()) - self.figure_TEP.height()
-        self.figure_TEP.move(0, butt_pos)
-        self.figure_MEP.move(0, butt_pos + self.figure_TEP.height() + 10)
+        TEP_plot_pos_y = int((1-self._ratio)*self.h) - self.figure_TEP.height()
+        MEP_plot_pos_y = TEP_plot_pos_y + self._butt_plot_height + 10
+        settings_pos_y = MEP_plot_pos_y + self._butt_plot_height + 10
 
+        aver_pos_x = int(0.65* self.w)
+
+        # TEP plot
+        self.figure_TEP.move(0, TEP_plot_pos_y)
+        self.checkbox_average_teps.move(aver_pos_x, TEP_plot_pos_y)
+ 
+        # MEP plot
+        self.figure_MEP.move(0, MEP_plot_pos_y)
+        self.checkbox_average_meps.move(aver_pos_x, MEP_plot_pos_y)
+
+        # Settings
+        self._setup_settings_frame()
         # self._button_interactive_plot.move(20, butt_pos - 20)
+        self._frame_settings.move(0, settings_pos_y)
 
+    def _setup_settings_frame(self):
+        self._max_amp = create_hbox([QLabel("Макс:", self), self._spinbox_max_amp_tep, QLabel(MICROVOLT, self)])
+        self._time_range = create_hbox([QLabel("от:   ", self), self._spinbox_min_time,  
+                                        QLabel("до:   ", self), self._spinbox_max_time, 
+                                        QLabel("мс", self)])
         layout_settings = QVBoxLayout(self._frame_settings)
         for layout in [self._max_amp,self._time_range]:
             layout_settings.addLayout(layout)
         # layout_settings.addWidget(self._button_apply)
-
-        self._frame_settings.move(0, butt_pos + self.figure_TEP.height() * 2 + 20)
+        
 
     # --- Сигналы ---
     def _setup_connections(self):
-        for spin_box in [self._spinbox_min_time, self._spinbox_max_time, self._spinbox_max_amp]:
+        for spin_box in [self._spinbox_min_time, self._spinbox_max_time, self._spinbox_max_amp_tep]:
             spin_box.valueChanged.connect(self._update_scale)
         
         self._button_interactive_plot.clicked.connect(self._on_interactive_plot_button_clicked)
@@ -130,10 +155,12 @@ class overviewPanel(QFrame):
     def _update_scale(self):
         xmax = self._spinbox_max_time.value()
         xmin = self._spinbox_min_time.value()
-        ymax = self._spinbox_max_amp.value()
+        ymax = self._spinbox_max_amp_tep.value()
 
         self.figure_TEP.update_axes(xmax, xmin, ymax)
-        self.figure_MEP.update_axes(xmax, xmin, self.params["MEP"]["amp"])
+        self.figure_MEP.update_axes(xmax, xmin, self.settings.butts_plot.MEP.amp, which='MEPs')
+
+        
 
     def _on_interactive_plot_button_clicked(self):
         if False:
@@ -145,11 +172,11 @@ class overviewPanel(QFrame):
     # --- Финализация ---
     def _post_init(self):
         self._update_scale()
-        
 
     # --- События ---
     def resizeEvent(self, event):
         super().resizeEvent(event)
-        self.figure_TEP.resize(self.width(), int((1 - self._ratio)*self.height()//2))
-        self.figure_MEP.resize(self.width(), int((1 - self._ratio)*self.height()//2))
-    
+        # self.figure_TEP.resize(self.width(), int((1 - self._ratio)*self.height()//2))
+        self.figure_TEP.redraw("TEPs")
+        # self.figure_MEP.resize(self.width(), int((1 - self._ratio)*self.height()//2))
+        self.figure_MEP.redraw("MEPs")

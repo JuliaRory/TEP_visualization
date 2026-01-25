@@ -30,7 +30,7 @@ class DataProcessor(QObject):
  
     def __init__(self, settings):
         super().__init__()
-        self.settings = settings
+        self.settings = settings    # settings
 
         # для хранения данных
         self._epochs = []
@@ -53,6 +53,9 @@ class DataProcessor(QObject):
 
         # данные для усреднения
         self.average_functions = None
+        self.average_functions_mep = None
+        self.average_mep_data = False       # overview panel
+        self.average_tep_data = False       # overview panel
 
         # параметры усреднения
         self._n_aver_max = settings.n_aver if hasattr(settings, "n_aver") else 100
@@ -89,25 +92,53 @@ class DataProcessor(QObject):
             self._n_epoch += 1
             self.updateCounter.emit(self._n_epoch)
 
-            if self.average_data:
+            if self.average_data or self.average_tep_data:
                 TEPs2plot = self._transform(epoch[:-2, :] * 1e6)     # without emg channels
                 self.update_average_functions(TEPs2plot)
+            
+            if self.average_mep_data:
+                emg = self._baseline(epoch[-2:, :] * 1e3)  # вычесть бейзлайн и перевести в мВ
+                emg = np.diff(emg, axis=0).flatten()                            # посчитать разницу каналов
+                self.update_average_functions(emg, which="MEPs")
 
             self.newDataProcessed.emit()        # --> plot_updater
 
-    def update_average_functions(self, TEPs):
-        for i, ch_data in enumerate(TEPs):
-            avg_funcs = self.average_functions[i]
+    def delete_epoch(self, n_delete):
+        """
+        n_delete - номер эпохи для удаления
+        """
+        self._n_epoch -= 1
+        self.updateCounter.emit(self._n_epoch)
+
+        del self._epochs[n_delete-1]                     # минус один для учёта нумерации с нуля
+        del self._timestamps[n_delete-1]
+        
+        self.newDataProcessed.emit()        # --> plot_updater
+
+    def update_average_functions(self, TEPs, which="TEPs"):
+        """add new epoch"""
+        if which == "TEPs":
+            for i, ch_data in enumerate(TEPs):
+                avg_funcs = self.average_functions[i]
+                for j in range(len(avg_funcs)):
+                    avg_funcs[j].add(ch_data[j])
+        else:   # MEPs
+            avg_funcs = self.average_functions_mep
             for j in range(len(avg_funcs)):
-                avg_funcs[j].add(ch_data[j])
+                avg_funcs[j].add(TEPs[j])
 
     def calculate_avg_TEP(self):
+        """calculate averaged value based on current data"""
         data_aver = []
         for avg_funcs in self.average_functions:
             average_TEPs = [f.calculate() for f in avg_funcs]
             data_aver.append(average_TEPs)
         return np.array(data_aver)
-
+    
+    def calculate_avg_MEP(self):
+        """calculate averaged value based on current data"""
+        data_aver = [f.calculate() for f in self.average_functions_mep]
+        return np.array(data_aver)
 
     # --- Конфигурация фильтров ---
 
@@ -164,25 +195,54 @@ class DataProcessor(QObject):
         )
     
     
-
     # --- Усреднение ---
+    def get_eeg_epochs(self):
+        return np.array([self._transform(np.array(TEPs[:-2, :] * 1e6, dtype=float)) for TEPs in self._epochs])
+    
+    def get_emg_epochs(self):
+        epochs = np.array(self._epochs)[:, -2:] * 10**3
+        emg_epochs = np.array([np.diff(self._baseline(emg), axis=0).flatten() for emg in epochs])
+        return emg_epochs
 
-    def create_average_functions(self):
+    def create_average_functions(self, which="TEPs"):
         """Создать функции для усреднения TEPs"""
         function = self.aver_empty_func[self.aver_method]   # пустой трафарет
+        
         if len(self._epochs) != 0:
-            data = np.array([self._transform(np.array(TEPs[:-2, :] * 1e6, dtype=float)) for TEPs in self._epochs])
-            self.average_functions = [
-                [function(data[:, i, j], self._n_aver_max, self._aver_all)
-                for j in range(self._n_samples)]
-                for i in range(len(self.settings.channels))
-            ]
+            if which == 'TEPs':
+                data = self.get_eeg_epochs()
+                self.average_functions = [
+                    [function(data[:, i, j], self._n_aver_max, self._aver_all)
+                    for j in range(self._n_samples)]
+                    for i in range(len(self.settings.channels))
+                ]
+            else:
+                data = self.get_emg_epochs()
+                self.average_functions_mep = [
+                    function(data[:, j], self._n_aver_max, self._aver_all)
+                    for j in range(self._n_samples)
+                ]
         else:
-            self.average_functions = [
-                [function([], self._n_aver_max, self._aver_all)
-                for _ in range(self._n_samples)]
-                for _ in range(len(self.settings.channels))
-            ]
+            if which == 'TEPs':
+                self.average_functions = [
+                    [function([], self._n_aver_max, self._aver_all)
+                    for _ in range(self._n_samples)]
+                    for _ in range(len(self.settings.channels))
+                ]
+            else:
+                self.average_functions_mep = [
+                        function([], self._n_aver_max, self._aver_all)
+                        for j in range(self._n_samples)
+                    ]
+    
+    def update_avg_mep(self, do_average):
+        self.average_mep_data = do_average
+        self.create_average_functions(which="MEPs")
+    
+    def update_avg_tep(self, do_average):
+        self.average_tep_data = do_average
+        if not self.average_data:
+            self.create_average_functions(which="TEPs")
     
 
     def cut_mep_epoch(self, mep_epoch, xmin_ms, xmax_ms):
@@ -199,4 +259,10 @@ class DataProcessor(QObject):
 
     def reset_sessions(self):
         self._epochs = []
+        self._timestamps = []
+        
+        self._n_epoch = 0
+        self.updateCounter.emit(self._n_epoch)
+
         self.average_functions = []
+        self.average_functions_mep = []

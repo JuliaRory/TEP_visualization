@@ -236,4 +236,6 @@ class MEPPlot(FigureCanvas):
         self.amp_counter.emit(np.sum(amps_clean>0.5))
 
         
-    
+    def refresh_plot(self):
+        self.fig.canvas.restore_region(self.background) # восстанавливаем чистый фон
+        self.fig.canvas.blit(self.ax.bbox)

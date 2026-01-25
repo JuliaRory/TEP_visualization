@@ -17,7 +17,7 @@ class TopoTEPsPanel(QFrame):
         super().__init__(parent)
 
         """Внешний вид виджета"""
-        # self.resize(init_size[0], init_size[1])
+        self.resize(init_size[0], init_size[1])
         
         """Параметры"""
         self.settings = settings 
@@ -80,23 +80,28 @@ class TopoTEPsPanel(QFrame):
         self._label_scale_y = QLabel(MICROVOLT, parent=self) 
         self._label_scale_x = QLabel('ms', parent=self) 
 
+        def set_font(label, fontsize=16, bold=True, test_text=""):
+            font = QFont('Helvetica', fontsize)
+            font.setBold(bold)
+            label.setFont(font)
+            text_width = QFontMetrics(font).horizontalAdvance(test_text)  # ширина текста в пикселях
+            text_height = QFontMetrics(font).height()
+            label.setFixedSize(text_width, text_height)        # чтобы помещался текст с разным количеством эпох
+
         self.label_n_epoch = QLabel("Количество эпох: 0.", parent=self)
-        font = QFont('Helvetica', 16)
-        font.setBold(True)
-        self.label_n_epoch.setFont(font)
-        text_width = QFontMetrics(font).horizontalAdvance('Количество эпох: 1000')  # ширина текста в пикселях
-        text_height = QFontMetrics(font).height()
-        self.label_n_epoch.setFixedSize(text_width, text_height)        # чтобы помещался текст с разным количеством эпох
+        set_font(self.label_n_epoch, 16, True, 'Количество эпох: 1000.')
+
+        self.label_n_epoch_specific = QLabel("", parent=self)
+        set_font(self.label_n_epoch_specific, 16, True, 'Показана эпоха #100.')
 
         self.label_record = QLabel("", parent=self)
         self.label_record.setObjectName("label_record")
-        text_width = QFontMetrics(font).horizontalAdvance('record in progress...')  # ширина текста в пикселях
-        text_height = QFontMetrics(font).height()
-        self.label_record.setFixedSize(text_width, text_height)        # чтобы помещался текст с разным количеством эпох
+        set_font(self.label_record, test_text='record in progress...')
+        
 
         """Создаём полотно для графиков"""
         self.figure = TEPsPlot(self, self._positions, single_w=self.plot_width, single_h=self.plot_height, w=self.width(), h=self.height(), channels=self.channels)
-        self._update_inner_sizes()
+        # self._update_inner_sizes()
         
         self.figure.setAttribute(Qt.WA_TransparentForMouseEvents, True)                                               # делаем фигуру "прозрачной", чтобы она не перекрывала другие виджеты
     
@@ -160,7 +165,7 @@ class TopoTEPsPanel(QFrame):
     def _update_inner_sizes(self):
 
         """Обновление позиций графика"""
-        self._calculate_positions()                                                                  # рассчитать новые позиции графиков
+        self._calculate_positions()             # рассчитать новые позиции графиков
         self.scale_left, self.scale_bottom = int( self.df_pos['x'].min()+0.2*self.plot_width), int(self.df_pos['y'].max()+0.2*self.plot_height)         #  позиция для пустых осей для задания масштаба
         self._positions = np.concatenate([self.df_pos[['x', 'y']].values, np.array([[self.scale_left, self.scale_bottom]])], axis=0)                    #  добавляем к списку позиций основных графиков позицию пустых осей
 
@@ -211,6 +216,7 @@ class TopoTEPsPanel(QFrame):
         self._label_scale_x.setFont(f_label)
         
         self.label_n_epoch.move(self.spin_box_scale_xmax.x()+width*2, self.top_pad//2)
+        self.label_n_epoch_specific.move(self.spin_box_scale_xmax.x()+width*2+self.label_n_epoch.width()+5, self.top_pad//2)
 
         self.processing_ui.move(self.width()-self.processing_ui.width(), 0)
 

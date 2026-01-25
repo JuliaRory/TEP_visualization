@@ -40,44 +40,53 @@ class SingleMEPsPlotDeeperLook:
     thr: float = .5
     n_plots_thr: int = 10
 
-# @dataclass
-# class ButtTEPsPlot:
-#     amp: float = 100
-#     units: str = "uV"
-#     title: str = "Averaged TEP"
-#     round: int = 0
-#     channels_nearest_n: List[int] = field(default_factory=lambda: [9, 36, 42, 38, 37])
-#     n_channels: int = 64
+@dataclass
+class MEPBlock:
+    amp: float = 1
+    units: str = "mV"
+    title: str = "Averaged MEP"
+    round: int = 1
+    do_averaging: bool = True
 
-#     xmin_ms: int = -10
-#     xmax_ms: int = 50
-#     TEP: TEPBlock = field(default_factory=TEPBlock)
-#     MEP: MEPBlock = field(default_factory=MEPBlock)
-#     Fs: int = 5000
-#     topo_butt_ratio: float = 0.4
-#     n_plots: int = 3
-#     timestamps_ms: List[int] = field(default_factory=lambda: [30, 55, 80])
-#     channels_nearest: List[str] = field(default_factory=lambda: ["C3", "C5", "C1", "CP3", "FC3"])
-#     topoplot: TopoplotSettings = field(default_factory=TopoplotSettings)
+@dataclass
+class TEPBlock:
+    amp: float = 100
+    units: str = "uV"
+    title: str = "Averaged TEP"
+    round: int = 0
+    channels_nearest_n: List[int] = field(default_factory=lambda: [9, 36, 42, 38, 37])
+    n_channels: int = 64
+    do_averaging: bool = False
 
+@dataclass
+class ButtsPlot:
+    TEP: TEPBlock = field(default_factory=TEPBlock)
+    MEP: MEPBlock = field(default_factory=MEPBlock)
+        
+    xmin_ms: int = -10
+    xmax_ms: int = 50
+    
+    channels_nearest: List[str] = field(default_factory=lambda: ["C3", "C5", "C1", "CP3", "FC3"])
+    
 
-# @dataclass
-# class ButtMEPsPlot:
-#     amp: float = 1
-#     units: str = "mV"
-#     title: str = "Averaged MEP"
-#     round: int = 1
+@dataclass
+class Topoplots:
+    n_plots: int = 3
+    timestamps_ms: List[int] = field(default_factory=lambda: [30, 55, 80])
+    draw: bool = True
+    vmin: int = -15
+    vmax: int = 15
+    countours: int = 6
+    image_interp: str = "cubic"
+    sensors: bool = True
+    sphere: float = 0.5
 
+@dataclass
+class OverviewPanel:
+    topo_butt_ratio: float = 0.4
 
-# @dataclass
-# class TopoPlot:
-#     draw: bool = True
-#     vmin: int = -15
-#     vmax: int = 15
-#     countours: int = 6
-#     image_interp: str = "cubic"
-#     sensors: bool = True
-#     sphere: float = 0.5
+    butts_plot: ButtsPlot = field(default_factory=ButtsPlot)
+    topoplot: Topoplots = field(default_factory=Topoplots)
 
 
 # --- Root ---
@@ -88,11 +97,11 @@ class PlotSettings:
     scale: Scale = field(default_factory=Scale)
 
     topo_teps: TopoTEPsPlot = field(default_factory=TopoTEPsPlot)
-    # butt_teps: ButtTEPsPlot = field(default_factory=ButtTEPsPlot)
+    
     single_meps: SingleMEPsPlot = field(default_factory=SingleMEPsPlot)
     meps_deeper_look: SingleMEPsPlotDeeperLook = field(default_factory=SingleMEPsPlotDeeperLook)
-    # butt_meps: ButtMEPsPlot = field(default_factory=ButtMEPsPlot)
-    # topoplots = TopoPlot = field(default_factory=TopoPlot)
+
+    overview_panel: OverviewPanel = field(default_factory=OverviewPanel)
 
     channels: List[str] = field(default_factory=lambda: ['T7', 'TP9', 'P7', 'CP5', 'FT9', 'F7', 'FC5', 'F3', 'P3', 'C3', 'CP1', 'O1', 'Fp1',
                                                             'FC1', 'Fz', 'Fp2', 'Cz', 'FC2', 'CP2', 'Pz', 'O2', 'Oz', 'C4', 'P4', 'F4', 'FC6',

@@ -13,50 +13,58 @@ from utils.helpers import get_time_ticks, get_voltage_ticks
 MICROVOLT = "\u03BC"+"V"
 
 class buttPlot(FigureCanvas):
-    def __init__(self, parent=None, w=1000, h=700, params=None, Fs=5000, dpi=100):
+    def __init__(self, parent=None, w=1000, h=700, settings=None, Fs=5000, dpi=100):
         self._figsize = (w/dpi, h/dpi)
+
         self.fig = Figure(figsize=self._figsize, dpi=dpi)
         self.fig.patch.set_alpha(0.0)                          # Делаем фон холста matplolib прозрачным
-        
         super().__init__(self.fig)
+
         self.setStyleSheet("background-color:transparent;")    # делаем виджет прозрачнымs
+        self.setMinimumWidth(int(300))   # !!! временные меры
 
         self.setParent(parent)
 
-        self._params = params or {}
+        self.settings = settings or {}
         self._ms_to_sample = lambda x: int(x / 1000 * Fs)
 
         self._init_state()
         
     def _init_state(self):
-
-        """создание оси"""
+        """создание осей"""
         # создаём ось на часть пространства графика[left, bottom, width, height]
-        self._ax = self.fig.add_axes([0.15, 0.1, 0.75, 0.8])   
+        self._ax = self.fig.add_axes([0.15, 0.1, 0.75, 0.8])
+        self._ax.grid(True)
 
-        y_units = self._params['units'] if self._params['units'] == 'mV' else MICROVOLT
-        self._ax.text(-.15, 1, f"[{y_units}]", color='black', transform=self._ax.transAxes)
+        # подписываем оси
+        y_units = self.settings.units if self.settings.units == 'mV' else MICROVOLT
+        self._ax.text(-.20, 1, f"[{y_units}]", color='black', transform=self._ax.transAxes)
         self._ax.text(1.05, -.05, "[ms]", color='black', transform=self._ax.transAxes)
+        # название графика
+        self._ax.set_title(self.settings.title) 
+        
+        self._ax.axvline(0) # рисуем момент 0 
+        self._ax.axhline(0) # рисуем амплитуду 0
 
-        self._ax.axvline(0)
-        self._ax.axhline(0)
-
+        # прямоугольник для синхронизации масштаба на основных графиках и этом
         self._rect = Rectangle((0, 0), width=(0), height=(0),
                     linewidth=2, edgecolor='red', facecolor='none', visible=False)
         self._ax.add_patch(self._rect)
 
-        self._ax.set_title(self._params["title"])
-
-        self._ax.grid(True)
-
+        self.fig.canvas.draw()
+        self._background = self.fig.canvas.copy_from_bbox(self._ax.bbox)
+        
         """параметры"""
-        self._mean = lambda x: np.mean(x[self._params["channels_nearest_n"]], axis=0)   # функция для усреднения каналов интереса
+        self._mean = lambda x: np.mean(x[self.settings.channels_nearest_n], axis=0)   # функция для усреднения каналов интереса
 
-        self._last_xlim = None  # границы по оси х не заданы
-        self._last_amp = None  # границы по оси y не заданы
+        self._last_xlim = None      # границы по оси х не заданы
+        self._last_amp = None       # границы по оси y не заданы
 
-        self._viridisBig = cm.get_cmap('jet')
+        self._viridisBig = cm.get_cmap('jet')       # палитра для разноцветных графиков
 
+        self._setup_tools_for_interaction()
+        
+    def _setup_tools_for_interaction(self):
         # Подключаем события мыши
         self.mpl_connect("motion_notify_event", self.on_mouse_move)
         # self.mpl_connect("button_press_event", self.on_mouse_click)
@@ -68,9 +76,9 @@ class buttPlot(FigureCanvas):
 
         # флаг, показывать ли координаты
         self.show_coords = False
-
         
     def set_x_shift(self, x_shift, window_dur, signal='TEP'):
+        """Задать смещение для оси х и на основе этого пустышки для накопления сигнала"""
         self._x = np.linspace(x_shift, window_dur+x_shift, window_dur)
         if signal == 'TEP':
             self._create_empty_TEPs()
@@ -81,7 +89,7 @@ class buttPlot(FigureCanvas):
         # --- копилка для сигнала ---
         self._lines = []
         y_empty = np.full(len(self._x), np.nan)
-        n = self._params["n_channels"] + 1
+        n = self.settings.n_channels + 1
         for i in range(n):
             (color, lw) = ("gray", 0.5) if i < n-1 else ("black", 1.5)
             line = Line2D(self._x, y_empty, lw=lw, color=color)
@@ -95,7 +103,9 @@ class buttPlot(FigureCanvas):
         self._line = Line2D(self._x, y_empty, lw=lw, color=color)
         self._ax.add_line(self._line)
 
-    def update_axes(self, xmax_ms=100, xmin_ms=-20, amp=100):
+    def update_axes(self, xmax_ms=100, xmin_ms=-20, amp=100, which='TEPs'):
+        # self.fig.canvas.restore_region(self._background)  # восстанавливаем чистый фон
+        """Обновить масштаб"""
         xmin, xmax = self._ms_to_sample(xmin_ms), self._ms_to_sample(xmax_ms)
 
         x_changed = not hasattr(self, "_last_xlim") or (self._last_xlim != (xmin, xmax))
@@ -116,14 +126,30 @@ class buttPlot(FigureCanvas):
             y_tick = get_voltage_ticks(amp, n_tick=2)      # значение тиков по вертикальной оси
             neg = np.arange(0, -amp - y_tick, -y_tick)[::-1]  # отрицательная часть
             pos = np.arange(0, amp + y_tick,  y_tick)         # положительная часть
-            y_ticks = np.concatenate([neg, pos]).round(self._params["round"])              # чтобы гарантировать 0
+            y_ticks = np.concatenate([neg, pos]).round(self.settings.round)              # чтобы гарантировать 0
             self._ax.set_yticks(y_ticks)
         
+        if hasattr(self, "_lines"):
+            for line in self._lines:
+                line.set_visible(False)
+        if hasattr(self, "_line"):
+            self._line.set_visible(False)
+
         self.fig.canvas.draw()
+        self._background_clear = self.fig.canvas.copy_from_bbox(self._ax.bbox)
         self._background = self.fig.canvas.copy_from_bbox(self._ax.bbox)
+
+        if hasattr(self, "_lines"):
+            for line in self._lines:
+                line.set_visible(True)
+            self.redraw("TEPs")
+        if hasattr(self, "_line"):
+            self._line.set_visible(True)
+            self.redraw("MEPs")
     
     def draw_rectangle(self, xmin_ms, xmax_ms, ymin, ymax):
-        self.fig.canvas.restore_region(self._background)  # восстанавливаем чистый фон
+        """Нарисовать прямоугольник для синхронизации масштабов"""
+        self.fig.canvas.restore_region(self._background_clear)  # восстанавливаем чистый фон
 
         xmin, xmax = self._ms_to_sample(xmin_ms), self._ms_to_sample(xmax_ms)
         self._rect.set_xy((xmin, ymin))
@@ -136,21 +162,23 @@ class buttPlot(FigureCanvas):
         self._ax.draw_artist(self._rect)
         self.fig.canvas.blit()
 
-        self._background_rect = self.fig.canvas.copy_from_bbox(self._ax.bbox)
+        self._background = self.fig.canvas.copy_from_bbox(self._ax.bbox)
 
     def update_TEPs(self, teps):
+        """Нарисовать новые TEPs"""
         self.fig.canvas.restore_region(self._background)  # восстанавливаем чистый фон
         
         for i in range(teps.shape[0]):          # для каждого канала
             self._lines[i].set_ydata(teps[i])
             self._ax.draw_artist(self._lines[i])
-
+        
         self._lines[i+1].set_ydata(self._mean(teps))     # усреднённые каналы вокруг С3
         self._ax.draw_artist(self._lines[i+1])
 
         self.fig.canvas.blit(self._ax.bbox)
     
     def update_MEPs(self, meps):
+        """Нарисовать новые MEPs"""
         self.fig.canvas.restore_region(self._background)  # восстанавливаем чистый фон
 
         self._line.set_ydata(meps)
@@ -158,7 +186,21 @@ class buttPlot(FigureCanvas):
 
         self.fig.canvas.blit(self._ax.bbox)
     
+    def redraw(self, which="TEPs", empty=False):
+        
+        if which=='TEPs':
+            teps = np.array([self._lines[i].get_ydata() for i in range(len(self._lines)-1)]) 
+            if empty:
+                teps = np.full_like(teps, fill_value=np.nan)
+            self.update_TEPs(teps)
+        else:
+            meps = self._line.get_ydata()
+            meps = np.full_like(meps, fill_value=np.nan)
+            self.update_MEPs(meps)
+
+
     def draw_loaded_multiple_sessions(self, session_data, signal="TEP"):
+        """Загрузить данные"""
         self.fig.canvas.restore_region(self._background)  # восстанавливаем чистый фон
 
         colors = ListedColormap(self._viridisBig(np.linspace(0, 1, len(session_data))))
@@ -174,10 +216,10 @@ class buttPlot(FigureCanvas):
 
         self.fig.canvas.blit(self._ax.bbox)
     
-    def refresh_plot(self):
-        self.fig.canvas.restore_region(self._background) # восстанавливаем чистый фон
-        self.fig.canvas.blit(self._ax.bbox)
+    def refresh_plot(self, which='TEPs'):
+        self.redraw(which=which, empty=True)
     
+    # === события ===
     def on_mouse_move(self, event):
         if self.show_coords and event.inaxes:
             text = f"x: {event.xdata:.2f}, y: {event.ydata:.2f}"
@@ -195,7 +237,7 @@ class buttPlot(FigureCanvas):
             if not self.show_coords:
                 self.coord_label.setVisible(False)
 
-#fontsize_ticks = 10
+# fontsize_ticks = 10
 # fontsize_axes = 10
 # fontsize_title = 12
         
