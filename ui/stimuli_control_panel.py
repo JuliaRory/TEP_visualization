@@ -1,10 +1,11 @@
-from PyQt5.QtWidgets import QFrame, QVBoxLayout, QHBoxLayout, QLabel, QWidget, QSizePolicy
-from PyQt5.QtCore import  pyqtSignal
+from PyQt5.QtWidgets import QFrame, QVBoxLayout, QHBoxLayout, QLabel, QWidget, QSizePolicy, QShortcut
+from PyQt5.QtCore import  pyqtSignal, Qt
+from PyQt5.QtGui import QKeySequence
 
 import json
 import os
 
-from utils.ui_helpers import create_button, create_spin_box, create_check_box, create_combo_box
+from utils.ui_helpers import create_button, create_spin_box, create_check_box, create_combo_box, create_shortcut
 from utils.layout_utils import create_hbox, create_vbox
 
 from .video_player import StimuliPresentation_one_by_one
@@ -74,6 +75,11 @@ class StimuliControlPanel(QFrame):
 
         self.noise_volume_slider = VerticalSliderWithLabel("N")
         self.noise_volume_slider.slider.setValue(self.settings.noise_volume)
+
+        create_shortcut("N+Up", self._up_noise_volume, parent=self)
+        create_shortcut("N+Down", self._down_noise_volume, parent=self)
+        create_shortcut("S+Up", self._up_stimuli_volume, parent=self)
+        create_shortcut("S+Down", self._down_stimuli_volume, parent=self)
 
     # =======================
     # =====   LAYOUT    =====
@@ -267,6 +273,28 @@ class StimuliControlPanel(QFrame):
         """изменения от положения слайдера"""
         # если открыто окно со стимулами, поменять там громкость !!! не работает :( !!!
         self._audio_player.set_volume(value)
+    
+    # -- for
+    def _up_noise_volume(self):
+        new_value = min(100, self._audio_player.volume + 5)
+        self.noise_volume_slider.setValue(new_value)
+        self._on_change_noise_volume(new_value)
+    
+    def _down_noise_volume(self):
+        new_value = max(0, self._audio_player.volume - 5)
+        self.noise_volume_slider.setValue(new_value)
+        self._on_change_noise_volume(new_value)
+    
+    def _up_stimuli_volume(self):
+        new_value = min(100, self._player_window.get_last_volume() + 5)
+        self.stimuli_volume_slider.setValue(new_value)
+        self._on_change_stimuli_volume(new_value)
+    
+    def _down_stimuli_volume(self):
+        new_value = max(0, self._player_window.get_last_volume() - 5)
+        self.stimuli_volume_slider.setValue(new_value)
+        self._on_change_stimuli_volume(new_value)
+
 
     # === получение последовательности стимулов === 
     def _get_sequence(self, seq_name):
@@ -292,3 +320,22 @@ class StimuliControlPanel(QFrame):
         
     def _finilize(self):
         self._update_combo_box_stimuli()
+    
+
+    # === events ===
+
+    # def keyPressEvent(self, event):
+    #     if event.key() == Qt.Key_Up+Qt.Key_N:                  # -- volume up
+    #         new_value = min(100, self._audio_player.volume + 5)
+    #         self._on_change_noise_volume(new_value)   
+        
+    #     # elif event.key() == Qt.Key_Down:                # -- volume down
+    #     #     new_value = max(0, self._volume - 1)
+    #     #     self.update_volume(new_value)
+
+    #     # elif event.key() == Qt.Key_M:                   # -- mute
+    #     #     self._player.audio_toggle_mute()
+    #     #     self.playerIsMuted.emit()
+
+    #     else:
+    #         super().keyPressEvent(event)

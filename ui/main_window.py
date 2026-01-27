@@ -1,7 +1,7 @@
 from PyQt5.QtCore import Qt, QTimer, pyqtSignal,  QEvent
 from PyQt5.QtGui import QGuiApplication
 from PyQt5.QtGui import  QMouseEvent
-from PyQt5.QtWidgets import QWidget, qApp, QSizePolicy, QSplitter, QApplication, QHBoxLayout
+from PyQt5.QtWidgets import QWidget, qApp, QSizePolicy, QSplitter, QApplication, QHBoxLayout, QFileDialog
                              
 import numpy as np
 import pandas as pd
@@ -9,6 +9,7 @@ import pandas as pd
 import os
 import json
 import time
+import h5py
 
 from ui import (SettingsPanel, ProcessingPanel, NVXControlPanel, StimuliControlPanel,
                 TopoTEPsPanel, overviewPanel, MEPsPanel)
@@ -252,7 +253,7 @@ class MainWindow(QWidget):
 
         # работа с эпохами
         # self._settings_panel.combo_box_mode_data.currentIndexChanged[int].connect(self._on_change_mode_data)
-        # self._settings_panel.button_save.clicked.connect(self._on_button_save_click)
+        self._settings_panel.button_save.clicked.connect(self._on_button_save_click)
         # self._settings_panel.button_load.clicked.connect(self._on_button_load_click)
         self._settings_panel.button_restart.clicked.connect(self._on_restart_button_click)
         self._settings_panel.button_remove_epoch.clicked.connect(self._on_remove_epoch_button_click)
@@ -339,6 +340,7 @@ class MainWindow(QWidget):
         new_label = f"Показана эпоха #{n_epoch}." if n_epoch is not None else ""
         self._topo_teps_panel.label_n_epoch_specific.setText(new_label)
         qApp.processEvents()    # для обновления отображения в Qt-приложении
+    
     # def _update_data(self):
     #     self._restart_plots()
     #     # если есть что нарисовать и режим отображения "новых данных"
@@ -395,31 +397,31 @@ class MainWindow(QWidget):
     #     self._tset.resize(self._tset.shape[0] + 1, axis=0)
     #     self._tset[-1] = ts
 
-    # def _on_button_save_click(self):
-    #     # открытие диалога для выбора названия и места хранения файла
-    #     file_path, _ = QFileDialog.getSaveFileName(
-    #         self,
-    #         "Задайте имя файла",
-    #         "data/exports",
-    #         "HDF5 Files (*.h5);;All Files (*)"
-    #     )
+    def _on_button_save_click(self):
+        # открытие диалога для выбора названия и места хранения файла
+        file_path, _ = QFileDialog.getSaveFileName(
+            self,
+            "Задайте имя файла",
+            "data/exports",
+            "HDF5 Files (*.h5);;All Files (*)"
+        )
 
-    #      # пользователь нажал Cancel
-    #     if not file_path:
-    #         print("---> Сохранение отменено")
-    #         return None 
+         # пользователь нажал Cancel
+        if not file_path:
+            print("---> Сохранение отменено")
+            return None 
         
-    #     data2save = np.array(self._epochs[:]).transpose(0, 2, 1).reshape(-1, 66)      # (n_samples, n_channels)
-    #     ts2save = np.array(self._ts)
-    #     # если выбран файл
-    #     with h5py.File(file_path, "w") as h5f:
-    #         data = h5f.create_dataset("epochs", data=data2save, dtype='float32')      # для эпох (64 EEG + 2 EMG)
-    #         data.attrs["Fs"] = self.SPEED["Fs"]
-    #         data.attrs["n_samples"] = self._n_samples
-    #         data.attrs["n_epochs"] = len(self._epochs)
+        data2save = np.array(self._data_processor._epochs[:]).transpose(0, 2, 1).reshape(-1, 66)      # (n_samples, n_channels)
+        ts2save = np.array(self._data_processor._timestamps)
+        # если выбран файл
+        with h5py.File(file_path, "w") as h5f:
+            data = h5f.create_dataset("epochs", data=data2save, dtype='float32')      # для эпох (64 EEG + 2 EMG)
+            data.attrs["Fs"] = self.SPEED["Fs"]
+            data.attrs["n_samples"] = self._n_samples
+            data.attrs["n_epochs"] = len(self._data_processor._epochs)
             
-    #         tdata = h5f.create_dataset("timestamps", data=ts2save, dtype='int64')      # для таймстемпов резонанса (в нс)
-    #         tdata.attrs["units"] = "ns"
+            tdata = h5f.create_dataset("timestamps", data=ts2save, dtype='int64')      # для таймстемпов резонанса (в нс)
+            tdata.attrs["units"] = "ns"
 
     # def _on_button_load_click(self):
     #     # очистить стек подгруженных данных
@@ -589,6 +591,22 @@ class MainWindow(QWidget):
 
         return super().eventFilter(obj, event)
     
+    # def keyPressEvent(self, event):
+    #     if event.key() == Qt.Key_Up+Qt.Key_N:                  # -- volume up
+    #         new_value = min(100, self._audio_player.volume + 5)
+    #         self._on_change_noise_volume(new_value)   
+        
+    #     # elif event.key() == Qt.Key_Down:                # -- volume down
+    #     #     new_value = max(0, self._volume - 1)
+    #     #     self.update_volume(new_value)
+
+    #     # elif event.key() == Qt.Key_M:                   # -- mute
+    #     #     self._player.audio_toggle_mute()
+    #     #     self.playerIsMuted.emit()
+
+    #     else:
+    #         super().keyPressEvent(event)
+             
     def closeEvent(self, event):
         try:
             n = self._tset.shape[0]
