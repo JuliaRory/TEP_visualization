@@ -32,7 +32,7 @@ class ProcessingSettings:
 class RecordSettings:
     bat_file: str = "D:/Resonance/distro-dual/msvc/control.bat"
     bat_file_home: str = "C:/Users/hodor/Documents/lab-MSU/Works/2025.10_TMS/dist_2024_11_13_imp/control.bat"
-    activate_bat: bool = False
+    activate_bat: bool = True
     service_name: str = "nvx136"
     stream_name: str = "eeg"
     records_folder: str = "C:/Users/hodor/Documents/lab-MSU/Works/2025.10_TMS/TEP_visualization/data/records"

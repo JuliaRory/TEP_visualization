@@ -24,7 +24,7 @@ class StimuliControlPanel(QFrame):
     stimuliPresentation = pyqtSignal(bool)      # -> stimuli presentation is on
     def __init__(self, settings,  output_stream, parent=None):
         super().__init__(parent)
-
+        self.parent = parent
         # self.setObjectName("settings_panel")    # для привязки стиля
         self.setMinimumWidth(200)
 
@@ -76,10 +76,10 @@ class StimuliControlPanel(QFrame):
         self.noise_volume_slider = VerticalSliderWithLabel("N")
         self.noise_volume_slider.slider.setValue(self.settings.noise_volume)
 
-        create_shortcut("N+Up", self._up_noise_volume, parent=self)
-        create_shortcut("N+Down", self._down_noise_volume, parent=self)
-        create_shortcut("S+Up", self._up_stimuli_volume, parent=self)
-        create_shortcut("S+Down", self._down_stimuli_volume, parent=self)
+        create_shortcut("N+Up", self._up_noise_volume, parent=self.parent)
+        create_shortcut("N+Down", self._down_noise_volume, parent=self.parent)
+        create_shortcut("S+Up", self._up_stimuli_volume, parent=self.parent)
+        create_shortcut("S+Down", self._down_stimuli_volume, parent=self.parent)
 
     # =======================
     # =====   LAYOUT    =====

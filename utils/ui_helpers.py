@@ -86,7 +86,7 @@ def create_shortcut_scale(keyword, spin1, spin2, action, parent=None):
 
 def create_shortcut(keyword, function, parent=None):
     shortcut = QShortcut(QKeySequence(keyword), parent)
-    shortcut.activated.connect(lambda: function)
+    shortcut.activated.connect(lambda: function())
 
 # def spin_box_with_unit(unit, min, max, value, step=1, data_type='int', decimals=4, w=None, h=None, function=None, parent=None):
 #         box = QWidget(parent)
