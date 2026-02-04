@@ -69,6 +69,7 @@ class StimuliControlPanel(QFrame):
         self.button_stimuli_pause = create_button(text=PLAY_LABEL, disabled=True, parent=self)
 
         self.label_stimuli_idx = QLabel("", self)
+        self.label_stimuli_idx.setObjectName("label_stimulus_idx")
 
         self.stimuli_volume_slider = VerticalSliderWithLabel("S")
         self.stimuli_volume_slider.slider.setValue(self.settings.stimuli_volume)
@@ -92,7 +93,7 @@ class StimuliControlPanel(QFrame):
         layout_nvx = create_hbox([self.check_box_stimuli_record])
         layout_noise = create_hbox([self.check_box_noise, self.button_noise])
         layout_stimuli_launch = create_hbox([self.button_stimuli])
-        layout_stimuli_control = create_hbox([self.button_stimuli_pause, self.button_stimuli_restart, self.label_stimuli_idx])
+        layout_stimuli_control = create_hbox([self.button_stimuli_pause, self.button_stimuli_restart])
 
         layout_volume = create_hbox([self.stimuli_volume_slider, self.noise_volume_slider])
 
@@ -102,6 +103,7 @@ class StimuliControlPanel(QFrame):
         layout_params.addLayout(layout_nvx)                            # | _запись nvx       |
         layout_params.addLayout(layout_stimuli_launch)                 # | Запуск            |
         layout_params.addLayout(layout_stimuli_control)                # | Пауза  Заново #__ |
+        layout_params.addWidget(self.label_stimuli_idx)
 
         layout_center = QHBoxLayout()
         layout_center.addLayout(layout_params)
@@ -214,19 +216,22 @@ class StimuliControlPanel(QFrame):
 
     def _on_pause_stimuli_button_click(self):
         pw = getattr(self, "_player_window", None)
-        if isinstance(pw, QWidget) and not pw.isHidden():
+        if isinstance(pw, QWidget):
             self._player_window.pause_video()
             self._change_button_pause_stimuli_text()
        
-        
     def _on_restart_stimuli_presentation(self):
+
         self._restart_stimuli = True
         self._on_stimuli_button_click()
 
     def _on_finish_stimuli(self):
-        self.stimuliPresentation.emit(False)
+        # запись nvx136
+        if self.check_box_stimuli_record.isChecked():
+            self.stimuliPresentation.emit(False)
 
-        self.button_stimuli.setText("Запуск")
+        # self.check_box_stimuli_record.setEnabled(True) # разрешить возможность поменять статус записи nvx
+
         self.label_stimuli_idx.setText(f"")
         self.button_stimuli_pause.setText(PLAY_LABEL)
         self.button_stimuli_restart.setEnabled(True)
@@ -235,8 +240,11 @@ class StimuliControlPanel(QFrame):
             self._on_noise_button_click()   # остановить проигрывание шума
     
     def _on_start_stimuli(self):
-        if self.check_box_stimuli_record:
+        # запись nvx136
+        if self.check_box_stimuli_record.isChecked():
             self.stimuliPresentation.emit(True)
+
+        # self.check_box_stimuli_record.setDisabled(True) # сделать недоступной возможность поменять статус записи nvx
 
         self.button_stimuli_pause.setText(STOP_LABEL)
         self.button_stimuli_restart.setEnabled(False)        # можно начать заново

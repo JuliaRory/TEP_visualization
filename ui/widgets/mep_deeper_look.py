@@ -16,7 +16,7 @@ class MEPsDeeperLook(QWidget):
         self.setWindowTitle("Motor Evoked Potentials")
         self.resize(1700, 500)
         
-        place_widget(self, monitor=1, coordinates=(10, 1080-600))
+        place_widget(self, monitor=3, coordinates=(10, 1080-600))
 
         self.Fs = Fs
         self.settings = settings # single mep plot settings

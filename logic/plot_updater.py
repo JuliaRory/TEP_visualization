@@ -17,7 +17,7 @@ class PlotUpdater:
         self.update_topoteps(processor)
         self.update_avg_teps(processor)
         self.update_meps(processor)
-        self.update_avg_meps(processor)
+        #self.update_avg_meps(processor)
         if self.do_mep_deeper_look:
             self.update_mep_deeper_look(processor)
     

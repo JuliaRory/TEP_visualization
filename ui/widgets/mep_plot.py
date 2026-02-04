@@ -221,6 +221,8 @@ class MEPPlot(FigureCanvas):
         self.amps[0] = round(float(x[max_ind] - x[min_ind]), 2)
         self.lats[0] = round(((max_ind - self.settings.xmin_ms) * 1000/self.Fs))
 
+        self._calculate_above_thr()
+
         for i in range(self.n_plots):
             title_n = f"#{i+1}" if self.titles_label is None else self.titles_label[i]
             title = title_n if self.amps[i] is None else f"{title_n} : {self.amps[i]} mV, {self.lats[i]} ms"

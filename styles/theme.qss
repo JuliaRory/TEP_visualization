@@ -121,7 +121,11 @@ QFrame#mep_main_panel {
     font-style: normal; /* normal или italic */
 }
 
-
+#label_stimulus_idx
+{
+    font-size: 20pt;
+    font-family: "Helvetica";
+}
 
 
 

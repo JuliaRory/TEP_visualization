@@ -25,14 +25,15 @@ class ServiceProxy:
         self._stream(json.dumps(message))
         print(f"[Proxy] Sent to {self.name}: {param}={value}")
 
-    def sendTransition(self, command, stream=None, add_stimuli=None):
+    def sendTransition(self, command, stream=None, add_stimuli=None, filename=None):
         # works
         """Отправка команды в QML-поток"""
         message = {
             "service": self.name,
             "type": "command",
             "command": command, 
-            "stream": stream
+            "stream": stream,
+            "filename": filename
         }
         if add_stimuli:
             message["add_stimuli"] = add_stimuli

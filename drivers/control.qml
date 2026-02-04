@@ -31,7 +31,8 @@ ApplicationWindow {
             id: rec_filename
             name: "rec_filename"
             label: "rec_filename"
-            value: "C:\\Users\\hodor\\Documents\\lab-MSU\\Works\\2025.10_TMS\\TEP_visualization\\data\\records\\rec-$$$.h5"
+            //value: "C:\\Users\\hodor\\Documents\\lab-MSU\\Works\\2025.10_TMS\\TEP_visualization\\data\\records\\rec-$$$.h5"
+            value: "D:\\Resonance\\TEP_visualization\\data\\records\\rec-$$$.h5"
         }
 
 
@@ -60,6 +61,7 @@ ApplicationWindow {
                     //print(rec_filename.text);
                     //service_name.value = msg.service
                     //stream_name.value = msg.stream
+                    recorder.hdfFileName = msg.filename
                     recorder.start();
                     print("--- start the record --- ");
                     };
@@ -87,7 +89,7 @@ ApplicationWindow {
 
     Recording {  // запускает qml
             id: recorder
-            //hdfFileName: rec_filename.text
+            hdfFileName: rec_filename.value
             //eventStreamDiscovery: 'discover:///?stream=events&name=Stimulus%20Presentation'
 			use_nvx: true
             service_name: service_name.value

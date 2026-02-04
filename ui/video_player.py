@@ -258,10 +258,11 @@ class StimuliPresentation_one_by_one(QWidget):
             return
 
         # Показ стимулов на паузе -> продолжить
-        print("[VLC player]: continue the stimuli presentation.")
-        self._player.play()
-        self._is_paused = False
-        self.stimuliPaused.emit()
+        if self._is_paused:
+            print("[VLC player]: continue the stimuli presentation.")
+            self._player.play()
+            self._is_paused = False
+            self.stimuliPaused.emit()
 
     def pause_video(self):
         # управление внешней кнопкой 

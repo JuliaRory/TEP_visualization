@@ -26,7 +26,7 @@ class ProcessingSettings:
     baseline_to_ms: int = -20
 
 
-# --- Record ---
+# --- Record & NVX control---
 
 @dataclass
 class RecordSettings:
@@ -36,6 +36,15 @@ class RecordSettings:
     service_name: str = "nvx136"
     stream_name: str = "eeg"
     records_folder: str = "C:/Users/hodor/Documents/lab-MSU/Works/2025.10_TMS/TEP_visualization/data/records"
+
+    bat_nvx136_25Hz: str = "D:/Resonance/distro-dual/msvc/NVX136.bat"
+    bat_nvx136_impedance: str = "D:/Resonance/distro-dual/msvc/impedanceChecker_64_2.bat"
+
+    number: str = "01"
+    subject: str = "AM"
+    spot: str = "M1"
+    coil: str = "qp"
+    yaw_angle: str = "45"
 
 
 # --- Stimuli ---
