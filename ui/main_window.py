@@ -22,6 +22,7 @@ from settings.plot_settings import PlotSettings
 
 from settings.settings_handler import SettingsHandler
 from settings.plot_settings_handler import PlotSettingsHandler
+from settings.record_settings_handler import RecordSettingsHandler
 
 from logic.plot_updater import PlotUpdater
 
@@ -87,9 +88,7 @@ class MainWindow(QWidget):
         
         self._data_processor = DataProcessor(self.settings)                                       # Обработчик данных (эпох)
       
-
-        self._settings_handler = SettingsHandler(self.settings, 
-                                                 self._data_processor)                      # Обработчик настроек
+        self._settings_handler = SettingsHandler(self.settings, self._data_processor)                      # Обработчик настроек
         
         self._settings_handler_plots = PlotSettingsHandler(self.settings_plot)                      # Обработчик настроек
         # self._settings_handler_nvx = NVXSettingsHandler(self.settings.nvx_control)                      # Обработчик настроек
@@ -123,12 +122,6 @@ class MainWindow(QWidget):
         self._ms_to_sample = lambda x: int(x / 1000 * self.SPEED["Fs"])                                  # функция для пересчёта мс в сэмплы
         self._n_samples = self._ms_to_sample(self.SPEED["window_end"] - self.SPEED["window_start"])       # длина эпохи в сэмплах
         self._time_shift = self._ms_to_sample(0 - self.SPEED["window_start"])                             # смещение относительно нуля для графиков в сэпмлах
-
-        # # --- создать и открыть файл для автоматической записи получаемых данных ---
-        # cur_time = datetime.now().strftime("%Y.%m.%d_%H.%M")
-        # self.autosave_file = h5py.File(os.path.join("data/autosave", f"{cur_time}.h5"), "w")
-        # self._dset = self.autosave_file.create_dataset("epochs", (0, 66), maxshape=(None, 66), dtype='float32')  # для эпох (64 EEG + 2 EMG)
-        # self._tset = self.autosave_file.create_dataset("timestamps", (0, ), maxshape=(None, ), dtype='int64')    # для таймстемпов резонанса (в нс)
 
         hor_ratio = self.settings.layout.horizontal_ratios
         cen_ratio = self.settings.layout.center_ratio
@@ -480,19 +473,6 @@ class MainWindow(QWidget):
 
         self._overview_panel.figure_TEP.draw_rectangle(xmin_ms, xmax_ms, ymin, ymax)
 
-    def _initial_calculations(self):
-        t0 = time.perf_counter()
-
-        self._on_update_CAR_signal()
-        self._on_update_baseline_signal()
-        self._on_update_lowpass_signal()
-        self._on_update_rereference_signal()
-        self._on_update_averaging_signal()
-
-        self._create_full_transform()      
-
-        t5 = time.perf_counter()
-        print(f"все предварительные рассчёты: {t5 - t0:.6f} сек")
 
     def _update_topoplots(self):
         plot = False
@@ -547,6 +527,11 @@ class MainWindow(QWidget):
         self._overview_panel.figure_MEP.set_x_shift(-self._time_shift, self._n_samples, signal="MEP")
 
         self._on_change_main_scale()
+
+        self._settings_handler_record = RecordSettingsHandler(self.settings.nvx_control, self._nvx_control_panel)
+        self._settings_handler_record.load_from_json(default=True)
+
+        self._settings_handler.load_from_json(default=True)
 
         self.show()
 
@@ -608,17 +593,10 @@ class MainWindow(QWidget):
     #         super().keyPressEvent(event)
              
     def closeEvent(self, event):
-        try:
-            n = self._tset.shape[0]
-            file_path = self.autosave_file.filename
-            self.autosave_file.close()
-            if n == 0:      # удалить, если ничего не было сохранено
-                os.remove(file_path)
-            print("---> Autofile закрыт корректно.")
-        except Exception as e:
-            print(f"---> Ошибка закрытия autofile: {e}")
+        self._settings_handler.save_to_json(default=True)
+        self._settings_handler_record.save_to_json(default=True)
 
-        if self.params["record"]["activate_bat"]:
+        if self.settings.nvx_control.activate_bat:
             service = self._resonance.getService("Resonance-control")     # Берем сервис
             service.sendTransition('!terminate')
         event.accept()

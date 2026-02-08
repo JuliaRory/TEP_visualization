@@ -31,6 +31,7 @@ class CheckableComboBox(QComboBox):
                 checked_list.append(item.text())
         return checked_list
 
+
     def _setup_connections(self):
         self.model().dataChanged.connect(self._on_current_text_changed)
     

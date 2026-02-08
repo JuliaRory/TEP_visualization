@@ -28,6 +28,7 @@ class ProcessingSettings:
 
 # --- Record & NVX control---
 
+
 @dataclass
 class RecordSettings:
     bat_file: str = "D:/Resonance/distro-dual/msvc/control.bat"
@@ -39,6 +40,14 @@ class RecordSettings:
 
     bat_nvx136_25Hz: str = "D:/Resonance/distro-dual/msvc/NVX136.bat"
     bat_nvx136_impedance: str = "D:/Resonance/distro-dual/msvc/impedanceChecker_64_2.bat"
+
+    use_number: bool = True
+    use_subject: bool = True
+    use_spot: bool = True
+    use_coil: bool = True
+    use_yaw_angle: bool = True
+    use_power: bool = False
+    use_comments: bool = False
 
     number: str = "01"
     subject: str = "AM"

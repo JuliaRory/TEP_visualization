@@ -38,7 +38,8 @@ class NVXControlPanel(QFrame):
             except:
                 cwd = os.path.dirname(self.settings.bat_file_home) # cwd = папка с батником
                 subprocess.Popen([self.settings.bat_file_home], cwd=cwd)
-    
+
+
     # =======================
     # =====     UI      =====
     # =======================
@@ -54,6 +55,11 @@ class NVXControlPanel(QFrame):
 
         self.lineedit_record = create_lineedit(parent=self)                                         # record name
 
+        self._create_filename_lineedits()
+
+        self.button_nvx_record = create_button(text='Запись', disabled=False, parent=self)          # recorder.start()      <-> "Остановить"
+
+    def _create_filename_lineedits(self):
         self.lineedit_number = create_lineedit(parent=self)
         self.lineedit_subject = create_lineedit(parent=self)                                   
         self.lineedit_spot = create_lineedit(parent=self) 
@@ -62,8 +68,6 @@ class NVXControlPanel(QFrame):
         self.lineedit_power = create_lineedit(parent=self)
         self.lineedit_comments = create_lineedit(parent=self)
 
-        
-
         self.checkbox_number = create_check_box(True, "#", parent=self)
         self.checkbox_subject = create_check_box(True, "subj", parent=self)
         self.checkbox_spot = create_check_box(True, "spot", parent=self)      
@@ -71,18 +75,8 @@ class NVXControlPanel(QFrame):
         self.checkbox_yaw_angle = create_check_box(True, "yaw_angle", parent=self)
         self.checkbox_power = create_check_box(False, "power", parent=self)       
         self.checkbox_comments = create_check_box(False, "comments", parent=self) 
-        self._init_state_record_name()                           
+                  
 
-        self.button_nvx_record = create_button(text='Запись', disabled=False, parent=self)          # recorder.start()      <-> "Остановить"
-
-    def _init_state_record_name(self):
-        self.lineedit_number.setText("01")
-        self.lineedit_subject.setText(self.settings.subject)
-        self.lineedit_spot.setText(self.settings.spot)
-        self.lineedit_coil.setText(self.settings.coil)
-        self.lineedit_yaw_angle.setText(self.settings.yaw_angle)
-        self._change_filename()
-        
     # =======================
     # =====   LAYOUT    =====
     # =======================
@@ -103,13 +97,13 @@ class NVXControlPanel(QFrame):
         layout_record_final = create_hbox([self.lineedit_record, self.button_nvx_record])
 
                                                                 # Vertical layout
-        layout = QVBoxLayout(self)           # +-----------------------|
+        layout = QVBoxLayout(self)                              # +-----------------------|
         layout.addWidget(self._label_nvx)                       # | NVX control           |
         layout.addLayout(layout_qml_control)                    # | Контроль qml   ...    |
         layout.addWidget(self.button_check_impedance)           # | Проверить импеданс    |
         layout.addLayout(layout_nvx_control)                    # | start   stop    kill  |
         layout.addLayout(layout_record) 
-        layout.addLayout(layout_record_final)                         # | record_name   Запись  |
+        layout.addLayout(layout_record_final)                   # | record_name   Запись  |
                                                                 # +-----------------------+
 
 
@@ -130,15 +124,15 @@ class NVXControlPanel(QFrame):
         if autofilename:
             for (checkbox, lineedit) in zip([self.checkbox_number, self.checkbox_subject, self.checkbox_spot, self.checkbox_coil, self.checkbox_yaw_angle, self.checkbox_power, self.checkbox_comments], 
                                         [self.lineedit_number, self.lineedit_subject, self.lineedit_spot, self.lineedit_coil, self.lineedit_yaw_angle, self.lineedit_power, self.lineedit_comments]):
-                lineedit.textChanged.connect(self._change_filename)
-                checkbox.stateChanged.connect(self._change_filename)
+                lineedit.textChanged.connect(self.change_filename)
+                checkbox.stateChanged.connect(self.change_filename)
 
     # =======================
     # =====   Логика    =====
     # =======================
 
     
-    def _change_filename(self):
+    def change_filename(self):
         new_filename = "rec"
         for (checkbox, lineedit) in zip([self.checkbox_number, self.checkbox_subject, self.checkbox_spot, self.checkbox_coil, self.checkbox_yaw_angle, self.checkbox_power, self.checkbox_comments], 
                                         [self.lineedit_number, self.lineedit_subject, self.lineedit_spot, self.lineedit_coil, self.lineedit_yaw_angle, self.lineedit_power, self.lineedit_comments]):
@@ -186,7 +180,7 @@ class NVXControlPanel(QFrame):
                 return os.path.exists(full_name)
             if check_file(filename):
                 filename = filename[:-5] +"-$$$.hdf5"
-            self._change_filename()
+            self.change_filename()
             
             self._service = self.resonance.getService(self.settings.service_name)     # Берем сервис
             self._service.sendTransition('start', stream=self.settings.stream_name, add_stimuli=comments, filename=filename)
@@ -202,7 +196,7 @@ class NVXControlPanel(QFrame):
 
             self._service.sendTransition('stop')
             # self._service_stimuli.sendTransition('stop')
-            self._change_filename()
+            self.change_filename()
             self.recording.emit(False)
         
         button_label = "Остановить" if self.record_in_progress else "Начать запись"
@@ -212,3 +206,5 @@ class NVXControlPanel(QFrame):
     def change_record_status(self, stimuli=False):
         self._add_stimuli_stream = stimuli
         self._on_nvx_record_button_click()
+
+    

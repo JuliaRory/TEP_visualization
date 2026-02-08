@@ -5,7 +5,7 @@ from dataclasses import asdict
 
 class SettingsHandler:
     """
-    «Связующее звено» между UI и логикой:
+    «Связующее звено» между UI и логикой processing:
     -- Слушает изменения в UI.
     -- Обновляет соответствующие поля в Settings.
     -- Вызывает методы DataProcessor, PlotUpdater или других классов, чтобы применить новые настройки
@@ -29,27 +29,6 @@ class SettingsHandler:
 
         self.configure_data_processor()
 
-    
-    # def _connect_ui(self):
-        
-        # self.ui.check_box_average.toggled.connect(self.update_averaging)
-        # self.combo_box_aver.currentIndexChanged.connect(self.update_averaging)
-
-        # self.ui.check_box_baseline.toggled.connect(self.update_baseline)
-        # self.ui.spin_box_baseline_from.valueChanged.connect(self.update_baseline)
-        # self.ui.spin_box_baseline_to.valueChanged.connect(self.update_baseline)
-        # self.combo_box_baseline.currentIndexChanged.connect(self.update_baseline)
-
-        # self.ui.check_box_lowpass.toggled.connect(self.update_lowpass)
-        # self.ui.spin_box_lowpass.valueChanged.connect(self.update_lowpass)
-
-        # self.ui.check_box_rereference.toggled.connect(self.update_rereference)
-
-        # self.ui.check_box_car.toggled.connect(self.update_CAR)
-
-        # self.ui.combo_box_mode.currentIndexChanged.connect(self.update_mode)
-        # self.ui.combo_box_mode_data.currentIndexChanged.connect(self.update_mode_data)
-    
     # -- Configure data processor --
     def configure_data_processor(self):
         # configure data processor according to current settings
@@ -180,7 +159,15 @@ class SettingsHandler:
                 self.plot_updater.update_avg_meps(self.data_processor)
 
 
-    def load_from_json(self, path):
+    def load_from_json(self, path=None, default=True):
+        if default:
+            path = r"data/settings/processing_default.json"
+
+        import os
+        if not os.path.exists(path):
+            print(f"{path} does not exist.")
+            return 
+        
         with open(path, "r", encoding="utf-8") as f:
             data = json.load(f)
 
@@ -188,12 +175,13 @@ class SettingsHandler:
         self.sync_ui_from_settings()
 
         self.data_processor.create_full_transform()
-        self.plot_updater.update_plots(self.data_processor)
+        if len(self.data_processor._epochs) != 0:
+            self.plot_updater.update_plots(self.data_processor)
+
     
-    
-    def save_to_json(self, path):
-        # сделать сохранение настроек по закрытию программы и потом открытие последней версии настроек 
-        # плюс сброс до дефолтных настроек
+    def save_to_json(self, path=None, default=True):
+        if default:
+            path = r"data/settings/processing_default.json"
         with open(path, "w", encoding="utf-8") as f:
             json.dump(asdict(self.settings), f, indent=4, ensure_ascii=False)
         
@@ -205,11 +193,23 @@ class SettingsHandler:
                 self._apply_dict_to_settings(attr, value)
             else:
                 setattr(obj, key, value)
-            
+
 
     def sync_ui_from_settings(self):
         s = self.settings.processing_settings
-        self.ui.check_box_averaging.setChecked(s.do_averaging)
+
+        self.ui.check_box_average.setChecked(s.do_averaging)
+        self.ui.combo_box_aver.setCurrentText(s.curr_aver_method)
+        self.ui.check_box_lowpass.setChecked(s.do_lowpass_filtering)
+        self.ui.spin_box_lowpass.setValue(s.lowpass_freq_Hz)
+        
+        self.ui.check_box_rereference.setChecked(s.do_rereferencing)
+        # self.ui.combo_box_rereference.setCurrentText(s.rereference_channel)       # it is not so simple because of custom class
+
+        self.ui.check_box_car.setChecked(s.do_CAR_filtering)
+        # self.ui.combo_box_channels.setCurrentText(s.car_except_channels)          # it is not so simple because of custom class
+
         self.ui.check_box_baseline.setChecked(s.do_baseline_correction)
         self.ui.spin_box_baseline_from.setValue(s.baseline_from_ms)
         self.ui.spin_box_baseline_to.setValue(s.baseline_to_ms)
+        self.ui.combo_box_baseline.setCurrentText(s.curr_baseline_method)
