@@ -67,9 +67,9 @@ class NVXControlPanel(QFrame):
         self.checkbox_number = create_check_box(True, "#", parent=self)
         self.checkbox_subject = create_check_box(True, "subj", parent=self)
         self.checkbox_spot = create_check_box(True, "spot", parent=self)      
-        self.checkbox_coil = create_check_box(True, "coil", parent=self)      
-        self.checkbox_yaw_angle = create_check_box(True, "yaw_angle", parent=self)
-        self.checkbox_power = create_check_box(False, "power", parent=self)       
+        self.checkbox_coil = create_check_box(False, "coil", parent=self)      
+        self.checkbox_yaw_angle = create_check_box(False, "yaw_angle", parent=self)
+        self.checkbox_power = create_check_box(True, "power", parent=self)       
         self.checkbox_comments = create_check_box(False, "comments", parent=self) 
         self._init_state_record_name()                           
 

@@ -25,7 +25,6 @@ app.setStyleSheet(style)
                                                                                                          
 driver = Driver("TEP_visual")
 
-
 dispatcher = CallDispatcher()                                            # пустая функция-обработчик
 driver.inputDataStream("epochs", dispatcher)                             # создание входного потока данных типа Stream
 # driver.inputMessageStream("epochs", dispatcher)                             # создание входного потока данных типа Stream

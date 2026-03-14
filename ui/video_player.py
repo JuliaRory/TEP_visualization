@@ -174,6 +174,8 @@ class StimuliPresentation_one_by_one(QWidget):
         self._placeholder_widget.show()
         
         # запустить следующее видео
+        self.stimulus.emit(self.video_names[self.order[self._current_index]-1])
+
         self._player.set_media(self._next_media)
         self._player.audio_set_volume(self._volume)
         self._player.play()
@@ -181,8 +183,8 @@ class StimuliPresentation_one_by_one(QWidget):
         # подготовить следующее видео
         self._current_index += 1
         self.currIdxChanged.emit(self._current_index)
-        if self._current_index < len(self.order):
-            self.stimulus.emit(self.video_names[self.order[self._current_index]-1])
+        # if self._current_index < len(self.order):
+        #     self.stimulus.emit(self.video_names[self.order[self._current_index]-1])
         self._prepare_next_video()
 
         self._is_paused = False
@@ -279,7 +281,7 @@ class StimuliPresentation_one_by_one(QWidget):
 
         self._current_index = 0
         self.currIdxChanged.emit(self._current_index)
-        self.stimulus.emit(self.video_names[self.order[self._current_index]-1])
+        # self.stimulus.emit(self.video_names[self.order[self._current_index]-1])
 
         self._prepare_next_video()
         self._placeholder_widget.show()

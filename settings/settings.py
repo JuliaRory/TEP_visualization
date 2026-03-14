@@ -41,7 +41,7 @@ class RecordSettings:
     bat_nvx136_impedance: str = "D:/Resonance/distro-dual/msvc/impedanceChecker_64_2.bat"
 
     number: str = "01"
-    subject: str = "AM"
+    subject: str = "AV"
     spot: str = "M1"
     coil: str = "qp"
     yaw_angle: str = "45"

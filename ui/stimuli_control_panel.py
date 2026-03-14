@@ -42,7 +42,7 @@ class StimuliControlPanel(QFrame):
         self._player_window = None
 
         # Создаем аудиоплеер
-        audio_file = os.path.join(r"resources\noise", "TAAC_CN2_coil_42MSO.wav")  # Укажите путь к вашему файлу
+        audio_file = os.path.join(r"resources\noise", "TAAC_CN2_coil_42MSO_9minutes_louder.wav")  # Укажите путь к вашему файлу
         self._audio_player = AudioPlayer(audio_file, initial_volume=self.settings.noise_volume)
 
     # =======================
@@ -258,6 +258,7 @@ class StimuliControlPanel(QFrame):
 
     def _on_stimuli_order_changed(self, filename):
         message = {"stimulus": filename}
+        print(message)
         self.output_stream(json.dumps(message))
 
     # === изменения звука === 
