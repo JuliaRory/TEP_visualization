@@ -32,10 +32,10 @@
         "Fz"
     ],
     "processing_settings": {
-        "do_averaging": false,
+        "do_averaging": true,
         "do_lowpass_filtering": true,
         "do_rereferencing": false,
-        "do_CAR_filtering": true,
+        "do_CAR_filtering": false,
         "do_baseline_correction": true,
         "aver_methods": [
             "mean",
