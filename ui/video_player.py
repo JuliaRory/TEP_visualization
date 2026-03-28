@@ -161,7 +161,8 @@ class StimuliPresentation_one_by_one(QWidget):
         
         if self._next_media is None:
             print("[VLC player]: stimuli sequence has ended.")
-            self.stimuliFinished.emit()
+            QTimer.singleShot(5000, self.stimuliFinished.emit)
+            # self.stimuliFinished.emit()
             self._finished = True
 
             self._placeholder_widget.setPixmap(self._final_pic)         # показать финальную картинку
@@ -293,7 +294,8 @@ class StimuliPresentation_one_by_one(QWidget):
         self._player.release()
         self._instance.release()
         if not self._finished:
-            self.stimuliFinished.emit()
+            QTimer.singleShot(5000, self.stimuliFinished.emit)
+            # self.stimuliFinished.emit()
         self.close()
     
     @property

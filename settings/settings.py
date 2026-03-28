@@ -31,7 +31,7 @@ class ProcessingSettings:
 
 @dataclass
 class RecordSettings:
-    bat_file: str = "D:/Resonance/distro-dual/msvc/control.bat"
+    bat_file: str = "D:\Resonance\dist_2025\control.bat"
     bat_file_home: str = "C:/Users/hodor/Documents/lab-MSU/Works/2025.10_TMS/dist_2024_11_13_imp/control.bat"
     activate_bat: bool = True
     service_name: str = "nvx136"
@@ -60,13 +60,18 @@ class RecordSettings:
 
 @dataclass
 class StimuliSettings:
-    monitor: int = 3
+    monitor: int = 2
     stimuli_with_record: bool = True
     use_noise: bool = True
     stimuli_filename: str = "resources/saved_stimuli.json"
     video_folder: str = "resources/videoSamples"
     stimuli_volume: int = 60
     noise_volume: int = 37
+    # noise_filename: str = "TAAC_CN2_coil_42MSO_9minutes_louder.wav"     # standard
+    # noise_filename: str = "CN2_blocked_canal_M1_9min_cor.wav"
+    # noise_filename: str = "CN2_blocked_canal_M1_9min_uncor.wav"
+    # noise_filename: str = "CN2_blocked_canal_SMA_9min_cor.wav"
+    noise_filename: str = "CN2_blocked_canal_SMA_9min_uncor.wav"
     
 # --- Layout ---
 
@@ -75,7 +80,6 @@ class LayoutSettings:
     horizontal_ratios: List[float] = field(default_factory=lambda: [0.10, 0.60, 0.30])
     center_ratio: float = 0.75
     right_ratio: float = 0.50
-
 
 
 # --- SPEED ---

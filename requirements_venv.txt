@@ -1,0 +1,6 @@
+matplotlib==3.10.6
+mne==1.10.2
+PyQt5==5.15.11
+pyqtgraph==0.14.0
+python-vlc==3.0.21203
+tqdm==4.67.1

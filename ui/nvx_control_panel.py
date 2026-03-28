@@ -175,7 +175,7 @@ class NVXControlPanel(QFrame):
 
             filename = self.lineedit_record.text()
             def check_file(filename):
-                folder = r"D:\Resonance\distro-dual\msvc\bin"
+                folder = r"D:\Resonance\dist_2025\bin"
                 full_name = os.path.join(folder, filename)
                 return os.path.exists(full_name)
             if check_file(filename):

@@ -133,6 +133,8 @@ class MainWindow(QWidget):
         self._right_panel_width = int(hor_ratio[2] * WIDTH_SET)
         self._left_panel_width = int(hor_ratio[0] * WIDTH_SET)
 
+        
+
     # --- UI: WIDGETS---
     def _setup_ui(self):
         """Создаёт все элементы интерфейса"""
