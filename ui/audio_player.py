@@ -41,6 +41,8 @@ class AudioPlayer(QtCore.QObject):
             pygame.mixer.init(frequency=44100, size=-16, channels=2, buffer=2048)
             # Устанавливаем начальную громкость
             pygame.mixer.music.set_volume(self.volume / 100.0)
+            pygame.mixer.music.load(self.audio_file_path)
+            print("Поставлен аудиофайл: ", self.audio_file_path)
             print(f"Pygame mixer инициализирован, громкость: {self.volume}%")
         except Exception as e:
             print(f"Ошибка инициализации pygame mixer: {e}")
@@ -67,11 +69,18 @@ class AudioPlayer(QtCore.QObject):
         print("Воспроизведение звука запущено")
         self.playback_started.emit()
     
+    def set_audiofile(self, filename):
+        if self.is_playing and not self.is_paused:
+            pygame.mixer.music.pause()
+        # Загружаем аудиофайл
+        pygame.mixer.music.load(filename)
+        print("Поставлен аудиофайл: ", filename)
+        if self.is_playing and not self.is_paused:
+            pygame.mixer.music.play()
+
     def _playback_loop(self):
         """Основной цикл воспроизведения в отдельном потоке"""
         try:
-            # Загружаем аудиофайл
-            pygame.mixer.music.load(self.audio_file_path)
             
             # Основной цикл воспроизведения
             while not self.stop_requested:

@@ -36,7 +36,7 @@ class RecordSettings:
     activate_bat: bool = True
     service_name: str = "nvx136"
     stream_name: str = "eeg"
-    records_folder: str = "C:/Users/hodor/Documents/lab-MSU/Works/2025.10_TMS/TEP_visualization/data/records"
+    records_folder: str = "D:/2025 - TEP/data - raw/tests"
 
     bat_nvx136_25Hz: str = "D:/Resonance/distro-dual/msvc/NVX136.bat"
     bat_nvx136_impedance: str = "D:/Resonance/distro-dual/msvc/impedanceChecker_64_2.bat"
@@ -67,8 +67,9 @@ class StimuliSettings:
     video_folder: str = "resources/videoSamples"
     stimuli_volume: int = 60
     noise_volume: int = 37
-    noise_filename: str = "TAAC_CN2_coil_42MSO_9minutes_louder.wav"     # standard
-    # noise_filename: str = "CN2_blocked_canal_M1_9min_cor.wav"
+    noise_folder: str = "resources/noise"
+    #noise_filename: str = "TAAC_CN2_coil_42MSO_9minutes_louder.wav"     # standard
+    noise_filename: str = "CN2_blocked_canal_M1_9min_cor.wav"
     # noise_filename: str = "CN2_blocked_canal_M1_9min_uncor.wav"
     # noise_filename: str = "CN2_blocked_canal_SMA_9min_cor.wav"
     # noise_filename: str = "CN2_blocked_canal_SMA_9min_uncor.wav"

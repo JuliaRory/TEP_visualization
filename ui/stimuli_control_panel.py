@@ -56,6 +56,9 @@ class StimuliControlPanel(QFrame):
         self.combo_box_stimuli = create_combo_box([], parent=self, tooltips=True)
         self._button_update_stimuli = create_button(text='⟳', disabled=False, parent=self, w=30)
 
+        self.combo_box_noise = create_combo_box([], parent=self, tooltips=True)
+        self._button_update_noise = create_button(text='⟳', disabled=False, parent=self, w=30)
+
         self.spin_box_monitor = create_spin_box(1, 3, self.settings.monitor, parent=self)
         
         self.check_box_stimuli_record = create_check_box(self.settings.stimuli_with_record, 'Запись NVX', parent=self)
@@ -89,6 +92,7 @@ class StimuliControlPanel(QFrame):
 
         layout_stimuli_creation = create_vbox([QLabel("СТИМУЛЫ", self), self.button_create_stimuli])
         layout_stimuli = create_hbox([self.combo_box_stimuli, self._button_update_stimuli])
+        layout_noise_options = create_hbox([self.combo_box_noise, self._button_update_noise])
         layout_monitor = create_hbox([QLabel("монитор", self), self.spin_box_monitor])
         layout_nvx = create_hbox([self.check_box_stimuli_record])
         layout_noise = create_hbox([self.check_box_noise, self.button_noise])
@@ -114,6 +118,7 @@ class StimuliControlPanel(QFrame):
         layout.addLayout(layout_stimuli_creation)               # | Стимулы           | 
                                                                 # | Создать           |
         layout.addLayout(layout_stimuli)                        # |  __________ ⟳    |
+        layout.addLayout(layout_noise_options)                   # |  __________ ⟳    |
         layout.addLayout(layout_center)                         # | 
 
         layout = QHBoxLayout(self)
@@ -137,6 +142,9 @@ class StimuliControlPanel(QFrame):
         self.noise_volume_slider.valueChanged.connect(self._on_change_noise_volume)
 
         self._button_update_stimuli.clicked.connect(self._update_combo_box_stimuli)
+        self._button_update_noise.clicked.connect(self._update_combo_box_noise)
+
+        self.combo_box_noise.currentTextChanged[str].connect(self._on_noise_combobox_changed)
     
     def _update_connections(self):
         """установление связей после открытия окна с презентацией стимулов"""
@@ -190,6 +198,10 @@ class StimuliControlPanel(QFrame):
 
             self._restart_stimuli = False                           
     
+    def _on_noise_combobox_changed(self, filename):
+        filename = os.path.join(r"resources/noise", filename)
+        self._audio_player.set_audiofile(filename)
+
     def _on_noise_button_click(self):
         new_label = STOP_LABEL
         if self._audio_player.is_active:
@@ -326,9 +338,18 @@ class StimuliControlPanel(QFrame):
                     self.combo_box_stimuli.addItems(data.keys())
         except (FileNotFoundError, json.JSONDecodeError):
             print("файл пока пустой")
+    
+    def _update_combo_box_noise(self):
+        self.combo_box_noise.clear()
+        folder = self.settings.noise_folder
+        filenames = os.listdir(folder)
+        self.combo_box_noise.addItems(filenames)
+        # self.combo_box_noise.currentText(self.settings.noise_filename)
+    
         
     def _finilize(self):
         self._update_combo_box_stimuli()
+        self._update_combo_box_noise()
     
 
     # === events ===
