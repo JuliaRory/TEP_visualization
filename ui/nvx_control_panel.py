@@ -53,6 +53,8 @@ class NVXControlPanel(QFrame):
         self.button_nvx_stop = create_button(text='Стоп', disabled=False, parent=self)              # stop
         self.button_nvx_kill = create_button(text='kill', disabled=False, parent=self)              # !terminate
 
+        self.lineedit_folder = create_lineedit(parent=self, w=200)
+        self.lineedit_folder.setText(self.settings.records_folder)
         self.lineedit_record = create_lineedit(parent=self)                                         # record name
 
         self._create_filename_lineedits()
@@ -82,7 +84,7 @@ class NVXControlPanel(QFrame):
     # =======================
     def _setup_layout(self):        
 
-        layout_qml_control = create_hbox([self.button_nvx_control, QLabel("...", self)])
+        layout_qml_control = create_hbox([self.button_nvx_control, QLabel("...")])
         layout_nvx_control = create_hbox([self.button_nvx_launch, self.button_nvx_stop, self.button_nvx_kill])
         
         layouts_label = []
@@ -94,6 +96,7 @@ class NVXControlPanel(QFrame):
         for layout_label in layouts_label:
             layout_record.addLayout(layout_label)
 
+        layout_folder = create_hbox([QLabel("Путь:"), self.lineedit_folder])
         layout_record_final = create_hbox([self.lineedit_record, self.button_nvx_record])
 
                                                                 # Vertical layout
@@ -102,6 +105,7 @@ class NVXControlPanel(QFrame):
         layout.addLayout(layout_qml_control)                    # | Контроль qml   ...    |
         layout.addWidget(self.button_check_impedance)           # | Проверить импеданс    |
         layout.addLayout(layout_nvx_control)                    # | start   stop    kill  |
+        layout.addLayout(layout_folder)
         layout.addLayout(layout_record) 
         layout.addLayout(layout_record_final)                   # | record_name   Запись  |
                                                                 # +-----------------------+
@@ -174,16 +178,15 @@ class NVXControlPanel(QFrame):
             comments = "true" if self._add_stimuli_stream else "false"
 
             filename = self.lineedit_record.text()
-            def check_file(filename):
-                folder = r"D:\Resonance\dist_2025\bin"
-                full_name = os.path.join(folder, filename)
-                return os.path.exists(full_name)
-            if check_file(filename):
-                filename = filename[:-5] +"-$$$.hdf5"
+            folder = self.lineedit_folder.text()
+            full_name = os.path.join(folder, filename)
+
+            if os.path.exists(full_name):
+                full_name = full_name[:-5] +"-$$$.hdf5"
             self.change_filename()
             
             self._service = self.resonance.getService(self.settings.service_name)     # Берем сервис
-            self._service.sendTransition('start', stream=self.settings.stream_name, add_stimuli=comments, filename=filename)
+            self._service.sendTransition('start', stream=self.settings.stream_name, add_stimuli=comments, filename=full_name)
 
             # self._service_stimuli = self.resonance.getService("TEP_visual")     # Берем сервис
             # self._service_stimuli.sendTransition('start', stream="stimuli")
