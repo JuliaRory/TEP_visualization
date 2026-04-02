@@ -67,17 +67,17 @@ class StimuliSettings:
     video_folder: str = "resources/videoSamples"
     stimuli_volume: int = 60
     noise_volume: int = 37
-    # noise_filename: str = "TAAC_CN2_coil_42MSO_9minutes_louder.wav"     # standard
+    noise_filename: str = "TAAC_CN2_coil_42MSO_9minutes_louder.wav"     # standard
     # noise_filename: str = "CN2_blocked_canal_M1_9min_cor.wav"
     # noise_filename: str = "CN2_blocked_canal_M1_9min_uncor.wav"
     # noise_filename: str = "CN2_blocked_canal_SMA_9min_cor.wav"
-    noise_filename: str = "CN2_blocked_canal_SMA_9min_uncor.wav"
+    # noise_filename: str = "CN2_blocked_canal_SMA_9min_uncor.wav"
     
 # --- Layout ---
 
 @dataclass
 class LayoutSettings:
-    horizontal_ratios: List[float] = field(default_factory=lambda: [0.10, 0.60, 0.30])
+    horizontal_ratios: List[float] = field(default_factory=lambda: [0.20, 0.60, 0.20])
     center_ratio: float = 0.75
     right_ratio: float = 0.50
 
