@@ -70,11 +70,14 @@ class AudioPlayer(QtCore.QObject):
         self.playback_started.emit()
     
     def set_audiofile(self, filename):
+        
         if self.is_playing and not self.is_paused:
             pygame.mixer.music.pause()
-        # Загружаем аудиофайл
-        pygame.mixer.music.load(filename)
-        print("Поставлен аудиофайл: ", filename)
+        try:
+            pygame.mixer.music.load(filename)   # Загружаем аудиофайл
+            print("Поставлен аудиофайл: ", filename)
+        except:
+            print("Не получилось загрузить аудифайл: ", filename)
         if self.is_playing and not self.is_paused:
             pygame.mixer.music.play()
 

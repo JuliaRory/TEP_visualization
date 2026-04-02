@@ -1,5 +1,6 @@
 from PyQt5.QtWidgets import QFrame,   QVBoxLayout, QLabel, QSizePolicy
 
+import os 
 
 from utils.ui_helpers import create_button, create_spin_box, create_check_box, create_combo_box, create_checkable_combobox
 from utils.layout_utils import create_hbox
@@ -66,6 +67,10 @@ class ProcessingPanel(QFrame):
         self.check_box_car = create_check_box(self.settings.do_CAR_filtering, 'CAR', parent=self)
         self.combo_box_channels = create_checkable_combobox(self.channels, self.settings.car_except_channels, w=70, parent=self)
 
+        self.check_box_ica = create_check_box(self.settings.apply_ICA, 'ICA', parent=self)
+        self.combo_box_ica = create_combo_box([], parent=self)
+        self._button_update_ica = create_button(text='⟳', disabled=False, parent=self, w=30)
+
         self.check_box_baseline = create_check_box(self.settings.do_baseline_correction, 'Бейзлайн', parent=self)
         self.spin_box_baseline_from = create_spin_box(-1000, self.settings.baseline_to_ms, self.settings.baseline_from_ms, step=10, parent=self)
         self.spin_box_baseline_to = create_spin_box(self.settings.baseline_from_ms, 0, self.settings.baseline_to_ms, step=10, parent=self)
@@ -83,6 +88,7 @@ class ProcessingPanel(QFrame):
         layout_lowpass = create_hbox([self.check_box_lowpass, self.spin_box_lowpass, QLabel("Гц", self)])
         layout_rereference = create_hbox([self.check_box_rereference, self.combo_box_rereference])
         layout_car = create_hbox([self.check_box_car, QLabel("кроме:", self), self.combo_box_channels])
+        layout_ica = create_hbox([self.check_box_ica, self.combo_box_ica, self._button_update_ica])
         layout_baseline_method = create_hbox([self.check_box_baseline, self.combo_box_baseline])
         layout_baseline_range = create_hbox([QLabel("от", self), self.spin_box_baseline_from, 
                                         QLabel("до", self), self.spin_box_baseline_to, QLabel("мс", self)
@@ -99,6 +105,7 @@ class ProcessingPanel(QFrame):
         layout.addLayout(layout_lowpass)                       # | _ФНЧ:  _____ Гц              |
         layout.addLayout(layout_rereference)                   # | _Референт:  _____            |
         layout.addLayout(layout_car)                           # | _CAR кроме: _____            |
+        layout.addLayout(layout_ica)                           # | _CAR кроме: _____            |
         layout.addLayout(layout_baseline)                      # | _Baseline метод: __mean__    |
                                                                # | от __ до __ мс               |
                                                                # +------------------------------+
@@ -111,10 +118,20 @@ class ProcessingPanel(QFrame):
     # =======================
     def _setup_connections(self):
         self.button_processing.clicked.connect(self._on_processing_button_click)
+        self._button_update_ica.clicked.connect(self._update_ica_combobox)
 
     # =======================
     # =====   Логика    =====
     # =======================
+
+    def _update_ica_combobox(self):
+        # self.combo_box_ica.clear()
+        folder = os.path.join(self.settings.ica_folder)
+        print(self.settings.ica_folder)
+        filenames = os.listdir(folder)
+        filenames = [fl for fl in filenames if fl.find(".h5") != -1]
+        self.combo_box_ica.addItems(filenames)
+
 
     def _on_processing_button_click(self):
         if ~are_equal(self.combo_box_aver.currentText(), self._last_aver_method):
@@ -146,3 +163,7 @@ class ProcessingPanel(QFrame):
 
         if is_baseline_method_changed or is_baseline_from_changed or is_baseline_to_changed:
             self.settings_handler.update_baseline()
+
+
+    def _finilize(self):
+        self._update_ica_combobox()

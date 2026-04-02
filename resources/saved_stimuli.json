@@ -1,4 +1,19 @@
 {   
+    "60fps_vs_120fps": {
+        "set": {
+            "1": "animatedSingle1500_tms_0ms_nosounds.mkv", 
+            "2": "animatedSingle1500_tms_0ms_nosounds_120fps.mkv",
+            "3": "audio_countdown_3.mkv"
+        },
+        "order": [
+            3, 2,2,1,2,1,1,1,2,1,2,1,2,1,1,2,1
+        ],
+        "cross": {
+            "dur_ms": 3000,
+            "filename": "cross_image_white_photomark.png"
+        }
+    },
+
     "bar_single_MOTOR_REST_1": {
         "set": {
             "1": "animatedSingle1500_tms_-200ms_nosounds_bar_120fps.mkv", 

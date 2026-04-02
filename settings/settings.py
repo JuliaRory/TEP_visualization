@@ -10,6 +10,7 @@ class ProcessingSettings:
     do_lowpass_filtering: bool = True
     do_rereferencing: bool = False
     do_CAR_filtering: bool = True
+    apply_ICA: bool = True
     do_baseline_correction: bool = True
 
     aver_methods: List[str] = field(default_factory=lambda: ["mean", "median", "trimmean"])
@@ -24,6 +25,8 @@ class ProcessingSettings:
     curr_baseline_method: str = "mean"
     baseline_from_ms: int = -75
     baseline_to_ms: int = -20
+
+    ica_folder: str = r"D:/temp/ICA/Cleaned_epochs"
 
 
 # --- Record & NVX control---
@@ -67,7 +70,7 @@ class StimuliSettings:
     video_folder: str = "resources/videoSamples"
     stimuli_volume: int = 60
     noise_volume: int = 37
-    noise_folder: str = "resources/noise"
+    noise_folder: str = r"resources/noise/"
     #noise_filename: str = "TAAC_CN2_coil_42MSO_9minutes_louder.wav"     # standard
     noise_filename: str = "CN2_blocked_canal_M1_9min_cor.wav"
     # noise_filename: str = "CN2_blocked_canal_M1_9min_uncor.wav"

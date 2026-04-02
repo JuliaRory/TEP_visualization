@@ -36,6 +36,7 @@
         "do_lowpass_filtering": true,
         "do_rereferencing": false,
         "do_CAR_filtering": false,
+        "apply_ICA": true,
         "do_baseline_correction": true,
         "aver_methods": [
             "mean",
@@ -115,7 +116,8 @@
         ],
         "curr_baseline_method": "mean",
         "baseline_from_ms": -75,
-        "baseline_to_ms": -20
+        "baseline_to_ms": -20,
+        "ica_folder": "D:\temp\\ICA\\Cleaned_epochs"
     },
     "nvx_control": {
         "bat_file": "D:/Resonance/distro-dual/msvc/control.bat",
