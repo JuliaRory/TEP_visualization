@@ -6,7 +6,7 @@ from typing import List
 
 @dataclass
 class ProcessingSettings:
-    do_averaging: bool = False
+    do_averaging: bool = True
     do_lowpass_filtering: bool = True
     do_rereferencing: bool = False
     do_CAR_filtering: bool = True
@@ -76,8 +76,8 @@ class StimuliSettings:
     # noise_filename: str = "CN2_blocked_canal_M1_9min_uncor.wav"
     # noise_filename: str = "CN2_blocked_canal_SMA_9min_cor.wav"
     # noise_filename: str = "CN2_blocked_canal_SMA_9min_uncor.wav"
-    noise_type: List[str] = field(default_factory=lambda: ["1", "2", "3", "4", "5"])
-    white_noise: List[str] = field(default_factory=lambda: ["10", "30", "50", "70", "90"])
+    noise_type: List[str] = field(default_factory=lambda: ["1", "2", "3", "4"])
+    white_noise: List[str] = field(default_factory=lambda: ["1", "2", "3", "4", "5"])
     
 # --- Layout ---
 

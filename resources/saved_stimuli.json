@@ -1,8 +1,8 @@
 {   
     "bar_single_MOTOR_REST_1": {
         "set": {
-            "1": "animatedSingle1500_tms_-200ms_nosounds_bar.mkv", 
-            "2": "animatedSingle1500_tms_0ms_nosounds_bar.mkv",
+            "1": "animatedSingle1500_tms_-200ms_nosounds_bar_continue.mkv", 
+            "2": "animatedSingle1500_tms_0ms_nosounds_bar_continue.mkv",
             "3": "rest1500_tms_0ms.mkv",
             "4": "audio_countdown_3.mkv"
         },
@@ -16,8 +16,8 @@
     },
     "bar_single_MOTOR_REST_2": {
         "set": {
-            "1": "animatedSingle1500_tms_-200ms_nosounds_bar.mkv", 
-            "2": "animatedSingle1500_tms_0ms_nosounds_bar.mkv",
+            "1": "animatedSingle1500_tms_-200ms_nosounds_bar_continue.mkv", 
+            "2": "animatedSingle1500_tms_0ms_nosounds_bar_continue.mkv",
             "3": "rest1500_tms_0ms.mkv",
             "4": "audio_countdown_3.mkv"
         },
@@ -31,8 +31,8 @@
     },
     "bar_single_MOTOR_REST_3": {
         "set": {
-            "1": "animatedSingle1500_tms_-200ms_nosounds_bar.mkv", 
-            "2": "animatedSingle1500_tms_0ms_nosounds_bar.mkv",
+            "1": "animatedSingle1500_tms_-200ms_nosounds_bar_continue.mkv", 
+            "2": "animatedSingle1500_tms_0ms_nosounds_bar_continue.mkv",
             "3": "rest1500_tms_0ms.mkv",
             "4": "audio_countdown_3.mkv"
         },
@@ -46,8 +46,8 @@
     },
     "bar_single_MOTOR_REST_4": {
         "set": {
-            "1": "animatedSingle1500_tms_-200ms_nosounds_bar.mkv", 
-            "2": "animatedSingle1500_tms_0ms_nosounds_bar.mkv",
+            "1": "animatedSingle1500_tms_-200ms_nosounds_bar_continue.mkv", 
+            "2": "animatedSingle1500_tms_0ms_nosounds_bar_continue.mkv",
             "3": "rest1500_tms_0ms.mkv",
             "4": "audio_countdown_3.mkv"
         },
@@ -61,8 +61,8 @@
     },
     "bar_single_MOTOR_REST_5": {
         "set": {
-            "1": "animatedSingle1500_tms_-200ms_nosounds_bar.mkv", 
-            "2": "animatedSingle1500_tms_0ms_nosounds_bar.mkv",
+            "1": "animatedSingle1500_tms_-200ms_nosounds_bar_continue.mkv", 
+            "2": "animatedSingle1500_tms_0ms_nosounds_bar_continue.mkv",
             "3": "rest1500_tms_0ms.mkv",
             "4": "audio_countdown_3.mkv"
         },
@@ -76,7 +76,7 @@
     },
     "bar_SST_single_1": {
         "set": {
-            "1": "animatedSingle1500_tms_0ms_nosounds_bar.mkv", 
+            "1": "animatedSingle1500_tms_0ms_nosounds_bar_continue.mkv", 
             "2": "animatedSingle1500_stop-200ms_tms_0ms_nosounds_bar_continue.mkv",
             "3": "audio_countdown_3.mkv"
         },
@@ -90,7 +90,7 @@
     },
     "bar_SST_single_2": {
         "set": {
-            "1": "animatedSingle1500_tms_0ms_nosounds_bar.mkv", 
+            "1": "animatedSingle1500_tms_0ms_nosounds_bar_continue.mkv", 
             "2": "animatedSingle1500_stop-200ms_tms_0ms_nosounds_bar_continue.mkv",
             "3": "audio_countdown_3.mkv"
         },
@@ -104,7 +104,7 @@
     },
     "bar_SST_single_3": {
         "set": {
-            "1": "animatedSingle1500_tms_0ms_nosounds_bar.mkv", 
+            "1": "animatedSingle1500_tms_0ms_nosounds_bar_continue.mkv", 
             "2": "animatedSingle1500_stop-200ms_tms_0ms_nosounds_bar_continue.mkv",
             "3": "audio_countdown_3.mkv"
         },
@@ -118,7 +118,7 @@
     },
     "bar_SST_single_4": {
         "set": {
-            "1": "animatedSingle1500_tms_0ms_nosounds_bar.mkv", 
+            "1": "animatedSingle1500_tms_0ms_nosounds_bar_continue.mkv", 
             "2": "animatedSingle1500_stop-200ms_tms_0ms_nosounds_bar_continue.mkv",
             "3": "audio_countdown_3.mkv"
         },
@@ -132,7 +132,7 @@
     },
     "bar_SST_single_5": {
         "set": {
-            "1": "animatedSingle1500_tms_0ms_nosounds_bar.mkv", 
+            "1": "animatedSingle1500_tms_0ms_nosounds_bar_continue.mkv", 
             "2": "animatedSingle1500_stop-200ms_tms_0ms_nosounds_bar_continue.mkv",
             "3": "audio_countdown_3.mkv"
         },

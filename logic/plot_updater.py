@@ -15,7 +15,9 @@ class PlotUpdater:
 
     def update_plots(self, processor):
         self.update_topoteps(processor)
-        # self.update_avg_teps(processor)
+
+        # self.update_avg_teps(processor) # ????
+
         self.update_meps(processor)
         #self.update_avg_meps(processor)
         if self.do_mep_deeper_look:
@@ -28,14 +30,14 @@ class PlotUpdater:
                 TEPs2plot = processor.calculate_avg_TEP() # взять все сохранённые эпохи и вернуть усреднённые ТЕР
             else:
                 TEPs2plot = processor.apply_transform(processor._epochs[-1][:-2, :] * 1e6)    # взять последнюю преобразованную эпоху
-
+                
             self.topo_panel.figure.update_data(TEPs2plot)
 
     def update_avg_teps(self, processor):
         if not self._show_specific_epoch:
             if self.settings.overview_panel.butts_plot.TEP.do_averaging:
-                # if not processor.average_data:
-                #     processor.create_average_functions()  # обновили все функции для усреднения
+                if not processor.average_data:
+                    processor.create_average_functions()  # обновили все функции для усреднения
                 TEPs2plot = processor.calculate_avg_TEP() # взять все сохранённые эпохи и вернуть усреднённые ТЕР
             else:
                 TEPs2plot = processor.apply_transform(processor._epochs[-1][:-2, :] * 1e6)    # взять последнюю преобразованную эпоху

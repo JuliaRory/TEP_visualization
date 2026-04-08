@@ -7,16 +7,16 @@ from typing import List
 @dataclass
 class Scale:
     xmin: int = -10
-    xmax: int = 30
-    ymin: int = -100
-    ymax: int = 100
+    xmax: int = 100
+    ymin: int = -30
+    ymax: int = 30
 
 @dataclass
 class TopoTEPsPlot:
     xmin: int = -10
-    xmax: int = 30
-    ymin: int = -100
-    ymax: int = 100
+    xmax: int = 100
+    ymin: int = -30
+    ymax: int = 30
 
 @dataclass
 class SingleMEPsPlot:
@@ -50,13 +50,13 @@ class MEPBlock:
 
 @dataclass
 class TEPBlock:
-    amp: float = 100
+    amp: float = 30
     units: str = "uV"
     title: str = "Averaged TEP"
     round: int = 0
     channels_nearest_n: List[int] = field(default_factory=lambda: [9, 36, 42, 38, 37])
     n_channels: int = 64
-    do_averaging: bool = False
+    do_averaging: bool = True
 
 @dataclass
 class ButtsPlot:
@@ -64,7 +64,7 @@ class ButtsPlot:
     MEP: MEPBlock = field(default_factory=MEPBlock)
         
     xmin_ms: int = -10
-    xmax_ms: int = 50
+    xmax_ms: int = 100
     
     channels_nearest: List[str] = field(default_factory=lambda: ["C3", "C5", "C1", "CP3", "FC3"])
     

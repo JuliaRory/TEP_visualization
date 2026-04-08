@@ -123,7 +123,7 @@ class StimuliControlPanel(QFrame):
         layout.addLayout(layout_stimuli_creation)               # | Стимулы           | 
                                                                 # | Создать           |
         layout.addLayout(layout_stimuli)                        # |  __________ ⟳    |
-        # layout.addLayout(layout_noise_options)                   # |  __________ ⟳    |
+        # layout.addLayout(layout_noise_options)                # |  __________ ⟳    |
         layout.addLayout(layout_noise)                          # | _ шум  вкл/выкл   |
         layout.addLayout(layout_center)                         # | 
 
@@ -210,6 +210,7 @@ class StimuliControlPanel(QFrame):
         noise_type = self.combo_box_noise_type.currentText()
         noise_var = self.combo_box_white_noise.currentText()
         filename = os.path.join(r"resources/noise", f"testNoise_type{noise_type}_var{noise_var}.wav")
+        print(filename)
         self._audio_player.set_audiofile(filename)
 
     def _on_noise_button_click(self):
