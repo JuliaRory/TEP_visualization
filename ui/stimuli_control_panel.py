@@ -56,8 +56,11 @@ class StimuliControlPanel(QFrame):
         self.combo_box_stimuli = create_combo_box([], parent=self, tooltips=True)
         self._button_update_stimuli = create_button(text='⟳', disabled=False, parent=self, w=30)
 
-        self.combo_box_noise = create_combo_box([], parent=self, tooltips=True)
-        self._button_update_noise = create_button(text='⟳', disabled=False, parent=self, w=30)
+        # self.combo_box_noise = create_combo_box([], parent=self, tooltips=True)
+        # self._button_update_noise = create_button(text='⟳', disabled=False, parent=self, w=30)
+
+        self.combo_box_noise_type = create_combo_box(self.settings.noise_type, parent=self, tooltips=True)
+        self.combo_box_white_noise = create_combo_box(self.settings.white_noise, parent=self, tooltips=True)
 
         self.spin_box_monitor = create_spin_box(1, 3, self.settings.monitor, parent=self)
         
@@ -92,17 +95,19 @@ class StimuliControlPanel(QFrame):
 
         layout_stimuli_creation = create_vbox([QLabel("СТИМУЛЫ", self), self.button_create_stimuli])
         layout_stimuli = create_hbox([self.combo_box_stimuli, self._button_update_stimuli])
-        layout_noise_options = create_hbox([self.combo_box_noise, self._button_update_noise])
+        # layout_noise_options = create_hbox([self.combo_box_noise, self._button_update_noise])
+        # layout_noise_options = create_hbox([QLabel("Тип:"), self.combo_box_noise_type, QLabel("var:"),self.combo_box_white_noise])
         layout_monitor = create_hbox([QLabel("монитор", self), self.spin_box_monitor])
         layout_nvx = create_hbox([self.check_box_stimuli_record])
-        layout_noise = create_hbox([self.check_box_noise, self.button_noise])
+        layout_noise = create_hbox([self.check_box_noise, self.button_noise, QLabel("Тип:"), self.combo_box_noise_type, QLabel("var:"),self.combo_box_white_noise])
+        
         layout_stimuli_launch = create_hbox([self.button_stimuli])
         layout_stimuli_control = create_hbox([self.button_stimuli_pause, self.button_stimuli_restart])
 
         layout_volume = create_hbox([self.stimuli_volume_slider, self.noise_volume_slider])
 
         layout_params = QVBoxLayout()
-        layout_params.addLayout(layout_noise)                          # | _ шум  вкл/выкл   |
+        
         layout_params.addLayout(layout_monitor)                        # | Монитор __        |
         layout_params.addLayout(layout_nvx)                            # | _запись nvx       |
         layout_params.addLayout(layout_stimuli_launch)                 # | Запуск            |
@@ -118,7 +123,8 @@ class StimuliControlPanel(QFrame):
         layout.addLayout(layout_stimuli_creation)               # | Стимулы           | 
                                                                 # | Создать           |
         layout.addLayout(layout_stimuli)                        # |  __________ ⟳    |
-        layout.addLayout(layout_noise_options)                   # |  __________ ⟳    |
+        # layout.addLayout(layout_noise_options)                   # |  __________ ⟳    |
+        layout.addLayout(layout_noise)                          # | _ шум  вкл/выкл   |
         layout.addLayout(layout_center)                         # | 
 
         layout = QHBoxLayout(self)
@@ -142,9 +148,11 @@ class StimuliControlPanel(QFrame):
         self.noise_volume_slider.valueChanged.connect(self._on_change_noise_volume)
 
         self._button_update_stimuli.clicked.connect(self._update_combo_box_stimuli)
-        self._button_update_noise.clicked.connect(self._update_combo_box_noise)
+        # self._button_update_noise.clicked.connect(self._update_combo_box_noise)
 
-        self.combo_box_noise.currentTextChanged[str].connect(self._on_noise_combobox_changed)
+        # self.combo_box_noise.currentTextChanged[str].connect(self._on_noise_combobox_changed)
+        self.combo_box_noise_type.currentTextChanged[str].connect(self._change_audio_filename)
+        self.combo_box_white_noise.currentTextChanged[str].connect(self._change_audio_filename)
     
     def _update_connections(self):
         """установление связей после открытия окна с презентацией стимулов"""
@@ -197,9 +205,11 @@ class StimuliControlPanel(QFrame):
             self.button_stimuli.setText("Закрыть")                # меняем надпись на кнопке "старт"
 
             self._restart_stimuli = False                           
-    
-    def _on_noise_combobox_changed(self, filename):
-        filename = os.path.join(r"resources/noise", filename)
+
+    def _change_audio_filename(self, level):
+        noise_type = self.combo_box_noise_type.currentText()
+        noise_var = self.combo_box_white_noise.currentText()
+        filename = os.path.join(r"resources/noise", f"testNoise_type{noise_type}_var{noise_var}.wav")
         self._audio_player.set_audiofile(filename)
 
     def _on_noise_button_click(self):
@@ -349,7 +359,7 @@ class StimuliControlPanel(QFrame):
         
     def _finilize(self):
         self._update_combo_box_stimuli()
-        self._update_combo_box_noise()
+        # self._update_combo_box_noise()
     
 
     # === events ===
