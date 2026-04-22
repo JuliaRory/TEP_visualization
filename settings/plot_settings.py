@@ -46,7 +46,7 @@ class MEPBlock:
     units: str = "mV"
     title: str = "Averaged MEP"
     round: int = 1
-    do_averaging: bool = True
+    do_averaging: bool = False
 
 @dataclass
 class TEPBlock:
@@ -56,7 +56,7 @@ class TEPBlock:
     round: int = 0
     channels_nearest_n: List[int] = field(default_factory=lambda: [9, 36, 42, 38, 37])
     n_channels: int = 64
-    do_averaging: bool = True
+    do_averaging: bool = False
 
 @dataclass
 class ButtsPlot:
