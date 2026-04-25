@@ -148,6 +148,8 @@
         "stimuli_filename": "resources/saved_stimuli.json",
         "video_folder": "resources/videoSamples",
         "stimuli_volume": 60,
+        "isi_min_s": 0.40000000000000013,
+        "isi_max_s": 0.9999999999999997,
         "noise_volume": 37,
         "noise_folder": "resources/noise",
         "noise_filename": "CN2_blocked_canal_M1_9min_cor.wav",
