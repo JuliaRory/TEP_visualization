@@ -1,6 +1,6 @@
 from PyQt5.QtWidgets import QFrame,  QLabel
 from PyQt5.QtGui import QFont, QFontMetrics
-from PyQt5.QtCore import Qt, pyqtSignal
+from PyQt5.QtCore import Qt, QTimer, pyqtSignal
 
 import numpy as np
 import pandas as pd
@@ -163,6 +163,11 @@ class TopoTEPsPanel(QFrame):
         self.df_pos = df[['x', 'y', 'labels', 'x_centered', 'y_centered']]
     
     def _update_inner_sizes(self):
+        if not hasattr(self, "figure"):
+            return
+
+        panel_width = max(1, self.width())
+        panel_height = max(1, self.height())
 
         """Обновление позиций графика"""
         self._calculate_positions()             # рассчитать новые позиции графиков
@@ -174,7 +179,12 @@ class TopoTEPsPanel(QFrame):
         self.xmax, self.xmin = self.spin_box_scale_xmax.value(), self.spin_box_scale_xmin.value()
         self.ymax, self.ymin = self.spin_box_scale_ymax.value(), self.spin_box_scale_ymin.value()
 
-        self.figure.resize(self.width(), self.height())
+        self.figure.resize(panel_width, panel_height)
+        self.figure.fig.set_size_inches(
+            panel_width / self.figure.fig.dpi,
+            panel_height / self.figure.fig.dpi,
+            forward=True
+        )
         self.figure.refresh_plots(self._positions, single_w=x_aver, single_h=y_aver)
         self._update_scale()
         # self.figure.update_position(self._positions, single_w=x_aver, single_h=y_aver, w=self.width(), h=self.height())
@@ -187,10 +197,10 @@ class TopoTEPsPanel(QFrame):
 
         scale_left = self.scale_left - width - int(width*0.2)
         scale_right = self.scale_left  + self.plot_width + int(width*0.2)
-        scale_bottom =self.height() - ( self.scale_bottom ) + int(height*0.2)
-        scale_top = self.height() - (self.scale_bottom + self.plot_height + height) - int(height*0.2)
+        scale_bottom = panel_height - ( self.scale_bottom ) + int(height*0.2)
+        scale_top = panel_height - (self.scale_bottom + self.plot_height + height) - int(height*0.2)
         scale_center_x = self.scale_left + int(self.plot_width / (self.xmax-self.xmin) * abs(self.xmin))
-        scale_center_y = self.height() - (self.scale_bottom + self.plot_height//2) - height//2
+        scale_center_y = panel_height - (self.scale_bottom + self.plot_height//2) - height//2
 
         self.spin_box_scale_ymax.move(scale_center_x, scale_top)
         self.spin_box_scale_ymin.move(scale_center_x, scale_bottom)
@@ -218,7 +228,7 @@ class TopoTEPsPanel(QFrame):
         self.label_n_epoch.move(self.spin_box_scale_xmax.x()+width*2, self.top_pad//2)
         self.label_n_epoch_specific.move(self.spin_box_scale_xmax.x()+width*2+self.label_n_epoch.width()+5, self.top_pad//2)
 
-        self.processing_ui.move(self.width()-self.processing_ui.width(), 0)
+        self.processing_ui.move(panel_width-self.processing_ui.width(), 0)
 
     # --- Финализация ---
     def _post_init(self):
@@ -226,6 +236,11 @@ class TopoTEPsPanel(QFrame):
         self.figure.set_x_shift(-self.x_shift, self.n_samples)        #  задаём размеры эпохи и смещение относительно 0 по оси абсцисс
 
     # --- События ---
+    def showEvent(self, event):
+        super().showEvent(event)
+        QTimer.singleShot(0, self._update_inner_sizes)
+        QTimer.singleShot(50, self._update_inner_sizes)
+
     def resizeEvent(self, event):
         super().resizeEvent(event)
         self._update_inner_sizes()

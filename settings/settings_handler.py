@@ -48,8 +48,10 @@ class SettingsHandler:
     def update_averaging(self, apply=True):
         s = self.settings.processing_settings
         s.do_averaging = self.ui.check_box_average.isChecked()
+        s.curr_aver_method = self.ui.combo_box_aver.currentText()
 
         self.data_processor.average_data = s.do_averaging
+        self.data_processor.aver_method = s.curr_aver_method
         if self.data_processor.average_data:
             self.data_processor.create_average_functions()
 
@@ -146,6 +148,8 @@ class SettingsHandler:
 
     def _apply(self, topoteps_draw=False, single_meps_draw=False, avg_teps_draw=False, avg_meps_draw=False):
         self.data_processor.create_full_transform()
+        if self.data_processor.average_data:
+            self.data_processor.create_average_functions()
         if self.data_processor.average_tep_data:
             self.data_processor.create_average_functions()
         if len(self.data_processor._epochs) != 0:

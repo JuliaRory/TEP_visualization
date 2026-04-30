@@ -69,7 +69,7 @@ class DataProcessor(QObject):
         self.aver_empty_func = {                                        # dict с функциями для усреднения
             "mean": lambda x, y, z: RollingMean(x, y, z), 
             "median": lambda x, y, z: RollingMedian(x, y, z), 
-            "trimmean": lambda x, y, z: RollingTrimMean(x, y, z)
+            "trimmean": lambda x, y, z: RollingTrimMean(x, y, save_all=z)
         }
 
 
@@ -93,10 +93,12 @@ class DataProcessor(QObject):
             self.updateCounter.emit(self._n_epoch)
 
             if self.average_data or self.average_tep_data:
+                self._ensure_average_functions(which="TEPs")
                 TEPs2plot = self._transform(epoch[:-2, :] * 1e6)     # without emg channels
                 self.update_average_functions(TEPs2plot)
             
             if self.average_mep_data:
+                self._ensure_average_functions(which="MEPs")
                 emg = self._baseline(epoch[-2:, :] * 1e3)  # вычесть бейзлайн и перевести в мВ
                 emg = np.diff(emg, axis=0).flatten()                            # посчитать разницу каналов
                 self.update_average_functions(emg, which="MEPs")
@@ -107,11 +109,19 @@ class DataProcessor(QObject):
         """
         n_delete - номер эпохи для удаления
         """
+        if n_delete < 1 or n_delete > len(self._epochs):
+            return
+
         self._n_epoch -= 1
         self.updateCounter.emit(self._n_epoch)
 
         del self._epochs[n_delete-1]                     # минус один для учёта нумерации с нуля
         del self._timestamps[n_delete-1]
+
+        if self.average_data or self.average_tep_data:
+            self.create_average_functions(which="TEPs")
+        if self.average_mep_data:
+            self.create_average_functions(which="MEPs")
         
         self.newDataProcessed.emit()        # --> plot_updater
 
@@ -129,6 +139,7 @@ class DataProcessor(QObject):
 
     def calculate_avg_TEP(self):
         """calculate averaged value based on current data"""
+        self._ensure_average_functions(which="TEPs")
         data_aver = []
         for avg_funcs in self.average_functions:
             average_TEPs = [f.calculate() for f in avg_funcs]
@@ -137,6 +148,7 @@ class DataProcessor(QObject):
     
     def calculate_avg_MEP(self):
         """calculate averaged value based on current data"""
+        self._ensure_average_functions(which="MEPs")
         data_aver = [f.calculate() for f in self.average_functions_mep]
         return np.array(data_aver)
 
@@ -234,6 +246,22 @@ class DataProcessor(QObject):
                         function([], self._n_aver_max, self._aver_all)
                         for j in range(self._n_samples)
                     ]
+
+    def _ensure_average_functions(self, which="TEPs"):
+        if which == "TEPs":
+            needs_create = (
+                not self.average_functions
+                or len(self.average_functions) != len(self.settings.channels)
+                or any(len(avg_funcs) != self._n_samples for avg_funcs in self.average_functions)
+            )
+        else:
+            needs_create = (
+                not self.average_functions_mep
+                or len(self.average_functions_mep) != self._n_samples
+            )
+
+        if needs_create:
+            self.create_average_functions(which=which)
     
     def update_avg_mep(self, do_average):
         self.average_mep_data = do_average
@@ -264,5 +292,10 @@ class DataProcessor(QObject):
         self._n_epoch = 0
         self.updateCounter.emit(self._n_epoch)
 
-        self.average_functions = []
-        self.average_functions_mep = []
+        self.average_functions = None
+        self.average_functions_mep = None
+
+        if self.average_data or self.average_tep_data:
+            self.create_average_functions(which="TEPs")
+        if self.average_mep_data:
+            self.create_average_functions(which="MEPs")

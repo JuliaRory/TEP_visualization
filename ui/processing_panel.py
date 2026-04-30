@@ -134,25 +134,29 @@ class ProcessingPanel(QFrame):
 
 
     def _on_processing_button_click(self):
-        if ~are_equal(self.combo_box_aver.currentText(), self._last_aver_method):
+        if not are_equal(self.check_box_average.isChecked(), self._last_do_averaging):
+            self._last_do_averaging = self.check_box_average.isChecked()
+            self.settings_handler.update_averaging()
+
+        if not are_equal(self.combo_box_aver.currentText(), self._last_aver_method):
             self._last_aver_method = self.combo_box_aver.currentText()
             self.settings_handler.update_averaging()
         
-        if ~are_equal(self.spin_box_lowpass.value(), self._last_lowpass_freq):
+        if not are_equal(self.spin_box_lowpass.value(), self._last_lowpass_freq):
             self._last_lowpass_freq = self.spin_box_lowpass.value()
             self.settings_handler.update_lowpass()
         
-        if ~are_equal(self.combo_box_rereference.checkedItems(), self._last_rereference_channel):
+        if not are_equal(self.combo_box_rereference.checkedItems(), self._last_rereference_channel):
             self._last_rereference_channel = self.combo_box_rereference.checkedItems()
             self.settings_handler.update_rereference()
 
-        if ~are_equal(self.combo_box_channels.checkedItems(), self._last_CAR_except_channels):
+        if not are_equal(self.combo_box_channels.checkedItems(), self._last_CAR_except_channels):
             self._last_CAR_except_channels = self.combo_box_channels.checkedItems()
             self.settings_handler.update_CAR()
 
-        is_baseline_method_changed = ~are_equal(self.combo_box_baseline.currentText(), self._last_baseline_method)
-        is_baseline_from_changed = ~are_equal(self.spin_box_baseline_from.value(), self._last_baseline_from)
-        is_baseline_to_changed = ~are_equal(self.spin_box_baseline_to.value(), self._last_baseline_to)
+        is_baseline_method_changed = not are_equal(self.combo_box_baseline.currentText(), self._last_baseline_method)
+        is_baseline_from_changed = not are_equal(self.spin_box_baseline_from.value(), self._last_baseline_from)
+        is_baseline_to_changed = not are_equal(self.spin_box_baseline_to.value(), self._last_baseline_to)
         
         if is_baseline_method_changed:
             self._last_baseline_method = self.combo_box_baseline.currentText()
