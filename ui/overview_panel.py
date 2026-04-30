@@ -1,5 +1,5 @@
 from PyQt5.QtWidgets import QFrame,  QLabel, QVBoxLayout
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, QTimer
 
 from utils.ui_helpers import create_spin_box, create_button, create_check_box
 from utils.layout_utils import create_hbox
@@ -172,11 +172,64 @@ class overviewPanel(QFrame):
     # --- Финализация ---
     def _post_init(self):
         self._update_scale()
+        QTimer.singleShot(0, self._update_inner_sizes)
+        QTimer.singleShot(50, self._update_inner_sizes)
 
     # --- События ---
+    def showEvent(self, event):
+        super().showEvent(event)
+        QTimer.singleShot(0, self._update_inner_sizes)
+
     def resizeEvent(self, event):
         super().resizeEvent(event)
-        # self.figure_TEP.resize(self.width(), int((1 - self._ratio)*self.height()//2))
-        self.figure_TEP.redraw("TEPs")
-        # self.figure_MEP.resize(self.width(), int((1 - self._ratio)*self.height()//2))
-        self.figure_MEP.redraw("MEPs")
+        self._update_inner_sizes()
+
+    def _update_inner_sizes(self):
+        if not hasattr(self, "figure_TEP"):
+            return
+
+        self.w = max(1, self.width())
+        self.h = max(1, self.height())
+        self._butt_plot_height = max(1, int((1-self._ratio)*self.h//2))
+
+        self._resize_butt_plot(self.figure_TEP, self.w, self._butt_plot_height)
+        self._resize_butt_plot(self.figure_MEP, self.w, self._butt_plot_height)
+
+        if self.settings.topoplot.draw:
+            self._place_topoplots()
+
+        self._place_butt_plots()
+        self._update_scale()
+
+    def _resize_butt_plot(self, figure, width, height):
+        figure.resize(width, height)
+        figure.fig.set_size_inches(
+            width / figure.fig.dpi,
+            height / figure.fig.dpi,
+            forward=True
+        )
+
+    def _place_topoplots(self):
+        n = self.settings.topoplot.n_plots
+        w_available = 0.8 * self.w
+        w_topo = max(1, int(w_available // n))
+        d_width = (1-0.8-0.1) * self.w / n
+        left = int(0.1 * self.w)
+
+        for i, topoplot in enumerate(self.figure_topo):
+            topoplot.resize(w_topo, w_topo)
+            left_new = int(left+(topoplot.width() + d_width)*i)
+            topoplot.move(left_new, left)
+            self.spinbox_ts[i].move(left_new + topoplot.width()//2-25, left-30)
+
+    def _place_butt_plots(self):
+        TEP_plot_pos_y = int((1-self._ratio)*self.h) - self.figure_TEP.height()
+        MEP_plot_pos_y = TEP_plot_pos_y + self._butt_plot_height + 10
+        settings_pos_y = MEP_plot_pos_y + self._butt_plot_height + 10
+        aver_pos_x = int(0.65* self.w)
+
+        self.figure_TEP.move(0, TEP_plot_pos_y)
+        self.checkbox_average_teps.move(aver_pos_x, TEP_plot_pos_y)
+        self.figure_MEP.move(0, MEP_plot_pos_y)
+        self.checkbox_average_meps.move(aver_pos_x, MEP_plot_pos_y)
+        self._frame_settings.move(0, settings_pos_y)

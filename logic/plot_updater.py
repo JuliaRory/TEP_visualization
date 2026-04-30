@@ -1,4 +1,4 @@
-import numpy as np
+﻿import numpy as np
 
 class PlotUpdater:
     def __init__(self, topo_panel, overview_panel, meps_panel, settings):
@@ -16,10 +16,11 @@ class PlotUpdater:
     def update_plots(self, processor):
         self.update_topoteps(processor)
 
-        self.update_avg_teps(processor) # ????
+        # self.update_avg_teps(processor) # ????
+        # self.update_avg_meps(processor)
 
         self.update_meps(processor)
-        self.update_avg_meps(processor)
+        
         if self.do_mep_deeper_look:
             self.update_mep_deeper_look(processor)
     

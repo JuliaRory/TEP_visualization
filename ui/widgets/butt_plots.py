@@ -181,6 +181,7 @@ class buttPlot(FigureCanvas):
         """Нарисовать новые MEPs"""
         self.fig.canvas.restore_region(self._background)  # восстанавливаем чистый фон
 
+        meps = self._fit_to_x(meps)
         self._line.set_ydata(meps)
         self._ax.draw_artist(self._line)
 
@@ -195,8 +196,21 @@ class buttPlot(FigureCanvas):
             self.update_TEPs(teps)
         else:
             meps = self._line.get_ydata()
-            meps = np.full_like(meps, fill_value=np.nan)
+            if empty:
+                meps = np.full_like(meps, fill_value=np.nan)
             self.update_MEPs(meps)
+
+    def _fit_to_x(self, data):
+        data = np.asarray(data)
+        target_len = len(self._x)
+        if len(data) == target_len:
+            return data
+        if len(data) > target_len:
+            return data[:target_len]
+
+        result = np.full(target_len, np.nan)
+        result[:len(data)] = data
+        return result
 
 
     def draw_loaded_multiple_sessions(self, session_data, signal="TEP"):
