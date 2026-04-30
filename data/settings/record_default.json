@@ -15,8 +15,10 @@
     "use_power": false,
     "use_comments": false,
     "number": "01",
-    "subject": "AM",
+    "subject": "AV",
     "spot": "M1",
     "coil": "qp",
-    "yaw_angle": "45"
+    "yaw_angle": "45",
+    "power": "",
+    "comments": ""
 }

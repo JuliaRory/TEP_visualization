@@ -595,6 +595,7 @@ class MainWindow(QWidget):
     #         super().keyPressEvent(event)
              
     def closeEvent(self, event):
+        self._settings_handler_record.sync_settings_from_ui()
         self._settings_handler.save_to_json(default=True)
         self._settings_handler_record.save_to_json(default=True)
 

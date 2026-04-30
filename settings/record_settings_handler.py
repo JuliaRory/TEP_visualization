@@ -29,6 +29,7 @@ class RecordSettingsHandler:
     def save_to_json(self, path=None, default=True):
         if default:
             path = r"data/settings/record_default.json"
+        self.sync_settings_from_ui()
         with open(path, "w", encoding="utf-8") as f:
             json.dump(asdict(self.settings), f, indent=4, ensure_ascii=False)
         
@@ -50,6 +51,8 @@ class RecordSettingsHandler:
         self.ui.lineedit_spot.setText(s.spot)
         self.ui.lineedit_coil.setText(s.coil)
         self.ui.lineedit_yaw_angle.setText(s.yaw_angle)    
+        self.ui.lineedit_power.setText(s.power)
+        self.ui.lineedit_comments.setText(s.comments)
 
         
         self.ui.checkbox_number.setChecked(s.use_number)
@@ -61,3 +64,22 @@ class RecordSettingsHandler:
         self.ui.checkbox_comments.setChecked(s.use_comments)
 
         self.ui.change_filename()
+
+    def sync_settings_from_ui(self):
+        s = self.settings
+
+        s.number = self.ui.lineedit_number.text()
+        s.subject = self.ui.lineedit_subject.text()
+        s.spot = self.ui.lineedit_spot.text()
+        s.coil = self.ui.lineedit_coil.text()
+        s.yaw_angle = self.ui.lineedit_yaw_angle.text()
+        s.power = self.ui.lineedit_power.text()
+        s.comments = self.ui.lineedit_comments.text()
+
+        s.use_number = self.ui.checkbox_number.isChecked()
+        s.use_subject = self.ui.checkbox_subject.isChecked()
+        s.use_spot = self.ui.checkbox_spot.isChecked()
+        s.use_coil = self.ui.checkbox_coil.isChecked()
+        s.use_yaw_angle = self.ui.checkbox_yaw_angle.isChecked()
+        s.use_power = self.ui.checkbox_power.isChecked()
+        s.use_comments = self.ui.checkbox_comments.isChecked()

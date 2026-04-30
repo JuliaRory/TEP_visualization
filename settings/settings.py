@@ -57,6 +57,8 @@ class RecordSettings:
     spot: str = "M1"
     coil: str = "qp"
     yaw_angle: str = "45"
+    power: str = ""
+    comments: str = ""
 
 
 # --- Stimuli ---

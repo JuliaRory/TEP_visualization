@@ -31,8 +31,8 @@ class StreamSource(DataSource):
         self.n_epoch += 1
 
         # data = np.array(json.loads(msg)["epoch"]).T  # [n_channels x n_samples]
-        data = np.array(msg).T
-        
+        data = np.array(msg).T * 50
+
         self.dataReady.emit(data, timestamp)  
 
     # добавить сохранение эпох в файл
