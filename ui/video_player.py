@@ -8,6 +8,13 @@ from PyQt5.QtGui import QPixmap
 from PyQt5.QtWidgets import QApplication, QLabel, QVBoxLayout, QWidget
 
 
+REST_STIMULUS = "rest1500_tms_0ms_bar.mkv"
+REST_STIMULUS_VARIANTS = (
+    "rest1500_tms_0ms_bar.mkv",
+    "rest1500_tms_-200ms_bar.mkv",
+)
+
+
 class StimuliPresentation_one_by_one(QWidget):
     stimuliStarted = pyqtSignal()
     stimuliFinished = pyqtSignal()
@@ -122,17 +129,28 @@ class StimuliPresentation_one_by_one(QWidget):
         )
 
         self.order = stimuli_sequence["order"]
-        self.video_names = list(stimuli_sequence["set"].values())
+        self.video_names_by_number = {
+            int(number): filename for number, filename in stimuli_sequence["set"].items()
+        }
+        self.video_names = self._make_playback_video_names(self.video_names_by_number, self.order)
         path = r"resources\videoSamples"
-        full_video_names = [os.path.join(path, file) for file in self.video_names]
-        self.video_files = [full_video_names[i - 1] for i in self.order]
+        self.video_files = [os.path.join(path, filename) for filename in self.video_names]
 
         self._current_index = 0
         self.currIdxChanged.emit(self._current_index)
-        self.stimulus.emit(self.video_names[self.order[self._current_index] - 1])
+        self.stimulus.emit(self.video_names[self._current_index])
 
         self._prepare_next_video()
         print("[VLC player]: press Space to start.")
+
+    def _make_playback_video_names(self, video_names_by_number, order):
+        video_names = []
+        for stimulus_number in order:
+            filename = video_names_by_number[int(stimulus_number)]
+            if filename == REST_STIMULUS:
+                filename = random.choice(REST_STIMULUS_VARIANTS)
+            video_names.append(filename)
+        return video_names
 
     def _prepare_next_video(self):
         if self._current_index >= len(self.video_files):
@@ -166,7 +184,7 @@ class StimuliPresentation_one_by_one(QWidget):
             self._placeholder_widget.setPixmap(self._main_cross_pic)
 
         self._placeholder_widget.show()
-        self.stimulus.emit(self.video_names[self.order[self._current_index] - 1])
+        self.stimulus.emit(self.video_names[self._current_index])
 
         if self._current_index == 0:
             self._show_marker()
