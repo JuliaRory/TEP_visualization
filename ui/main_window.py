@@ -11,7 +11,7 @@ import json
 import time
 import h5py
 
-from ui import (SettingsPanel, ProcessingPanel, NVXControlPanel, StimuliControlPanel,
+from ui import (SettingsPanel, ProcessingPanel, NVXControlPanel, StimuliControlPanel, SurveyPanel,
                 TopoTEPsPanel, overviewPanel, MEPsPanel)
  
 from logic.sources.stream import StreamSource
@@ -147,12 +147,18 @@ class MainWindow(QWidget):
                                                 settings=self.settings.stimuli_control,
                                                 output_stream=self._output_stream)
 
+        self._survey_panel = SurveyPanel(
+            parent=self,
+            participant_id_getter=lambda: self._nvx_control_panel.lineedit_subject.text()
+        )
+
         self._settings_panel = SettingsPanel(parent=self,
                                              settings=self.settings,
                                              settings_handler=self._settings_handler,
                                              channels=self.settings.channels,
                                              control_nvx_panel=self._nvx_control_panel,
-                                             control_stimuli_panel=self._stimuli_control_panel)
+                                             control_stimuli_panel=self._stimuli_control_panel,
+                                             survey_panel=self._survey_panel)
         
         self._processing_panel = ProcessingPanel(parent=self,
                                              settings=self.settings.processing_settings,

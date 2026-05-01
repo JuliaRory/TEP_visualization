@@ -21,12 +21,12 @@ from PyQt5.QtWidgets import (
 )
 
 
-DEFAULT_SURVEY_PATH = os.path.join("resources", "survey_default.json")
+DEFAULT_SURVEY_PATH = os.path.join("resources", "survey_day1.json")
 DEFAULT_OUTPUT_DIR = os.path.join("data", "survey_responses")
 
 
 def load_survey_config(path=DEFAULT_SURVEY_PATH):
-    with open(path, "r", encoding="utf-8") as f:
+    with open(path, "r", encoding="utf-8-sig") as f:
         payload = json.load(f)
 
     if isinstance(payload, list):

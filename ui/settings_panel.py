@@ -18,7 +18,7 @@ class SettingsPanel(QFrame):
     
     """ Панель с настройками."""
 
-    def __init__(self, settings, settings_handler, channels, control_nvx_panel, control_stimuli_panel, parent=None):
+    def __init__(self, settings, settings_handler, channels, control_nvx_panel, control_stimuli_panel, survey_panel=None, parent=None):
         super().__init__(parent)
 
         self.setObjectName("settings_panel")    # для привязки стиля
@@ -30,6 +30,7 @@ class SettingsPanel(QFrame):
 
         self.control_nvx_panel = control_nvx_panel
         self.control_stimuli_panel = control_stimuli_panel
+        self.survey_panel = survey_panel
 
         self._init_ui()
 
@@ -83,8 +84,13 @@ class SettingsPanel(QFrame):
 
         self._setup_epochs_frame()
 
+        top_layout = QHBoxLayout()
+        top_layout.addWidget(self._epochs_manager_frame, 1)
+        if self.survey_panel is not None:
+            top_layout.addWidget(self.survey_panel, 1)
+
         layout = QVBoxLayout(self)
-        layout.addWidget(self._epochs_manager_frame)
+        layout.addLayout(top_layout)
         layout.addWidget(self.control_nvx_panel)
         layout.addWidget(self.control_stimuli_panel)
         
