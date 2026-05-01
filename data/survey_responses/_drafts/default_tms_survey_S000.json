@@ -1,0 +1,12 @@
+{
+  "participant_id": "S000",
+  "survey_id": "default_tms_survey",
+  "saved_at": "2026-05-01T23:41:43",
+  "is_draft": true,
+  "answers": {
+    "task_quality": 5,
+    "fatigue": 30,
+    "discomfort": "mostly_yes",
+    "comment": "ffdddd"
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "participant_id": "D002",
+  "survey_id": "day1",
+  "saved_at": "2026-05-01T23:49:51",
+  "answers": {
+    "task_quality": 2,
+    "fatigue": 49,
+    "discomfort": "mostly_no",
+    "comment": "hjggj"
+  }
+}
