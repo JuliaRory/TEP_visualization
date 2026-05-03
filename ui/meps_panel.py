@@ -108,7 +108,7 @@ class MEPsPanel(QFrame):
         self._label_counter.setText(f"≥ 0.5 mV: \n    {value} / 5.  ")
 
     def _on_deeper_look_button_clicked(self):
-        self._deeper_look_window = MEPsDeeperLook(self.settings_dl, self.Fs)
+        self._deeper_look_window = MEPsDeeperLook(self.settings_dl, self.Fs, monitor=2)
 
         self._deeper_look_window.show()
         self._deeper_look_window.raise_()

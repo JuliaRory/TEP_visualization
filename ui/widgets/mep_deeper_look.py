@@ -10,13 +10,13 @@ from utils.widget_placement import place_widget
 
 class MEPsDeeperLook(QWidget):
     
-    def __init__(self, settings, Fs):
+    def __init__(self, settings, Fs, monitor=1):
         super().__init__()
 
         self.setWindowTitle("Motor Evoked Potentials")
         self.resize(1700, 500)
         
-        place_widget(self, monitor=3, coordinates=(10, 1080-600))
+        place_widget(self, monitor=monitor, coordinates=(10, 1080-600))
 
         self.Fs = Fs
         self.settings = settings # single mep plot settings
