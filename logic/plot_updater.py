@@ -16,7 +16,7 @@ class PlotUpdater:
     def update_plots(self, processor):
         self.update_topoteps(processor)
 
-        # self.update_avg_teps(processor) # ????
+        self.update_avg_teps(processor) # ????
         # self.update_avg_meps(processor)
 
         self.update_meps(processor)
@@ -65,7 +65,9 @@ class PlotUpdater:
 
         if not self._show_specific_epoch:
             emg = processor._baseline(processor._epochs[-1][-2:, :] * 1E3)  # вычесть бейзлайн и перевести в мВ
-            emg = np.diff(emg, axis=0).flatten()                            # посчитать разницу каналов
+            emg = processor._baseline(processor._epochs[-1][:2] * 1E3)  # вычесть бейзлайн и перевести в мВ
+            emg = -emg[0].flatten()      
+            #emg = np.diff(emg, axis=0).flatten()                            # посчитать разницу каналов
             emg2plot = processor.cut_mep_epoch(emg, self.settings.single_meps.xmin_ms, self.settings.single_meps.xmax_ms)
 
             self.meps_panel.figure.update_emg(emg2plot)

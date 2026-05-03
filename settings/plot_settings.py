@@ -56,7 +56,7 @@ class TEPBlock:
     round: int = 0
     channels_nearest_n: List[int] = field(default_factory=lambda: [9, 36, 42, 38, 37])
     n_channels: int = 64
-    do_averaging: bool = False
+    do_averaging: bool = True
 
 @dataclass
 class ButtsPlot:

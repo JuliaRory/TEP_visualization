@@ -1,8 +1,8 @@
 {   
-    "bar_75_real_vs_motor_1":{
+    "bar_25-50_rest_vs_motor_1":{
         "set": {
             "1": "animatedSingle1500_tms_0ms_nosounds_bar.mkv", 
-            "2": "animatedSingle1500_tms_-200ms_nosounds_bar.mkv",
+            "2": "animatedSingle1500_tms_+200ms_nosounds_bar.mkv",
             "3": "rest1500_tms_0ms_bar.mkv",
             "4": "audio_countdown_3.mkv"
         },
@@ -14,10 +14,10 @@
             "filename": "cross_image_white_photomark.png"
         }
     },
-    "bar_75_real_vs_motor_2":{
+    "bar_25-50_rest_vs_motor_2":{
         "set": {
             "1": "animatedSingle1500_tms_0ms_nosounds_bar.mkv", 
-            "2": "animatedSingle1500_tms_-200ms_nosounds_bar.mkv",
+            "2": "animatedSingle1500_tms_+200ms_nosounds_bar.mkv",
             "3": "rest1500_tms_0ms_bar.mkv",
             "4": "audio_countdown_3.mkv"
         },
@@ -29,10 +29,10 @@
             "filename": "cross_image_white_photomark.png"
         }
     },
-    "bar_75_real_vs_motor_3":{
+    "bar_25-50_rest_vs_motor_3":{
         "set": {
             "1": "animatedSingle1500_tms_0ms_nosounds_bar.mkv", 
-            "2": "animatedSingle1500_tms_-200ms_nosounds_bar.mkv",
+            "2": "animatedSingle1500_tms_+200ms_nosounds_bar.mkv",
             "3": "rest1500_tms_0ms_bar.mkv",
             "4": "audio_countdown_3.mkv"
         },
@@ -44,10 +44,10 @@
             "filename": "cross_image_white_photomark.png"
         }
     },
-    "bar_75_real_vs_motor_4":{
+    "bar_25-50_rest_vs_motor_4":{
         "set": {
             "1": "animatedSingle1500_tms_0ms_nosounds_bar.mkv", 
-            "2": "animatedSingle1500_tms_-200ms_nosounds_bar.mkv",
+            "2": "animatedSingle1500_tms_+200ms_nosounds_bar.mkv",
             "3": "rest1500_tms_0ms_bar.mkv",
             "4": "audio_countdown_3.mkv"
         },
@@ -59,10 +59,10 @@
             "filename": "cross_image_white_photomark.png"
         }
     },
-    "bar_75_real_vs_motor_5":{
+    "bar_25-50_rest_vs_motor_5":{
         "set": {
             "1": "animatedSingle1500_tms_0ms_nosounds_bar.mkv", 
-            "2": "animatedSingle1500_tms_-200ms_nosounds_bar.mkv",
+            "2": "animatedSingle1500_tms_+200ms_nosounds_bar.mkv",
             "3": "rest1500_tms_0ms_bar.mkv",
             "4": "audio_countdown_3.mkv"
         },
@@ -74,99 +74,63 @@
             "filename": "cross_image_white_photomark.png"
         }
     },
-    
-    
-    "bar_single_1": {
+    "bar_10-30_rest_vs_motor_1":{
         "set": {
-            "1": "animatedSingle1500_tms_+200ms_nosounds_bar.mkv", 
-            "2": "animatedSingle1500_tms_0ms_nosounds_bar.mkv",
-            "3": "rest1500_tms_0ms_bar.mkv",
-            "4": "audio_countdown_3.mkv"
+            "1": "animatedSingle1500_tms_0ms_nosounds_bar.mkv", 
+            "2": "rest1500_tms_0ms_bar.mkv",
+            "3": "audio_countdown_3.mkv"
         },
         "order": [
-            4,1,1,3,1,3,2,2,3,3,2,2,1,2,1,3,3,2,3,2,2,3,1,1,3,3,1,2,2,1,1,2,2,1,1,2,2,3,3,1,2,1,3,1,3,3,1,1,2,2,3,2,3,3,1,1,3,2,1,2,3,3,2,3,1,1,3,3,2,1,1,2,3,2,2,1
+            3,1,1,1,1,2,1,2,1,2,1,1,2,1,1,1,2,1,1,1,1,1,1,1,2,1,1,1,2,1,1,1,1,2,1,1,2,1,1,2,1
         ],
         "cross": {
             "dur_ms": 3000,
             "filename": "cross_image_white_photomark.png"
         }
     },
-    "bar_single_MOTOR_REST_1": {
+    "bar_10-30_rest_vs_motor_2":{
         "set": {
-            "1": "animatedSingle1500_tms_+200ms_nosounds_bar.mkv", 
-            "2": "animatedSingle1500_tms_0ms_nosounds_bar.mkv",
-            "3": "rest1500_tms_0ms.mkv",
-            "4": "audio_countdown_3.mkv"
+            "1": "animatedSingle1500_tms_0ms_nosounds_bar.mkv", 
+            "2": "rest1500_tms_0ms_bar.mkv",
+            "3": "audio_countdown_3.mkv"
         },
         "order": [
-            4,1,1,3,1,3,2,2,3,3,2,2,1,2,1,3,3,2,3,2,2,3,1,1,3,3,1,2,2,1,1,2,2,1,1,2,2,3,3,1,2,1,3,1,3,3,1,1,2,2,3,2,3,3,1,1,3,2,1,2,3,3,2,3,1,1,3,3,2,1,1,2,3,2,2,1
+            3,1,2,1,1,1,2,1,1,1,2,1,1,2,1,1,2,1,1,1,1,2,1,1,1,2,1,2,1,1,1,1,1,2,1,1,1,1,2,1,1
         ],
         "cross": {
             "dur_ms": 3000,
             "filename": "cross_image_white_photomark.png"
         }
     },
-    "bar_single_MOTOR_REST_2": {
+    "bar_10-30_rest_vs_motor_3":{
         "set": {
-            "1": "animatedSingle1500_tms_+200ms_nosounds_bar.mkv", 
-            "2": "animatedSingle1500_tms_0ms_nosounds_bar.mkv",
-            "3": "rest1500_tms_0ms_bar.mkv",
-            "4": "audio_countdown_3.mkv"
+            "1": "animatedSingle1500_tms_0ms_nosounds_bar.mkv", 
+            "2": "rest1500_tms_0ms_bar.mkv",
+            "3": "audio_countdown_3.mkv"
         },
         "order": [
-            4,2,2,1,1,3,3,1,3,1,1,2,3,3,2,2,3,2,3,1,1,3,3,2,2,1,3,1,1,2,2,1,2,2,3,3,1,3,2,3,2,1,2,1,1,3,3,1,2,2,1,3,3,2,2,3,3,1,1,2,1,1,3,2,1,1,2,3,3,2,3,1,3,1,2,2
+            3,1,1,1,1,1,2,1,1,1,2,1,2,1,1,1,2,1,1,2,1,1,1,1,2,1,1,1,2,1,1,2,1,1,2,1,1,1,1,1,2
         ],
         "cross": {
             "dur_ms": 3000,
             "filename": "cross_image_white_photomark.png"
         }
     },
-    "bar_single_MOTOR_REST_3": {
+    "bar_10-30_rest_vs_motor_4":{
         "set": {
-            "1": "animatedSingle1500_tms_+200ms_nosounds_bar.mkv", 
-            "2": "animatedSingle1500_tms_0ms_nosounds_bar.mkv",
-            "3": "rest1500_tms_0ms_bar.mkv",
-            "4": "audio_countdown_3.mkv"
+            "1": "animatedSingle1500_tms_0ms_nosounds_bar.mkv", 
+            "2": "rest1500_tms_0ms_bar.mkv",
+            "3": "audio_countdown_3.mkv"
         },
         "order": [
-            4,1,1,3,2,3,3,2,2,1,2,2,1,3,3,1,3,1,3,3,2,2,3,2,1,1,2,2,3,1,1,3,1,2,2,3,2,3,1,1,3,3,1,2,2,1,1,2,3,3,1,1,2,1,2,1,3,3,2,2,3,3,2,2,1,1,2,3,3,1,3,2,3,2,1,1
+            3,1,2,1,1,1,1,1,1,2,1,1,2,1,1,2,1,1,1,1,2,1,2,1,1,1,2,1,1,2,1,1,1,1,2,1,2,1,1,1,1
         ],
         "cross": {
             "dur_ms": 3000,
             "filename": "cross_image_white_photomark.png"
         }
     },
-    "bar_single_MOTOR_REST_4": {
-        "set": {
-            "1": "animatedSingle1500_tms_+200ms_nosounds_bar.mkv", 
-            "2": "animatedSingle1500_tms_0ms_nosounds_bar.mkv",
-            "3": "rest1500_tms_0ms_bar.mkv",
-            "4": "audio_countdown_3.mkv"
-        },
-        "order": [
-            4,1,1,3,3,2,2,3,3,2,2,1,1,3,2,1,1,2,2,3,2,2,1,2,1,1,3,3,1,3,3,2,1,3,1,2,2,3,3,1,3,1,1,2,3,2,3,1,3,2,3,1,2,1,1,2,2,1,2,3,3,1,1,2,2,3,2,3,3,2,2,1,3,3,1,1
-        ],
-        "cross": {
-            "dur_ms": 3000,
-            "filename": "cross_image_white_photomark.png"
-        }
-    },
-    "bar_single_MOTOR_REST_5": {
-        "set": {
-            "1": "animatedSingle1500_tms_+200ms_nosounds_bar.mkv", 
-            "2": "animatedSingle1500_tms_0ms_nosounds_bar.mkv",
-            "3": "rest1500_tms_0ms_bar.mkv",
-            "4": "audio_countdown_3.mkv"
-        },
-        "order": [
-            4,2,2,1,2,1,1,3,3,1,3,2,3,2,1,3,1,3,1,2,1,3,3,1,1,2,2,3,2,2,3,3,2,2,1,1,2,2,3,3,1,1,3,1,3,2,2,3,1,1,2,3,3,1,2,2,1,1,3,3,2,2,1,1,2,3,3,2,3,1,1,3,3,2,1,2
-        ],
-        "cross": {
-            "dur_ms": 3000,
-            "filename": "cross_image_white_photomark.png"
-        }
-    },
-    "bar_SST_single_1": {
+    "bar_60-20_SST_1": {
         "set": {
             "1": "animatedSingle1500_tms_0ms_nosounds_bar_continue.mkv", 
             "2": "animatedSingle1500_stop-200ms_tms_0ms_nosounds_bar_continue.mkv",
@@ -180,7 +144,7 @@
             "filename": "cross_image_white_photomark.png"
         }
     },
-    "bar_SST_single_2": {
+    "bar_60-20_SST_2": {
         "set": {
             "1": "animatedSingle1500_tms_0ms_nosounds_bar_continue.mkv", 
             "2": "animatedSingle1500_stop-200ms_tms_0ms_nosounds_bar_continue.mkv",
@@ -194,7 +158,7 @@
             "filename": "cross_image_white_photomark.png"
         }
     },
-    "bar_SST_single_3": {
+    "bar_60-20_SST_3": {
         "set": {
             "1": "animatedSingle1500_tms_0ms_nosounds_bar_continue.mkv", 
             "2": "animatedSingle1500_stop-200ms_tms_0ms_nosounds_bar_continue.mkv",
@@ -208,7 +172,7 @@
             "filename": "cross_image_white_photomark.png"
         }
     },
-    "bar_SST_single_4": {
+    "bar_60-20_SST_4": {
         "set": {
             "1": "animatedSingle1500_tms_0ms_nosounds_bar_continue.mkv", 
             "2": "animatedSingle1500_stop-200ms_tms_0ms_nosounds_bar_continue.mkv",
@@ -222,7 +186,7 @@
             "filename": "cross_image_white_photomark.png"
         }
     },
-    "bar_SST_single_5": {
+    "bar_60-20_SST_5": {
         "set": {
             "1": "animatedSingle1500_tms_0ms_nosounds_bar_continue.mkv", 
             "2": "animatedSingle1500_stop-200ms_tms_0ms_nosounds_bar_continue.mkv",
@@ -236,167 +200,7 @@
             "filename": "cross_image_white_photomark.png"
         }
     },
-    "single_MOTOR_REST_1": {
-        "set": {
-            "1": "animatedSingle1500_tms_-200ms_nosounds.mkv", 
-            "2": "animatedSingle1500_tms_0ms_nosounds.mkv",
-            "3": "rest1500_tms_0ms.mkv",
-            "4": "audio_countdown_3.mkv"
-        },
-        "order": [
-            4,1,1,3,1,3,2,2,3,3,2,2,1,2,1,3,3,2,3,2,2,3,1,1,3,3,1,2,2,1,1,2,2,1,1,2,2,3,3,1,2,1,3,1,3,3,1,1,2,2,3,2,3,3,1,1,3,2,1,2,3,3,2,3,1,1,3,3,2,1,1,2,3,2,2,1
-        ],
-        "cross": {
-            "dur_ms": 3000,
-            "filename": "cross_image_white_photomark.png"
-        }
-    },
-    "single_MOTOR_REST_2": {
-        "set": {
-            "1": "animatedSingle1500_tms_-200ms_nosounds.mkv", 
-            "2": "animatedSingle1500_tms_0ms_nosounds.mkv",
-            "3": "rest1500_tms_0ms.mkv",
-            "4": "audio_countdown_3.mkv"
-        },
-        "order": [
-            4,2,2,1,1,3,3,1,3,1,1,2,3,3,2,2,3,2,3,1,1,3,3,2,2,1,3,1,1,2,2,1,2,2,3,3,1,3,2,3,2,1,2,1,1,3,3,1,2,2,1,3,3,2,2,3,3,1,1,2,1,1,3,2,1,1,2,3,3,2,3,1,3,1,2,2
-        ],
-        "cross": {
-            "dur_ms": 3000,
-            "filename": "cross_image_white_photomark.png"
-        }
-    },
-    "single_MOTOR_REST_3": {
-        "set": {
-            "1": "animatedSingle1500_tms_-200ms_nosounds.mkv", 
-            "2": "animatedSingle1500_tms_0ms_nosounds.mkv",
-            "3": "rest1500_tms_0ms.mkv",
-            "4": "audio_countdown_3.mkv"
-        },
-        "order": [
-            4,1,1,3,2,3,3,2,2,1,2,2,1,3,3,1,3,1,3,3,2,2,3,2,1,1,2,2,3,1,1,3,1,2,2,3,2,3,1,1,3,3,1,2,2,1,1,2,3,3,1,1,2,1,2,1,3,3,2,2,3,3,2,2,1,1,2,3,3,1,3,2,3,2,1,1
-        ],
-        "cross": {
-            "dur_ms": 3000,
-            "filename": "cross_image_white_photomark.png"
-        }
-    },
-    "single_MOTOR_REST_4": {
-        "set": {
-            "1": "animatedSingle1500_tms_-200ms_nosounds.mkv", 
-            "2": "animatedSingle1500_tms_0ms_nosounds.mkv",
-            "3": "rest1500_tms_0ms.mkv",
-            "4": "audio_countdown_3.mkv"
-        },
-        "order": [
-            4,1,1,3,3,2,2,3,3,2,2,1,1,3,2,1,1,2,2,3,2,2,1,2,1,1,3,3,1,3,3,2,1,3,1,2,2,3,3,1,3,1,1,2,3,2,3,1,3,2,3,1,2,1,1,2,2,1,2,3,3,1,1,2,2,3,2,3,3,2,2,1,3,3,1,1
-        ],
-        "cross": {
-            "dur_ms": 3000,
-            "filename": "cross_image_white_photomark.png"
-        }
-    },
-    "single_MOTOR_REST_5": {
-        "set": {
-            "1": "animatedSingle1500_tms_-200ms_nosounds.mkv", 
-            "2": "animatedSingle1500_tms_0ms_nosounds.mkv",
-            "3": "rest1500_tms_0ms.mkv",
-            "4": "audio_countdown_3.mkv"
-        },
-        "order": [
-            4,2,2,1,2,1,1,3,3,1,3,2,3,2,1,3,1,3,1,2,1,3,3,1,1,2,2,3,2,2,3,3,2,2,1,1,2,2,3,3,1,1,3,1,3,2,2,3,1,1,2,3,3,1,2,2,1,1,3,3,2,2,1,1,2,3,3,2,3,1,1,3,3,2,1,2
-        ],
-        "cross": {
-            "dur_ms": 3000,
-            "filename": "cross_image_white_photomark.png"
-        }
-    },
-    "SST_single_1": {
-        "set": {
-            "1": "animatedSingle1500_tms_0ms_nosounds.mkv", 
-            "2": "animatedSingle1500_stop-200ms_tms_0ms_nosounds.mkv",
-            "3": "audio_countdown_3.mkv"
-        },
-        "order": [
-            3,1,1,1,1,2,1,2,1,2,1,1,2,1,1,1,2,1,1,1,1,1,1,1,2,1,1,1,2,1,1,1,1,2,1,1,2,1,1,2,1,1,1,1,2,1,2,1,1,2,1,1,1,1,2,1,1,1,1,2,1,1,1,2,1,1,1,2,1,1,2,1,1,1,2,1,1,1,1,2,1
-        ],
-        "cross": {
-            "dur_ms": 3000,
-            "filename": "cross_image_white_photomark.png"
-        }
-    },
-    "SST_single_2": {
-        "set": {
-            "1": "animatedSingle1500_tms_0ms_nosounds.mkv", 
-            "2": "animatedSingle1500_stop-200ms_tms_0ms_nosounds.mkv",
-            "3": "audio_countdown_3.mkv"
-        },
-        "order": [
-            3,1,2,1,1,1,2,1,1,1,2,1,1,2,1,1,2,1,1,1,1,2,1,1,1,2,1,2,1,1,1,1,1,2,1,1,1,1,1,2,1,1,1,2,1,1,2,1,1,1,2,1,1,2,1,2,1,1,1,1,1,1,1,1,2,1,1,2,1,2,1,1,1,1,2,1,1,2,1,1,1
-        ],
-        "cross": {
-            "dur_ms": 3000,
-            "filename": "cross_image_white_photomark.png"
-        }
-    },
-    "SST_single_3": {
-        "set": {
-            "1": "animatedSingle1500_tms_0ms_nosounds.mkv", 
-            "2": "animatedSingle1500_stop-200ms_tms_0ms_nosounds.mkv",
-            "3": "audio_countdown_3.mkv"
-        },
-        "order": [
-            3,1,1,1,1,1,2,1,1,1,2,1,2,1,1,1,2,1,1,2,1,1,1,1,2,1,1,1,2,1,1,2,1,1,2,1,1,1,1,1,2,1,2,1,1,1,2,1,2,1,1,1,1,1,2,1,1,1,1,1,2,1,1,1,2,1,1,1,2,1,1,2,1,1,1,1,2,1,1,1,2
-        ],
-        "cross": {
-            "dur_ms": 3000,
-            "filename": "cross_image_white_photomark.png"
-        }
-    },
-    "SST_single_4": {
-        "set": {
-            "1": "animatedSingle1500_tms_0ms_nosounds.mkv", 
-            "2": "animatedSingle1500_stop-200ms_tms_0ms_nosounds.mkv",
-            "3": "audio_countdown_3.mkv"
-        },
-        "order": [
-            3,1,2,1,1,1,1,1,1,2,1,1,2,1,1,2,1,1,1,1,2,1,2,1,1,1,2,1,1,2,1,1,1,1,2,1,2,1,1,1,1,1,1,1,1,2,1,1,1,2,1,1,2,1,1,2,1,2,1,1,1,1,2,1,1,1,1,2,1,1,2,1,1,1,1,2,1,1,2,1,1
-        ],
-        "cross": {
-            "dur_ms": 3000,
-            "filename": "cross_image_white_photomark.png"
-        }
-    },
-    "SST_single_5": {
-        "set": {
-            "1": "animatedSingle1500_tms_0ms_nosounds.mkv", 
-            "2": "animatedSingle1500_stop-200ms_tms_0ms_nosounds.mkv",
-            "3": "audio_countdown_3.mkv"
-        },
-        "order": [
-            3,1,1,1,1,2,1,1,2,1,1,1,2,1,1,1,2,1,1,2,1,1,1,2,1,2,1,1,1,1,1,2,1,1,2,1,1,2,1,1,1,1,1,1,1,2,1,1,1,2,1,1,1,1,2,1,1,1,1,1,2,1,1,1,2,1,2,1,1,1,2,1,1,2,1,2,1,1,2,1,1
-        ],
-        "cross": {
-            "dur_ms": 3000,
-            "filename": "cross_image_white_photomark.png"
-        }
-    },
-    "SST_single_4stimuli": {
-        "set": {
-            "1": "animatedSingle1500_tms_-200ms_nosounds.mkv", 
-            "2": "animatedSingle1500_tms_0ms_nosounds.mkv",
-            "3": "animatedSingle1500_stop-200ms_tms_0ms_nosounds.mkv",
-            "4": "rest1500_tms_0ms.mkv",
-            "5": "audio_countdown_3.mkv"
-        },
-        "order": [
-            5,3,2,1,3,4,2,4,1,4,1,3,4,2,3,1,4,2,1,2,3,1,3,2,4,3,2,1,4,2,1,3,1,4,3,2,4,1,2,4,1,3,2,1,4,3,4,3,1,4,2,3,1,2,4,3,1,2,3,4,2,3,2,4,3,1,2,4,2,1,4,3,2,3,4,1,2,1,3,4,1
-        ],
-        "cross": {
-            "dur_ms": 3000,
-            "filename": "cross_image_white_photomark.png"
-        }
-    },
+    
     "test": {
         "set": {
             "1": "audio_countdown_3.mkv",

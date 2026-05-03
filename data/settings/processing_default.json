@@ -32,7 +32,7 @@
         "Fz"
     ],
     "processing_settings": {
-        "do_averaging": false,
+        "do_averaging": true,
         "do_lowpass_filtering": true,
         "do_rereferencing": false,
         "do_CAR_filtering": true,
@@ -131,17 +131,17 @@
         "use_number": true,
         "use_subject": true,
         "use_spot": true,
-        "use_coil": true,
+        "use_coil": false,
         "use_yaw_angle": true,
-        "use_power": false,
-        "use_comments": false,
-        "number": "01",
-        "subject": "AV",
+        "use_power": true,
+        "use_comments": true,
+        "number": "04",
+        "subject": "01AV",
         "spot": "M1",
-        "coil": "qp",
-        "yaw_angle": "45",
-        "power": "",
-        "comments": ""
+        "coil": "",
+        "yaw_angle": "PA",
+        "power": "43MSO",
+        "comments": "MI"
     },
     "stimuli_control": {
         "monitor": 3,
