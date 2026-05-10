@@ -16,6 +16,7 @@ from ui import (SettingsPanel, ProcessingPanel, NVXControlPanel, StimuliControlP
  
 from logic.sources.stream import StreamSource
 from logic.data_processor import DataProcessor
+from logic.epoch_record_buffer import EpochRecordBuffer
 
 from settings.settings import Settings 
 from settings.plot_settings import PlotSettings 
@@ -87,6 +88,7 @@ class MainWindow(QWidget):
         #self._load_data = FileSource()                                              # Приёмник загружаемых данных
         
         self._data_processor = DataProcessor(self.settings)                                       # Обработчик данных (эпох)
+        self._epoch_record_buffer = EpochRecordBuffer(self.settings.speed)
       
         self._settings_handler = SettingsHandler(self.settings, self._data_processor)                      # Обработчик настроек
         
@@ -240,6 +242,7 @@ class MainWindow(QWidget):
     # --- Connections ---
     def _setup_connections(self):
         # работа с потоками данных
+        self._input_stream.dataReady.connect(self._epoch_record_buffer.add_epoch)
         self._input_stream.dataReady.connect(lambda epoch, ts: self._data_processor.add_epoch(epoch, ts))
         self._data_processor.newDataProcessed.connect(lambda: self._plot_updater.update_plots(self._data_processor))
 
@@ -262,6 +265,7 @@ class MainWindow(QWidget):
 
         # сигнал для обновления состояния надписи REC в центральных графиках
         self._nvx_control_panel.recording.connect(self._on_recording_status_changed_signal)
+        self._nvx_control_panel.recordingFileChanged.connect(self._on_nvx_recording_file_changed)
 
         # сигнал для управления записью nvx одновременно с показом стимулов
         self._stimuli_control_panel.stimuliPresentation.connect(self._on_stimuli_presenation_status_changed_signal)
@@ -274,6 +278,18 @@ class MainWindow(QWidget):
     def _on_stimuli_presenation_status_changed_signal(self, presentation_status):
         """связь между показом стимулов и записью nvx"""
         self._nvx_control_panel.change_record_status(stimuli=True)
+
+    def _on_nvx_recording_file_changed(self, recording_status, record_path):
+        if recording_status:
+            self._epoch_record_buffer.start(record_path)
+            return
+
+        try:
+            saved_path = self._epoch_record_buffer.stop_and_save()
+            if saved_path:
+                print(f"Saved TEP epochs to {saved_path}")
+        except Exception as exc:
+            print(f"Could not save TEP epochs to {record_path}: {exc}")
 
     # --- Логика ---
     

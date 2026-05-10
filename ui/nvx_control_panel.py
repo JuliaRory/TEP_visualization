@@ -12,6 +12,7 @@ class NVXControlPanel(QFrame):
     """ --- UI для контроля NVX136 через резонанс --- """
 
     recording = pyqtSignal(bool)
+    recordingFileChanged = pyqtSignal(bool, str)
     def __init__(self, settings, resonance, parent=None):
         super().__init__(parent)
 
@@ -29,6 +30,7 @@ class NVXControlPanel(QFrame):
     def _init_state(self):
         self.record_in_progress = False
         self._add_stimuli_stream = False
+        self._current_record_path = ""
 
         if self.settings.activate_bat:
             # Запуск батника с qml-файлом для управления резонансными модулями
@@ -183,7 +185,9 @@ class NVXControlPanel(QFrame):
 
             if os.path.exists(full_name):
                 full_name = full_name[:-5] +"-$$$.hdf5"
+            self._current_record_path = full_name
             self.change_filename()
+            self.recordingFileChanged.emit(True, self._current_record_path)
             
             self._service = self.resonance.getService(self.settings.service_name)     # Берем сервис
             self._service.sendTransition('start', stream=self.settings.stream_name, add_stimuli=comments, filename=full_name)
@@ -201,6 +205,7 @@ class NVXControlPanel(QFrame):
             # self._service_stimuli.sendTransition('stop')
             self.change_filename()
             self.recording.emit(False)
+            self.recordingFileChanged.emit(False, self._current_record_path)
         
         button_label = "Остановить" if self.record_in_progress else "Начать запись"
         self.button_nvx_record.setText(button_label)
