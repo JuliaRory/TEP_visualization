@@ -16,11 +16,11 @@ class SurveyPanel(QFrame):
         self.participant_id_getter = participant_id_getter
         self._survey_windows = {}
         self._survey_configs = [
-            (1, os.path.join("resources", "survey_day1.json")),
-            (2, os.path.join("resources", "survey_day2.json")),
-            (3, os.path.join("resources", "survey_day3.json")),
-            (4, os.path.join("resources", "survey_day4.json")),
-            (5, os.path.join("resources", "survey_day5.json")),
+            (0, os.path.join("resources", "survey_day1.json")),
+            (1, os.path.join("resources", "survey_day2.json")),
+            (2, os.path.join("resources", "survey_day3.json")),
+            (3, os.path.join("resources", "survey_day4.json")),
+            (4, os.path.join("resources", "survey_day5.json")),
         ]
 
         self._setup_ui()

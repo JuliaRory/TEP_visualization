@@ -35,7 +35,7 @@ class MEPPlot(FigureCanvas):
         stimuliFinished (pyqtSignal): срабатывает после окончания всего воспроизведения
     """
 
-    amp_counter = pyqtSignal(int)  
+    amp_counter = pyqtSignal(int)
 
     """Класс для отрисовки графиков"""
     def __init__(self, parent=None, w=1000, h=700,  Fs=5000, settings=None, titles=None, emphasize_first=True, dpi=100):
@@ -62,34 +62,42 @@ class MEPPlot(FigureCanvas):
         self._init_state()
         
     def _init_state(self):
-        
-        """Прорисовка осей"""
-        self._xmin, self._xmax = self.ms_to_sample(self.settings.xmin_ms), self.ms_to_sample(self.settings.xmax_ms)     
-        self._ymax = self.settings.max_amp_mV
-        self.n_plots = self.settings.n_plots
-        
-        self.ax = self.fig.add_axes([0, 0, 1, 1])   # создаём ось на всё пространство графика [left, bottom, width, height]
-        
-        self.lines = []                             # здесь будут накапливаться до n графиков миограммы
-        self.amps = [None for _ in range(self.n_plots)]        # amplitudes
-        self.lats = [None for _ in range(self.n_plots)]        # latentcies
-        self.titles = []
+        self._sync_settings()
 
-        x_shift = self._xmin
-        window_dur = self._xmax - self._xmin
-        x = np.linspace(x_shift, window_dur+x_shift, window_dur)
-        self._x = self._normalize(x, axis='x')     
+        """Прорисовка осей"""
+        self.ax = self.fig.add_axes([0, 0, 1, 1])   # создаём ось на всё пространство графика [left, bottom, width, height]
+
+        self.amps = [None for _ in range(self.n_plots)]        # amplitudes
+        self.lats = [None for _ in range(self.n_plots)]        # latencies
 
         self.refresh_plots()
 
-        """Параметры для рассчёта амплитуды"""
-        self._start_amp = self.ms_to_sample(self.settings.amp_start_ms) - self._xmin
-        self._end_amp = self.ms_to_sample(self.settings.amp_end_ms)  - self._xmin
+    def _sync_settings(self):
+        self._xmin = self.ms_to_sample(self.settings.xmin_ms)
+        self._xmax = self.ms_to_sample(self.settings.xmax_ms)
+        if self._xmax <= self._xmin:
+            self._xmax = self._xmin + 1
+
+        self._ymax = max(float(self.settings.max_amp_mV), 1e-9)
+        self.n_plots = max(int(self.settings.n_plots), 1)
+
+        window_dur = max(self._xmax - self._xmin, 1)
+        x = np.arange(self._xmin, self._xmax)
+        if len(x) != window_dur:
+            x = np.linspace(self._xmin, self._xmax, window_dur, endpoint=False)
+        self._x = self._normalize(x, axis='x')
+
+        self._start_amp = max(0, self.ms_to_sample(self.settings.amp_start_ms) - self._xmin)
+        self._end_amp = min(window_dur, self.ms_to_sample(self.settings.amp_end_ms) - self._xmin)
+        if self._end_amp <= self._start_amp:
+            self._end_amp = min(window_dur, self._start_amp + 1)
 
     def refresh_plots(self):
         """Перерисовка всех осей для обновления размеров"""
 
         self.ax.clear()
+        self.lines = []                             # здесь будут накапливаться до n графиков миограммы
+        self.titles = []
         self.ax.set_axis_off()                      # полностью скрываем оси
         self.ax.patch.set_visible(False)            # убираем фон осей
         for spine in self.ax.spines.values():       # убираем рамку
@@ -101,6 +109,17 @@ class MEPPlot(FigureCanvas):
         self.fig.canvas.draw()
         self.background = self.fig.canvas.copy_from_bbox(self.ax.bbox)
 
+    def rebuild_from_settings(self, reset_history=True):
+        self._sync_settings()
+        if reset_history or len(self.amps) != self.n_plots:
+            self.amps = [None for _ in range(self.n_plots)]
+            self.lats = [None for _ in range(self.n_plots)]
+        else:
+            self.amps = list(self.amps[:self.n_plots]) + [None] * max(0, self.n_plots - len(self.amps))
+            self.lats = list(self.lats[:self.n_plots]) + [None] * max(0, self.n_plots - len(self.lats))
+        self.refresh_plots()
+        self.emit_threshold_count()
+
 
     def create_axes(self):
         """Создаёт оси со всеми нужными параметрами"""
@@ -108,7 +127,7 @@ class MEPPlot(FigureCanvas):
 
 
         x_step = 20 # ms
-        n_xticks = (self.settings.xmax_ms - self.settings.xmin_ms) // x_step + 1
+        n_xticks = max((self.settings.xmax_ms - self.settings.xmin_ms) // x_step + 1, 2)
 
         x_ticks_orig = np.linspace(self.settings.xmin_ms, self.settings.xmax_ms, n_xticks).astype(int)
         y_ticks_orig = np.linspace(-self._ymax, self._ymax, 5)
@@ -176,7 +195,7 @@ class MEPPlot(FigureCanvas):
                 self.ax.text(1.05, -.05, "ms", transform=tr, fontsize=fontsize_axes, color='darkgray')
             
             # --- надпись над графиком ---
-            title = f"#{i+1}" if self.titles_label is None else self.titles_label[i]
+            title = self._title_for_index(i)
             color = 'black' if (i == 0) and self.emphasize_first else 'darkgray'
             text_title = self.ax.text(-0.1, 1.1, title, transform=tr, fontsize=fontsize_title, color=color)
             self.titles.append(text_title)
@@ -187,6 +206,14 @@ class MEPPlot(FigureCanvas):
             self.lines.append(line)
       
     def update_emg(self, emg, normalize=True):
+        emg = np.asarray(emg, dtype=float).flatten()
+        if len(emg) != len(self._x):
+            n = min(len(emg), len(self._x))
+            padded = np.full(len(self._x), np.nan)
+            if n > 0:
+                padded[:n] = emg[:n]
+            emg = padded
+
         self.fig.canvas.restore_region(self.background) # восстанавливаем чистый фон
 
         if sum(np.isfinite(emg)) != 0:
@@ -209,33 +236,51 @@ class MEPPlot(FigureCanvas):
         return (x - xmin) / (xmax - xmin)
 
     def _calcalate_MEP(self, data):
-        self.amps = np.roll(self.amps, 1)
-        self.lats = np.roll(self.lats, 1)
+        self.amps = [None] + list(self.amps[:-1])
+        self.lats = [None] + list(self.lats[:-1])
 
         x = data[self._start_amp:self._end_amp]
+        x = x[np.isfinite(x)]
+        if len(x) == 0:
+            self.emit_threshold_count()
+            return
         
         # Индексы глобального минимума/максимума 
         min_ind = int(np.argmin(x))
         max_ind = int(np.argmax(x))
 
         self.amps[0] = round(float(x[max_ind] - x[min_ind]), 2)
-        self.lats[0] = round(((max_ind - self.settings.xmin_ms) * 1000/self.Fs))
+        peak_sample = self._start_amp + max_ind
+        self.lats[0] = round(self.settings.xmin_ms + peak_sample * 1000 / self.Fs)
 
-        self._calculate_above_thr()
+        self.emit_threshold_count()
 
         for i in range(self.n_plots):
-            title_n = f"#{i+1}" if self.titles_label is None else self.titles_label[i]
+            title_n = self._title_for_index(i)
             title = title_n if self.amps[i] is None else f"{title_n} : {self.amps[i]} mV, {self.lats[i]} ms"
             # title = f"#{i+1}" if self.amps[i] is None else f"#{i+1} : {self.amps[i]} mV, {self.lats[i]} ms"
             self.titles[i].set_text(title)
             self.ax.draw_artist(self.titles[i])
 
+    def _title_for_index(self, i):
+        if self.titles_label is not None and i < len(self.titles_label):
+            return self.titles_label[i]
+        return f"#{i+1}"
+
 
     def _calculate_above_thr(self):
-        amps = np.asarray(self.amps).astype(float)
-        mask = np.isfinite(amps)
-        amps_clean = amps[mask]
-        self.amp_counter.emit(np.sum(amps_clean>0.5))
+        thr = float(getattr(self.settings, "thr", 0.5))
+        n_thr = int(getattr(self.settings, "n_plots_thr", self.n_plots))
+        n_thr = max(1, min(n_thr, self.n_plots))
+        amps = np.asarray([
+            np.nan if amp is None else float(amp)
+            for amp in self.amps[:n_thr]
+        ], dtype=float)
+        amps_clean = amps[np.isfinite(amps)]
+        return int(np.sum(amps_clean >= thr))
+
+    def emit_threshold_count(self):
+        self.amp_counter.emit(self._calculate_above_thr())
 
         
     def refresh_plot(self):

@@ -1,4 +1,4 @@
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, pyqtSignal
 from PyQt5.QtWidgets import QWidget, QGridLayout, QLabel,  QFrame,  QVBoxLayout
 
 from utils.ui_helpers import create_spin_box, create_button
@@ -9,6 +9,7 @@ from utils.widget_placement import place_widget
 
 
 class MEPsDeeperLook(QWidget):
+    settingsChanged = pyqtSignal()
     
     def __init__(self, settings, Fs, monitor=1):
         super().__init__()
@@ -44,8 +45,8 @@ class MEPsDeeperLook(QWidget):
         self._frame_thr.setContentsMargins(0, 0, 0, 0)
         self._frame_thr.setFixedHeight(int(0.5 * self.line_h))
 
-        self.spinbox_thr = create_spin_box(0, 100, self.settings.thr, data_type="float", decimals=2, step=.1, parent=self._frame_thr, w=50)
-        self.spinbox_thr_n_plots = create_spin_box(0, 20, self.settings.n_plots_thr, parent=self._frame_thr, w=50)
+        self.spinbox_thr = create_spin_box(0, 100, self.settings.thr, data_type="float", decimals=2, step=.1, parent=self._frame_thr, w=60)
+        self.spinbox_thr_n_plots = create_spin_box(1, self.settings.n_plots, self.settings.n_plots_thr, parent=self._frame_thr, w=50)
         
         self._label_thr = QLabel(f"Выше порога: {0}/{self.settings.n_plots_thr}")
         self._label_thr.setObjectName("label_thr_counter")
@@ -65,7 +66,7 @@ class MEPsDeeperLook(QWidget):
 
         label1 = QLabel("Макс:", self._frame_mep_settings)
         label2 = QLabel("мВ", self._frame_mep_settings)
-        self._spinbox_max_amp = create_spin_box(0, 1000, self.settings.max_amp_mV, parent=self._frame_mep_settings, w=50)
+        self._spinbox_max_amp = create_spin_box(0.01, 1000, self.settings.max_amp_mV, data_type="float", decimals=2, step=.1, parent=self._frame_mep_settings, w=60)
         self._max_amp = create_hbox([label1, self._spinbox_max_amp, label2])
 
         label = QLabel("N:    ", self._frame_mep_settings)
@@ -82,6 +83,16 @@ class MEPsDeeperLook(QWidget):
         label3 = QLabel("мс", self._frame_mep_settings)
         self._spinbox_max_time = create_spin_box(0, 500, self.settings.xmax_ms, parent=self._frame_mep_settings, w=50)
         self._time_range_max = create_hbox([label2, self._spinbox_max_time, label3])
+
+        label1 = QLabel("ампл. от:", self._frame_mep_settings)
+        label3 = QLabel("мс", self._frame_mep_settings)
+        self._spinbox_amp_start = create_spin_box(-300, 500, self.settings.amp_start_ms, parent=self._frame_mep_settings, w=50)
+        self._amp_start = create_hbox([label1, self._spinbox_amp_start, label3])
+
+        label2 = QLabel("ампл. до:", self._frame_mep_settings)
+        label3 = QLabel("мс", self._frame_mep_settings)
+        self._spinbox_amp_end = create_spin_box(-300, 500, self.settings.amp_end_ms, parent=self._frame_mep_settings, w=50)
+        self._amp_end = create_hbox([label2, self._spinbox_amp_end, label3])
 
         self._button_apply = create_button('Применить', disabled=False, parent=self._frame_mep_settings, w=150)
         
@@ -137,22 +148,61 @@ class MEPsDeeperLook(QWidget):
     
     def _setup_mep_settings(self):
         self.layout_settings = QVBoxLayout(self._frame_mep_settings)
-        for layout in [self._max_amp, self._n_plots, self._time_range_min, self._time_range_max]:
+        for layout in [self._max_amp, self._n_plots, self._time_range_min, self._time_range_max, self._amp_start, self._amp_end]:
             self.layout_settings.addLayout(layout)
         self.layout_settings.addWidget(self._button_apply)
 
         self.layout_settings.addStretch()
     
     def update_emg(self, emg2plot):
-        line1_new_value = emg2plot
-
-        line2_new_value = self.figure_1.lines[-1].get_ydata()
-        line3_new_value = self.figure_2.lines[-1].get_ydata()
-        
-        self.figure_1.update_emg(line1_new_value, normalize=True)
-        self.figure_2.update_emg(line2_new_value, normalize=False)
-        self.figure_3.update_emg(line3_new_value, normalize=False)
+        self.figure.update_emg(emg2plot)
 
 
     def _setup_connections(self):
-        self.figure.amp_counter.connect(lambda value: self._label_thr.setText(f"Выше порога: {value}/{self.settings.n_plots_thr}"))
+        self.figure.amp_counter.connect(self._on_change_amp_counter)
+        self.spinbox_thr.valueChanged.connect(self._on_threshold_changed)
+        self.spinbox_thr_n_plots.valueChanged.connect(self._on_threshold_changed)
+        self._button_apply.clicked.connect(self._apply_mep_settings)
+
+    def _on_change_amp_counter(self, value):
+        self._label_thr.setText(f"Выше порога: {value}/{self.settings.n_plots_thr}")
+
+    def _on_threshold_changed(self):
+        self.settings.thr = self.spinbox_thr.value()
+        self.settings.n_plots_thr = self._coerce_threshold_window(self.spinbox_thr_n_plots.value())
+        self.figure.emit_threshold_count()
+
+    def _apply_mep_settings(self):
+        xmin = self._spinbox_min_time.value()
+        xmax = self._spinbox_max_time.value()
+        if xmax <= xmin:
+            xmax = xmin + 1
+            self._spinbox_max_time.setValue(xmax)
+
+        amp_start = self._spinbox_amp_start.value()
+        amp_end = self._spinbox_amp_end.value()
+        if amp_end <= amp_start:
+            amp_end = amp_start + 1
+            self._spinbox_amp_end.setValue(amp_end)
+
+        self.settings.max_amp_mV = self._spinbox_max_amp.value()
+        self.settings.n_plots = self._spinbox_n_plots.value()
+        self.spinbox_thr_n_plots.setMaximum(self.settings.n_plots)
+        self.settings.xmin_ms = xmin
+        self.settings.xmax_ms = xmax
+        self.settings.amp_start_ms = amp_start
+        self.settings.amp_end_ms = amp_end
+        self.settings.thr = self.spinbox_thr.value()
+        self.settings.n_plots_thr = self._coerce_threshold_window(self.spinbox_thr_n_plots.value())
+
+        self.figure.titles_label = [f"# {i+1}" for i in range(self.settings.n_plots)]
+        self.figure.rebuild_from_settings(reset_history=True)
+        self.settingsChanged.emit()
+
+    def _coerce_threshold_window(self, value):
+        value = max(1, min(int(value), int(self.settings.n_plots)))
+        if self.spinbox_thr_n_plots.value() != value:
+            blocked = self.spinbox_thr_n_plots.blockSignals(True)
+            self.spinbox_thr_n_plots.setValue(value)
+            self.spinbox_thr_n_plots.blockSignals(blocked)
+        return value

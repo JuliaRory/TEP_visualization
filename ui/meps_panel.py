@@ -43,7 +43,7 @@ class MEPsPanel(QFrame):
         self.setObjectName("mep_main_panel")    # для привязки стиля
         self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
 
-        self.left_right_ratio = 0.0
+        self.left_right_ratio = getattr(self.settings, "set_plot_ratio", 0.15)
         self.n5_5, self.n5_10 = 0, 0
         self.n10_5, self.n10_10 = 0, 0
         
@@ -57,7 +57,7 @@ class MEPsPanel(QFrame):
         # self._label.setFixedWidth(60)
 
         # self._label_counter = QLabel(f">0.5 mV: {self.n5_5}/5; {self.n5_10}/10.\n>1.0 mV: {self.n10_5}/5; {self.n10_10}/10.")
-        self._label_counter = QLabel(f"≥ 0.5 mV: \n    {self.n5_5} / 5.  ")
+        self._label_counter = QLabel(self._counter_text(0))
         self._label_counter.setObjectName("label_amp_counter")
         # self._label_counter.setFixedWidth(150)
 
@@ -71,10 +71,6 @@ class MEPsPanel(QFrame):
         layout_settings.addWidget(self._label)
         layout_settings.addWidget(self._label_counter)
         layout_settings.addWidget(self._button_deeper_look)
-        
-        # for layout in [self._max_amp, self._n_plots, self._time_range_min, self._time_range_max]:
-        #     layout_settings.addLayout(layout)
-        # layout_settings.addWidget(self._button_apply)
         
 
         self.splitter = QSplitter(Qt.Horizontal, parent=self)        # позволяет изменять размер
@@ -105,9 +101,17 @@ class MEPsPanel(QFrame):
         self._button_deeper_look.clicked.connect(self._on_deeper_look_button_clicked)
     
     def _on_change_amp_counter(self, value):
-        self._label_counter.setText(f"≥ 0.5 mV: \n    {value} / 5.  ")
+        self._label_counter.setText(self._counter_text(value))
+
+    def _counter_text(self, value):
+        return f"≥ {self.settings.thr:g} mV:\n    {value} / {self.settings.n_plots_thr}.  "
 
     def _on_deeper_look_button_clicked(self):
+        if hasattr(self, "_deeper_look_window") and self._deeper_look_window.isVisible():
+            self._deeper_look_window.raise_()
+            self._deeper_look_window.activateWindow()
+            return
+
         self._deeper_look_window = MEPsDeeperLook(self.settings_dl, self.Fs, monitor=2)
 
         self._deeper_look_window.show()

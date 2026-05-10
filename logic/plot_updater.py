@@ -12,8 +12,10 @@ class PlotUpdater:
 
         self.do_mep_deeper_look = False
         self._show_specific_epoch = False
+        self._latest_processor = None
 
     def update_plots(self, processor):
+        self._latest_processor = processor
         self.update_topoteps(processor)
 
         self.update_avg_teps(processor) # ????
@@ -60,14 +62,12 @@ class PlotUpdater:
     
     def update_meps(self, processor):
         """MEPs"""
+        self._latest_processor = processor
         if len(processor._epochs) == 0:
             return
 
         if not self._show_specific_epoch:
-            emg = processor._baseline(processor._epochs[-1][-2:, :] * 1E3)  # вычесть бейзлайн и перевести в мВ
-            emg = processor._baseline(processor._epochs[-1][:2] * 1E3)  # вычесть бейзлайн и перевести в мВ
-            emg = -emg[0].flatten()      
-            #emg = np.diff(emg, axis=0).flatten()                            # посчитать разницу каналов
+            emg = self._mep_from_epoch(processor, processor._epochs[-1])
             emg2plot = processor.cut_mep_epoch(emg, self.settings.single_meps.xmin_ms, self.settings.single_meps.xmax_ms)
 
             self.meps_panel.figure.update_emg(emg2plot)
@@ -91,21 +91,36 @@ class PlotUpdater:
             self.overview_panel.figure_MEP.update_MEPs(emg)
 
     def add_mep_deeper_look(self, ui):
-        print(ui)
         self.mep_deeper_look_window = ui
         self.do_mep_deeper_look = True
+        if hasattr(ui, "settingsChanged"):
+            ui.settingsChanged.connect(self._refresh_mep_deeper_look)
+        self._refresh_mep_deeper_look()
 
     def update_mep_deeper_look(self, processor):
         """MEPs in DeeperLook Window"""
+        self._latest_processor = processor
         if len(processor._epochs) == 0:
             return
+        if not getattr(self, "mep_deeper_look_window", None):
+            return
+        if not self.mep_deeper_look_window.isVisible():
+            return
 
-        emg = processor._baseline(processor._epochs[-1][-2:, :] * 1E3)  # вычесть бейзлайн и перевести в мВ
-        emg = np.diff(emg, axis=0).flatten()                            # посчитать разницу каналов
-        emg2plot = processor.cut_mep_epoch(emg, self.settings.single_meps.xmin_ms, self.settings.single_meps.xmax_ms)
+        settings = self.mep_deeper_look_window.settings
+        emg = self._mep_from_epoch(processor, processor._epochs[-1])
+        emg2plot = processor.cut_mep_epoch(emg, settings.xmin_ms, settings.xmax_ms)
 
         # self.mep_deeper_look_window.update_emg(emg2plot)
         self.mep_deeper_look_window.figure.update_emg(emg2plot)
+
+    def _refresh_mep_deeper_look(self):
+        if self._latest_processor is not None:
+            self.update_mep_deeper_look(self._latest_processor)
+
+    def _mep_from_epoch(self, processor, epoch):
+        emg = processor._baseline(epoch[-2:, :] * 1E3)  # вычесть бейзлайн и перевести в мВ
+        return np.diff(emg, axis=0).flatten()           # посчитать разницу каналов
     
     def clear_plots(self):
         self.topo_panel.figure.refresh_plot()

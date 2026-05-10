@@ -1,14 +1,15 @@
 {
   "participant_id": "01AV",
   "survey_id": "day1",
-  "saved_at": "2026-05-02T11:13:33",
+  "saved_at": "2026-05-09T22:31:49",
   "is_draft": true,
-  "current_page_index": 4,
+  "current_page_index": 0,
   "answers": {
-    "task_quality_1": 4,
+    "task_quality_1": 3,
     "task_quality_2": 6,
     "task_quality_3": 7,
     "task_quality_4": 7,
+    "Real_ability": null,
     "MI_ability": null,
     "MI_vividness": null,
     "MI_difficulty": null,
