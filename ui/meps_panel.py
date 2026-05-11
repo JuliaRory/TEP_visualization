@@ -13,6 +13,7 @@ class MEPsPanel(QFrame):
     
     """
     deeperLookActivate = pyqtSignal()
+    movementDetectionActivate = pyqtSignal()
     def __init__(self, parent=None,   Fs=5000, settings=None, settings_dl=None, init_size=[600, 800]):
         super().__init__(parent)
         """Внешний вид виджета"""
@@ -64,6 +65,7 @@ class MEPsPanel(QFrame):
         self._frame_settings = QFrame(self)
 
         self._button_deeper_look = create_button("MEP threshold", parent=self, w=100)
+        self._button_movement_detection = create_button("MEP delays", parent=self, w=100)
 
     # --- Layout ---
     def _setup_layout(self):
@@ -71,6 +73,7 @@ class MEPsPanel(QFrame):
         layout_settings.addWidget(self._label)
         layout_settings.addWidget(self._label_counter)
         layout_settings.addWidget(self._button_deeper_look)
+        layout_settings.addWidget(self._button_movement_detection)
         
 
         self.splitter = QSplitter(Qt.Horizontal, parent=self)        # позволяет изменять размер
@@ -99,6 +102,7 @@ class MEPsPanel(QFrame):
     def _setup_connections(self):
         self.figure.amp_counter.connect(self._on_change_amp_counter)
         self._button_deeper_look.clicked.connect(self._on_deeper_look_button_clicked)
+        self._button_movement_detection.clicked.connect(self.movementDetectionActivate.emit)
     
     def _on_change_amp_counter(self, value):
         self._label_counter.setText(self._counter_text(value))

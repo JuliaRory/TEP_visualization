@@ -70,5 +70,7 @@ class EpochRecordBuffer:
         dataset.attrs["n_epochs"] = n_epochs
         dataset.attrs["n_samples"] = n_samples
         dataset.attrs["n_channels"] = n_channels
+        dataset.attrs["window_start_ms"] = self.speed_settings.window_start
+        dataset.attrs["window_end_ms"] = self.speed_settings.window_end
         dataset.attrs["shape_original"] = "[n_epochs, n_channels, n_samples]"
         dataset.attrs["shape_saved"] = "[n_epochs * n_samples, n_channels]"

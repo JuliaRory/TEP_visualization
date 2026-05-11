@@ -1,7 +1,7 @@
 from PyQt5.QtCore import Qt, QTimer, pyqtSignal,  QEvent
 from PyQt5.QtGui import QGuiApplication
 from PyQt5.QtGui import  QMouseEvent
-from PyQt5.QtWidgets import QWidget, qApp, QSizePolicy, QSplitter, QApplication, QHBoxLayout, QFileDialog
+from PyQt5.QtWidgets import QWidget, qApp, QSizePolicy, QSplitter, QApplication, QHBoxLayout, QFileDialog, QMessageBox
                              
 import numpy as np
 import pandas as pd
@@ -17,6 +17,7 @@ from ui import (SettingsPanel, ProcessingPanel, NVXControlPanel, StimuliControlP
 from logic.sources.stream import StreamSource
 from logic.data_processor import DataProcessor
 from logic.epoch_record_buffer import EpochRecordBuffer
+from ui.widgets.mep_movement_detection_window import MEPMovementDetectionWindow
 
 from settings.settings import Settings 
 from settings.plot_settings import PlotSettings 
@@ -116,6 +117,7 @@ class MainWindow(QWidget):
 
         self._session_loaded = []                              # список с подгруженными датасетами
         self._session_loaded_labels = []                       # список с названиями подгруженных файлов (для легенды)
+        self._mep_movement_detection_window = None
 
         # отображение эпох
         self._specific_epoch = False                         # флаг для отслеживания режима показа определенной эпохи или стандартного
@@ -251,6 +253,7 @@ class MainWindow(QWidget):
 
         # подключение окна MEPDeeperLook
         self._meps_panel.deeperLookActivate.connect(lambda: self._plot_updater.add_mep_deeper_look(self._meps_panel._deeper_look_window))
+        self._meps_panel.movementDetectionActivate.connect(self._on_mep_movement_detection_button_click)
 
         # начальная замедленная инициализиация всех вычислений для уменьшения подтупливаний при запуске приложения
         # self.start_calc_signal.connect(self._initial_calculations)
@@ -290,6 +293,38 @@ class MainWindow(QWidget):
                 print(f"Saved TEP epochs to {saved_path}")
         except Exception as exc:
             print(f"Could not save TEP epochs to {record_path}: {exc}")
+
+    def _on_mep_movement_detection_button_click(self):
+        epoch_record_path = self._epoch_record_path_from_record_line()
+        if not os.path.exists(epoch_record_path):
+            QMessageBox.information(self, "MEP delays", f"Файл эпох не найден:\n{epoch_record_path}")
+            print("No saved epoch file for MEP movement detection")
+            return
+
+        if (
+            self._mep_movement_detection_window is not None
+            and self._mep_movement_detection_window.isVisible()
+        ):
+            if self._mep_movement_detection_window.epoch_path == epoch_record_path:
+                self._mep_movement_detection_window.raise_()
+                self._mep_movement_detection_window.activateWindow()
+                return
+            self._mep_movement_detection_window.close()
+
+        self._mep_movement_detection_window = MEPMovementDetectionWindow(
+            epoch_record_path,
+            parent=None,
+        )
+        self._mep_movement_detection_window.show()
+        self._mep_movement_detection_window.raise_()
+
+    def _epoch_record_path_from_record_line(self):
+        filename = self._nvx_control_panel.lineedit_record.text().strip()
+        if not filename:
+            return os.path.join("data", "records", "rec.hdf5")
+        if os.path.isabs(filename):
+            return filename
+        return os.path.join("data", "records", filename)
 
     # --- Логика ---
     
