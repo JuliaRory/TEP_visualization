@@ -17,6 +17,7 @@ from ui import (SettingsPanel, ProcessingPanel, NVXControlPanel, StimuliControlP
 from logic.sources.stream import StreamSource
 from logic.data_processor import DataProcessor
 from logic.epoch_record_buffer import EpochRecordBuffer
+from ui.widgets.mep_condition_analysis_window import MEPConditionAnalysisWindow
 from ui.widgets.mep_movement_detection_window import MEPMovementDetectionWindow
 
 from settings.settings import Settings 
@@ -118,6 +119,7 @@ class MainWindow(QWidget):
         self._session_loaded = []                              # список с подгруженными датасетами
         self._session_loaded_labels = []                       # список с названиями подгруженных файлов (для легенды)
         self._mep_movement_detection_window = None
+        self._mep_condition_analysis_window = None
 
         # отображение эпох
         self._specific_epoch = False                         # флаг для отслеживания режима показа определенной эпохи или стандартного
@@ -254,6 +256,7 @@ class MainWindow(QWidget):
         # подключение окна MEPDeeperLook
         self._meps_panel.deeperLookActivate.connect(lambda: self._plot_updater.add_mep_deeper_look(self._meps_panel._deeper_look_window))
         self._meps_panel.movementDetectionActivate.connect(self._on_mep_movement_detection_button_click)
+        self._meps_panel.conditionAnalysisActivate.connect(self._on_mep_condition_analysis_button_click)
 
         # начальная замедленная инициализиация всех вычислений для уменьшения подтупливаний при запуске приложения
         # self.start_calc_signal.connect(self._initial_calculations)
@@ -325,6 +328,32 @@ class MainWindow(QWidget):
         if os.path.isabs(filename):
             return filename
         return os.path.join("data", "records", filename)
+
+    def _on_mep_condition_analysis_button_click(self):
+        epoch_record_path = self._epoch_record_path_from_record_line()
+        if not os.path.exists(epoch_record_path):
+            QMessageBox.information(self, "MEP conditions", f"Файл эпох не найден:\n{epoch_record_path}")
+            print("No saved epoch file for MEP condition analysis")
+            return
+
+        stimuli_filename = getattr(self.settings.stimuli_control, "stimuli_filename", "resources/saved_stimuli.json")
+        if (
+            self._mep_condition_analysis_window is not None
+            and self._mep_condition_analysis_window.isVisible()
+        ):
+            if self._mep_condition_analysis_window.epoch_path == epoch_record_path:
+                self._mep_condition_analysis_window.raise_()
+                self._mep_condition_analysis_window.activateWindow()
+                return
+            self._mep_condition_analysis_window.close()
+
+        self._mep_condition_analysis_window = MEPConditionAnalysisWindow(
+            epoch_record_path,
+            stimuli_filename=stimuli_filename,
+            parent=None,
+        )
+        self._mep_condition_analysis_window.show()
+        self._mep_condition_analysis_window.raise_()
 
     # --- Логика ---
     
