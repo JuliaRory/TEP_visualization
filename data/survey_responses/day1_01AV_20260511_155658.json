@@ -1,0 +1,18 @@
+{
+  "participant_id": "01AV",
+  "survey_id": "day1",
+  "saved_at": "2026-05-11T15:56:58",
+  "answers": {
+    "task_quality_1": 3,
+    "task_quality_2": 4,
+    "task_quality_3": 4,
+    "task_quality_4": 3,
+    "MI_ability": 69,
+    "MI_vividness": 52,
+    "MI_difficulty": 83,
+    "MI_description": "Я пытался не заснуть .",
+    "TMS_distraction": 16,
+    "TMS_amplitude": 45,
+    "comment": null
+  }
+}

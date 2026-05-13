@@ -10,8 +10,8 @@ from PyQt5.QtWidgets import QApplication, QLabel, QVBoxLayout, QWidget
 
 REST_STIMULUS = "rest1500_tms_0ms_bar.mkv"
 REST_STIMULUS_VARIANTS = (
-    "rest1500_tms_0ms_bar.mkv",
-    "rest1500_tms_-200ms_bar.mkv",
+    "rest1500_tms_0ms_bar.mkv"
+    #"rest1500_tms_-200ms_bar.mkv",
 )
 
 
@@ -147,8 +147,8 @@ class StimuliPresentation_one_by_one(QWidget):
         video_names = []
         for stimulus_number in order:
             filename = video_names_by_number[int(stimulus_number)]
-            if filename == REST_STIMULUS:
-                filename = random.choice(REST_STIMULUS_VARIANTS)
+            # if filename == REST_STIMULUS:
+            #     filename = random.choice(REST_STIMULUS_VARIANTS)
             video_names.append(filename)
         return video_names
 
