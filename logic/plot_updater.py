@@ -116,7 +116,25 @@ class PlotUpdater:
 
     def _refresh_mep_deeper_look(self):
         if self._latest_processor is not None:
-            self.update_mep_deeper_look(self._latest_processor)
+            self._redraw_mep_deeper_look_history(self._latest_processor)
+
+    def _redraw_mep_deeper_look_history(self, processor):
+        if len(processor._epochs) == 0:
+            return
+        if not getattr(self, "mep_deeper_look_window", None):
+            return
+        if not self.mep_deeper_look_window.isVisible():
+            return
+
+        ui = self.mep_deeper_look_window
+        settings = ui.settings
+        ui.figure.rebuild_from_settings(reset_history=True)
+
+        n_plots = max(1, int(getattr(settings, "n_plots", 1)))
+        for epoch in processor._epochs[-n_plots:]:
+            emg = self._mep_from_epoch(processor, epoch)
+            emg2plot = processor.cut_mep_epoch(emg, settings.xmin_ms, settings.xmax_ms)
+            ui.figure.update_emg(emg2plot)
 
     def _mep_from_epoch(self, processor, epoch):
         emg = processor._baseline(epoch[-2:, :] * 1E3)  # вычесть бейзлайн и перевести в мВ

@@ -15,10 +15,11 @@ class AudioPlayer(QtCore.QObject):
     playback_stopped = QtCore.pyqtSignal()
     volume_changed = QtCore.pyqtSignal(int)
     
-    def __init__(self, audio_file_path, initial_volume=50):
+    def __init__(self, audio_file_path, initial_volume=50, fade_in_ms=2000):
         super().__init__()
         self.audio_file_path = audio_file_path
         self.initial_volume = initial_volume
+        self.fade_in_ms = fade_in_ms
         
         # Состояние воспроизведения
         self.is_playing = False
@@ -28,6 +29,13 @@ class AudioPlayer(QtCore.QObject):
         # Громкость
         self.volume = initial_volume
         self.muted_volume = initial_volume  # Сохраняем громкость перед mute
+        self._is_muted = False
+        self._fade_target_volume = initial_volume
+        self._fade_step = 0
+        self._fade_steps = max(1, int(self.fade_in_ms / 50))
+        self._fade_timer = QtCore.QTimer(self)
+        self._fade_timer.setInterval(max(1, int(self.fade_in_ms / self._fade_steps)))
+        self._fade_timer.timeout.connect(self._on_fade_step)
         
         # Поток воспроизведения
         self.playback_thread = None
@@ -57,6 +65,7 @@ class AudioPlayer(QtCore.QObject):
         self.is_playing = True
         self.is_paused = False
         self.stop_requested = False
+        self._start_fade_in()
         
         # Создаем и запускаем поток воспроизведения
         self.playback_thread = threading.Thread(
@@ -121,6 +130,7 @@ class AudioPlayer(QtCore.QObject):
             
         if not self.is_paused:
             self.is_paused = True
+            self._stop_fade()
             pygame.mixer.music.pause()
             print("Воспроизведение на паузе")
             self.playback_paused.emit()
@@ -133,6 +143,7 @@ class AudioPlayer(QtCore.QObject):
             
         if self.is_paused:
             self.is_paused = False
+            self._start_fade_in()
             pygame.mixer.music.unpause()
             print("Воспроизведение продолжено")
             self.playback_started.emit()
@@ -142,6 +153,7 @@ class AudioPlayer(QtCore.QObject):
         self.stop_requested = True
         self.is_playing = False
         self.is_paused = False
+        self._stop_fade()
         
         # Останавливаем воспроизведение pygame
         pygame.mixer.music.stop()
@@ -166,7 +178,9 @@ class AudioPlayer(QtCore.QObject):
             self.volume = volume
             
             # Если не в режиме mute, применяем громкость
-            if not hasattr(self, '_is_muted') or not self._is_muted:
+            if self._fade_timer.isActive():
+                self._fade_target_volume = volume
+            elif not self._is_muted:
                 pygame.mixer.music.set_volume(volume / 100.0)
             
             print(f"Громкость установлена: {volume}%")
@@ -180,10 +194,8 @@ class AudioPlayer(QtCore.QObject):
     
     def mute(self):
         """Отключение звука"""
-        if not hasattr(self, '_is_muted'):
-            self._is_muted = False
-            
         if not self._is_muted:
+            self._stop_fade()
             self.muted_volume = self.volume  # Сохраняем текущую громкость
             pygame.mixer.music.set_volume(0)
             self._is_muted = True
@@ -191,17 +203,44 @@ class AudioPlayer(QtCore.QObject):
     
     def unmute(self):
         """Включение звука"""
-        if hasattr(self, '_is_muted') and self._is_muted:
+        if self._is_muted:
             pygame.mixer.music.set_volume(self.muted_volume / 100.0)
             self._is_muted = False
             print(f"Звук включен, громкость: {self.muted_volume}%")
     
     def toggle_mute(self):
         """Переключение режима mute/unmute"""
-        if not hasattr(self, '_is_muted') or not self._is_muted:
+        if not self._is_muted:
             self.mute()
         else:
             self.unmute()
+
+    def _start_fade_in(self):
+        self._fade_target_volume = self.volume
+        self._fade_step = 0
+        if self._is_muted or self._fade_target_volume <= 0:
+            pygame.mixer.music.set_volume(0)
+            return
+
+        pygame.mixer.music.set_volume(0)
+        self._fade_timer.start()
+
+    def _stop_fade(self):
+        if self._fade_timer.isActive():
+            self._fade_timer.stop()
+
+    def _on_fade_step(self):
+        if self._is_muted:
+            self._stop_fade()
+            pygame.mixer.music.set_volume(0)
+            return
+
+        self._fade_step += 1
+        progress = min(1.0, self._fade_step / self._fade_steps)
+        pygame.mixer.music.set_volume((self._fade_target_volume * progress) / 100.0)
+
+        if progress >= 1.0:
+            self._stop_fade()
     
     
     

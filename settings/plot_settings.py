@@ -39,7 +39,7 @@ class SingleMEPsPlotDeeperLook:
     set_plot_ratio: float = .15
     amp_start_ms: int = 10
     amp_end_ms: int = 40
-    thr: float = .5
+    thr: float = .05
     n_plots_thr: int = 10
 
 @dataclass

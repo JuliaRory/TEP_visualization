@@ -167,7 +167,7 @@ class MEPsDeeperLook(QWidget):
     def _on_change_amp_counter(self, value):
         self._label_thr.setText(f"Выше порога: {value}/{self.settings.n_plots_thr}")
 
-    def _on_threshold_changed(self):
+    def _on_threshold_changed(self, _value=None):
         self.settings.thr = self.spinbox_thr.value()
         self.settings.n_plots_thr = self._coerce_threshold_window(self.spinbox_thr_n_plots.value())
         self.figure.emit_threshold_count()
@@ -181,8 +181,11 @@ class MEPsDeeperLook(QWidget):
 
         amp_start = self._spinbox_amp_start.value()
         amp_end = self._spinbox_amp_end.value()
-        if amp_end <= amp_start:
-            amp_end = amp_start + 1
+        amp_start = max(xmin, min(amp_start, xmax - 1))
+        amp_end = max(amp_start + 1, min(amp_end, xmax))
+        if self._spinbox_amp_start.value() != amp_start:
+            self._spinbox_amp_start.setValue(amp_start)
+        if self._spinbox_amp_end.value() != amp_end:
             self._spinbox_amp_end.setValue(amp_end)
 
         self.settings.max_amp_mV = self._spinbox_max_amp.value()

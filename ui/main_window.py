@@ -284,6 +284,8 @@ class MainWindow(QWidget):
     def _on_stimuli_presenation_status_changed_signal(self, presentation_status):
         """связь между показом стимулов и записью nvx"""
         self._nvx_control_panel.change_record_status(stimuli=True)
+        if not presentation_status:
+            self._nvx_control_panel.update_next_record_number()
 
     def _on_nvx_recording_file_changed(self, recording_status, record_path):
         if recording_status:
@@ -620,6 +622,7 @@ class MainWindow(QWidget):
         self._settings_handler_record.load_from_json(default=True)
 
         self._settings_handler.load_from_json(default=True)
+        self._stimuli_control_panel.sync_ui_from_settings()
 
         self.show()
 

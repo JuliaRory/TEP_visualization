@@ -188,7 +188,7 @@ class MEPPlot(FigureCanvas):
                     tick = Line2D([-0.03, 0], [y_t, y_t], color='darkgray', lw=2, transform=tr)
                     self.ax.add_line(tick)
                     self.ax.text(-.15, y_t,
-                            str(y_ticks_orig[j]), transform=tr,
+                            self._format_axis_value(y_ticks_orig[j]), transform=tr,
                             ha='center', va='center', fontsize=fontsize_ticks, color='darkgray')
                 
                 self.ax.text(-.5, 1, "mV", transform=tr, fontsize=fontsize_axes, color='darkgray')
@@ -266,6 +266,13 @@ class MEPPlot(FigureCanvas):
         if self.titles_label is not None and i < len(self.titles_label):
             return self.titles_label[i]
         return f"#{i+1}"
+
+    @staticmethod
+    def _format_axis_value(value):
+        value = round(float(value), 2)
+        if value == 0:
+            value = 0.0
+        return f"{value:.2f}"
 
 
     def _calculate_above_thr(self):

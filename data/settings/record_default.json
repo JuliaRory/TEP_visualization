@@ -4,7 +4,7 @@
     "activate_bat": true,
     "service_name": "nvx136",
     "stream_name": "eeg",
-    "records_folder": "C:/Users/hodor/Documents/lab-MSU/Works/2025.10_TMS/TEP_visualization/data/records",
+    "records_folder": "D:/2025 - TEP/data - raw/tests",
     "bat_nvx136_25Hz": "D:/Resonance/distro-dual/msvc/NVX136.bat",
     "bat_nvx136_impedance": "D:/Resonance/distro-dual/msvc/impedanceChecker_64_2.bat",
     "use_number": true,
@@ -14,11 +14,11 @@
     "use_yaw_angle": true,
     "use_power": true,
     "use_comments": true,
-    "number": "09",
+    "number": "00",
     "subject": "01AV",
     "spot": "PPC_L",
     "coil": "",
     "yaw_angle": "PA",
-    "power": "54MSO",
+    "power": "54",
     "comments": "MI"
 }

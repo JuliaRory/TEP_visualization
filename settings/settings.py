@@ -47,7 +47,7 @@ class RecordSettings:
     use_number: bool = True
     use_subject: bool = True
     use_spot: bool = True
-    use_coil: bool = True
+    use_coil: bool = False
     use_yaw_angle: bool = True
     use_power: bool = False
     use_comments: bool = False
@@ -55,7 +55,7 @@ class RecordSettings:
     number: str = "01"
     subject: str = "AV"
     spot: str = "M1"
-    coil: str = "qp"
+    coil: str = ""
     yaw_angle: str = "45"
     power: str = ""
     comments: str = ""
@@ -82,6 +82,12 @@ class StimuliSettings:
     # noise_filename: str = "CN2_blocked_canal_SMA_9min_uncor.wav"
     noise_type: List[str] = field(default_factory=lambda: ["1", "2", "3", "4"])
     white_noise: List[str] = field(default_factory=lambda: ["1", "2", "3", "4", "5"])
+    rest_video_variants: List[str] = field(default_factory=lambda: [
+        "rest1500_tms_0ms_bar",
+        "rest1500_tms_-200ms_bar",
+        "rest1500_tms_+200ms_bar",
+    ])
+    rest_video_selected: List[str] = field(default_factory=lambda: ["rest1500_tms_0ms_bar"])
     
 # --- Layout ---
 

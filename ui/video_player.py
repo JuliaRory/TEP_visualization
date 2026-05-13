@@ -10,8 +10,9 @@ from PyQt5.QtWidgets import QApplication, QLabel, QVBoxLayout, QWidget
 
 REST_STIMULUS = "rest1500_tms_0ms_bar.mkv"
 REST_STIMULUS_VARIANTS = (
-    "rest1500_tms_0ms_bar.mkv"
-    #"rest1500_tms_-200ms_bar.mkv",
+    "rest1500_tms_0ms_bar.mkv",
+    "rest1500_tms_-200ms_bar.mkv",
+    "rest1500_tms_+200ms_bar.mkv",
 )
 
 
@@ -27,10 +28,11 @@ class StimuliPresentation_one_by_one(QWidget):
 
     stimulus = pyqtSignal(str)
 
-    def __init__(self, monitor=1, volume=80):
+    def __init__(self, monitor=1, volume=80, rest_stimulus_variants=None):
         super().__init__()
 
         self._volume = volume
+        self.set_rest_stimulus_variants(rest_stimulus_variants)
 
         screens = QApplication.instance().screens()
         target_monitor = screens[monitor - 1].geometry()
@@ -147,10 +149,20 @@ class StimuliPresentation_one_by_one(QWidget):
         video_names = []
         for stimulus_number in order:
             filename = video_names_by_number[int(stimulus_number)]
-            # if filename == REST_STIMULUS:
-            #     filename = random.choice(REST_STIMULUS_VARIANTS)
+            if filename in REST_STIMULUS_VARIANTS:
+                filename = random.choice(self._rest_stimulus_variants)
             video_names.append(filename)
         return video_names
+
+    def set_rest_stimulus_variants(self, filenames):
+        variants = [self._normalize_video_filename(name) for name in (filenames or [])]
+        variants = [name for name in variants if name in REST_STIMULUS_VARIANTS]
+        self._rest_stimulus_variants = variants or [REST_STIMULUS]
+
+    @staticmethod
+    def _normalize_video_filename(name):
+        name = str(name)
+        return name if os.path.splitext(name)[1] else f"{name}.mkv"
 
     def _prepare_next_video(self):
         if self._current_index >= len(self.video_files):

@@ -5,7 +5,7 @@ from PyQt5.QtGui import QKeySequence
 import json
 import os
 
-from utils.ui_helpers import create_button, create_spin_box, create_check_box, create_combo_box, create_shortcut
+from utils.ui_helpers import create_button, create_spin_box, create_check_box, create_combo_box, create_checkable_combobox, create_shortcut
 from utils.layout_utils import create_hbox, create_vbox
 
 from .video_player import StimuliPresentation_one_by_one
@@ -52,6 +52,13 @@ class StimuliControlPanel(QFrame):
 
         self.combo_box_noise_type = create_combo_box(self.settings.noise_type, parent=self, tooltips=True)
         self.combo_box_white_noise = create_combo_box(self.settings.white_noise, parent=self, tooltips=True)
+        self.combo_box_rest_video = create_checkable_combobox(
+            self.settings.rest_video_variants,
+            self.settings.rest_video_selected,
+            status=True,
+            w=190,
+            parent=self,
+        )
 
         self.spin_box_monitor = create_spin_box(1, 3, self.settings.monitor, parent=self)
         self.spin_box_isi_min = create_spin_box(
@@ -91,6 +98,7 @@ class StimuliControlPanel(QFrame):
         layout_noise = create_hbox(
             [self.check_box_noise, self.button_noise, QLabel("Тип:"), self.combo_box_noise_type, QLabel("var:"), self.combo_box_white_noise]
         )
+        layout_rest_video = create_hbox([QLabel("REST", self), self.combo_box_rest_video])
         layout_isi = create_hbox(
             [QLabel("ISI, s", self), self.spin_box_isi_min, QLabel("min", self), self.spin_box_isi_max, QLabel("max", self)]
         )
@@ -114,6 +122,7 @@ class StimuliControlPanel(QFrame):
         layout.addLayout(layout_stimuli_creation)
         layout.addLayout(layout_stimuli)
         layout.addLayout(layout_noise)
+        layout.addLayout(layout_rest_video)
         layout.addLayout(layout_isi)
         layout.addLayout(layout_center)
 
@@ -138,6 +147,7 @@ class StimuliControlPanel(QFrame):
         self._button_update_stimuli.clicked.connect(self._update_combo_box_stimuli)
         self.combo_box_noise_type.currentTextChanged[str].connect(self._change_audio_filename)
         self.combo_box_white_noise.currentTextChanged[str].connect(self._change_audio_filename)
+        self.combo_box_rest_video.textChanged.connect(self._on_change_rest_video_variants)
 
     def _update_connections(self):
         self._player_window.stimuliStarted.connect(self._on_start_stimuli)
@@ -164,7 +174,8 @@ class StimuliControlPanel(QFrame):
             if not self._restart_stimuli:
                 self._player_window = StimuliPresentation_one_by_one(
                     monitor=self.spin_box_monitor.value(),
-                    volume=self.stimuli_volume_slider.slider.value()
+                    volume=self.stimuli_volume_slider.slider.value(),
+                    rest_stimulus_variants=self.settings.rest_video_selected,
                 )
                 self._player_window.set_isi_range(self.settings.isi_min_s, self.settings.isi_max_s)
                 self._player_window.show()
@@ -176,6 +187,7 @@ class StimuliControlPanel(QFrame):
             sequence = self._get_sequence(seq_name)
 
             self._player_window.set_isi_range(self.settings.isi_min_s, self.settings.isi_max_s)
+            self._player_window.set_rest_stimulus_variants(self.settings.rest_video_selected)
             self._player_window.set_sequence(sequence, seq_name)
             self._player_window.restart_sequence()
 
@@ -289,6 +301,27 @@ class StimuliControlPanel(QFrame):
         if isinstance(pw, QWidget) and not pw.isHidden():
             self._player_window.set_isi_range(min_s, max_s)
 
+    def _on_change_rest_video_variants(self, selected):
+        if not selected:
+            selected = [self.settings.rest_video_variants[0]]
+            self._set_rest_video_checked_items(selected)
+
+        self.settings.rest_video_selected = selected
+
+        pw = getattr(self, "_player_window", None)
+        if isinstance(pw, QWidget) and not pw.isHidden():
+            self._player_window.set_rest_stimulus_variants(selected)
+
+    def _set_rest_video_checked_items(self, selected):
+        selected = set(selected)
+        model = self.combo_box_rest_video.model()
+        model.blockSignals(True)
+        for i in range(model.rowCount()):
+            item = model.item(i)
+            state = Qt.Checked if item.text() in selected else Qt.Unchecked
+            item.setCheckState(state)
+        model.blockSignals(False)
+
     def _up_noise_volume(self):
         new_value = min(100, self._audio_player.volume + 5)
         self.noise_volume_slider.setValue(new_value)
@@ -339,3 +372,11 @@ class StimuliControlPanel(QFrame):
 
     def _finilize(self):
         self._update_combo_box_stimuli()
+
+    def sync_ui_from_settings(self):
+        available = set(self.settings.rest_video_variants)
+        selected = [item for item in self.settings.rest_video_selected if item in available]
+        if not selected:
+            selected = [self.settings.rest_video_variants[0]]
+        self.settings.rest_video_selected = selected
+        self._set_rest_video_checked_items(selected)
