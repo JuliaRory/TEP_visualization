@@ -1,0 +1,25 @@
+{
+  "participant_id": "0000",
+  "survey_id": "day0",
+  "saved_at": "2026-05-18T12:21:43",
+  "is_draft": true,
+  "current_page_index": 4,
+  "answers": {
+    "task_quality_1": 3,
+    "task_quality_2": 7,
+    "task_quality_3": 7,
+    "task_quality_4": 7,
+    "Real_ability": 5,
+    "SST_ability": 4,
+    "SST_difficulty": 49,
+    "SST_TMS_distraction": 40,
+    "SST_comments": null,
+    "MI_ability": 5,
+    "MI_vividness": 65,
+    "MI_difficulty": 65,
+    "MI_description": "по",
+    "TMS_distraction": 32,
+    "TMS_amplitude": 62,
+    "comment": null
+  }
+}

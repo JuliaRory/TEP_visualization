@@ -1,0 +1,19 @@
+{
+  "participant_id": "08EN",
+  "survey_id": "day0",
+  "saved_at": "2026-05-19T20:25:13",
+  "answers": {
+    "task_quality_1": 2,
+    "task_quality_2": 4,
+    "task_quality_3": 3,
+    "task_quality_4": 3,
+    "Real_ability": 5,
+    "MI_ability": 36,
+    "MI_vividness": 37,
+    "MI_difficulty": 42,
+    "MI_description": "Припоминание ощущения движений. Ощущение движений - ощущение перемещения составных частей пальца относительно друг друга.",
+    "TMS_distraction": 58,
+    "TMS_amplitude": 53,
+    "comment": null
+  }
+}

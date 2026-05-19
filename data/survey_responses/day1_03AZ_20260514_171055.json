@@ -1,0 +1,18 @@
+{
+  "participant_id": "03AZ",
+  "survey_id": "day1",
+  "saved_at": "2026-05-14T17:10:55",
+  "answers": {
+    "task_quality_1": 5,
+    "task_quality_2": 3,
+    "task_quality_3": 1,
+    "task_quality_4": 1,
+    "MI_ability": 65,
+    "MI_vividness": 50,
+    "MI_difficulty": 34,
+    "MI_description": "Представляла напряжение мышцы и движения суставов.",
+    "TMS_distraction": 6,
+    "TMS_amplitude": 81,
+    "comment": null
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "participant_id": "05UB",
+  "survey_id": "day1",
+  "saved_at": "2026-05-16T15:17:02",
+  "answers": {
+    "task_quality_1": 5,
+    "task_quality_2": 4,
+    "task_quality_3": 4,
+    "task_quality_4": 4,
+    "MI_ability": 49,
+    "MI_vividness": 64,
+    "MI_difficulty": 40,
+    "MI_description": "Старалась представить как будто бы я вот-вот сделаю движение, но останавливаюсь на представлении ощущений. Представляла что я ощущаю в мышце при движении и в суставе.",
+    "TMS_distraction": 25,
+    "TMS_amplitude": 67,
+    "comment": null
+  }
+}

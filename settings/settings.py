@@ -73,7 +73,7 @@ class StimuliSettings:
     stimuli_volume: int = 60
     isi_min_s: float = 1.5
     isi_max_s: float = 3.0
-    noise_volume: int = 37
+    noise_volume: int = 67
     noise_folder: str = r"resources/noise/"
     #noise_filename: str = "TAAC_CN2_coil_42MSO_9minutes_louder.wav"     # standard
     noise_filename: str = "CN2_blocked_canal_M1_9min_cor.wav"

@@ -157,8 +157,13 @@ class DataProcessor(QObject):
     def configure_baseline(self, enabled=True, t_from=-75, t_to=-20, method="mean"):
         self._baseline_enabled = enabled
         if enabled:
-            ind_from = t_from  # Здесь можно перевести в сэмплы, если нужно
-            ind_to = t_to
+            ind_from = self._time_shift + self._ms_to_sample(t_from)
+            ind_to = self._time_shift + self._ms_to_sample(t_to)
+            ind_from = max(0, min(self._n_samples, ind_from))
+            ind_to = max(0, min(self._n_samples, ind_to))
+            if ind_from >= ind_to:
+                self._baseline = lambda x: x
+                return
             func = np.mean if method == "mean" else np.median
             self._baseline = lambda x: x - func(x[:, ind_from:ind_to], axis=1, keepdims=True)
         else:

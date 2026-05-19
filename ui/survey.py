@@ -53,11 +53,12 @@ def load_survey_config(path=DEFAULT_SURVEY_PATH):
 class AnalogScaleWidget(QWidget):
     valueChanged = pyqtSignal(int)
 
-    def __init__(self, left_label="", right_label="", initial_value=None, parent=None):
+    def __init__(self, left_label="", right_label="", initial_value=None, center_mark=False, parent=None):
         super().__init__(parent)
         self._left_label = left_label
         self._right_label = right_label
         self._value = initial_value
+        self._center_mark = center_mark
         self._left_margin = 28
         self._right_margin = 28
         self._line_y = 44
@@ -109,6 +110,11 @@ class AnalogScaleWidget(QWidget):
             painter.setPen(QPen(QColor("#6a7b76"), 3))
             painter.setBrush(QColor("#a8c686"))
             painter.drawEllipse(int(x) - 8, line_y - 8, 16, 16)
+
+        if self._center_mark:
+            center_x = left + (right - left) / 2
+            painter.setPen(QPen(QColor("#3f3b35"), 3, Qt.SolidLine, Qt.RoundCap))
+            painter.drawLine(int(center_x), line_y - 10, int(center_x), line_y + 10)
 
         painter.setPen(QColor("#55524d"))
         painter.setFont(QFont("Helvetica", 9))
@@ -254,6 +260,7 @@ class QuestionWidget(QFrame):
                 left_label=question.get("left", ""),
                 right_label=question.get("right", ""),
                 initial_value=question.get("initial"),
+                center_mark=question.get("center_mark", False),
                 parent=self,
             )
         elif question_type == "text":
@@ -292,7 +299,7 @@ class QuestionnaireWindow(QWidget):
         self._dirty = False
 
         self.setWindowTitle(self.config.get("title", "Опросник"))
-        self.resize(820, 720)
+        self.resize(1100, 720)
         self._setup_ui()
         self._apply_local_style()
         if participant_id:

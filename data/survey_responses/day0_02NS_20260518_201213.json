@@ -1,0 +1,23 @@
+{
+  "participant_id": "02NS",
+  "survey_id": "day0",
+  "saved_at": "2026-05-18T20:12:13",
+  "answers": {
+    "task_quality_1": 5,
+    "task_quality_2": 5,
+    "task_quality_3": 3,
+    "task_quality_4": 2,
+    "Real_ability": 6,
+    "SST_ability": 4,
+    "SST_difficulty": 38,
+    "SST_TMS_distraction": 29,
+    "SST_comments": null,
+    "MI_ability": 84,
+    "MI_vividness": 72,
+    "MI_difficulty": 89,
+    "MI_description": "Представление об напряжении мышцы, о её утомлении и о количестве тепла, которое приливает к данной мышце.",
+    "TMS_distraction": 14,
+    "TMS_amplitude": 86,
+    "comment": null
+  }
+}
