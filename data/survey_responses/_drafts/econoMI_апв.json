@@ -1,0 +1,22 @@
+{
+  "participant_id": "апв",
+  "survey_id": "econoMI",
+  "saved_at": "2026-05-20T03:03:40",
+  "is_draft": true,
+  "current_page_index": 0,
+  "answers": {
+    "hands_difficulty": 42,
+    "hands_description": "п",
+    "shapes_difficulty": 66,
+    "shapes_description": "авыва",
+    "Real_ability": 5,
+    "MI_timing_ability": null,
+    "MI_ability": null,
+    "MI_vividness": null,
+    "MI_difficulty": null,
+    "MI_description": null,
+    "TMS_distraction": null,
+    "TMS_amplitude": null,
+    "comment": null
+  }
+}

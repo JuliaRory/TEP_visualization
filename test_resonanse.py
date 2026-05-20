@@ -25,35 +25,40 @@ class MainWindow(QWidget):
         cwd = os.path.dirname(bat_file) # cwd = папка с батником
         subprocess.Popen([bat_file], cwd=cwd)
 
+        self.record_on = False
         self.sendmessage = controlSignal_stream
         self._setup_ui()
         self.show()
 
     def _setup_ui(self):
-        button = create_button("play", callback=self._on_button_click, checkable=True, parent=self)
-        button.move(W//2, H//2)
+        self.button = create_button("play", callback=self._on_button_click, parent=self)
+        self.button.move(W//2, H//2)
 
     def _on_button_click(self):
-        # Создаем прокси
         resonance = ResonanceAppProxy(self.sendmessage)
 
-        # Берем сервис 
         signalGenerator = resonance.getService("signalGenerator")
 
-        # Меняем параметр
-        # signalGenerator.sendParameter("channels", 4)
-        signalGenerator.sendTransition('start')
+        if ~self.record_on:
+            full_name = r"record-$$$.hdf"
+            signalGenerator.sendTransition('start', filename=full_name)
+            self.button.setText("stop")
+        else:
+            signalGenerator.sendTransition('stop')
+            self.button.setText("play")
 
-        
+        self.record_on = ~self.record_on
+
+
 
 app = QApplication(sys.argv) 
 
 driver = Driver("Controller") 
-controlSignal_stream = driver.outputMessageStream("controlSignal")           # создание входного потока данных типа Stream
+controlSignal_stream = driver.outputMessageStream("controlSignal")           # создание выходного потока данных типа Stream
 
-bat_file = r"C:\Users\hodor\Documents\lab-MSU\Works\2025.10_TMS\dist_2024_11_13_imp\control.bat"
+bat_file = r"C:\Users\hodor\Documents\lab-MSU\Works\2025.10_TMS\dist_2024_11_13_imp\control.bat"        # <-- YOUR PATH
 
-main = MainWindow(controlSignal_stream, bat_file)         # открыть Qt-окно приложения
+main = MainWindow(controlSignal_stream, bat_file)         
 
 # {"service": "impedance", "param": "axis_scale_max", "value": 200}
 
