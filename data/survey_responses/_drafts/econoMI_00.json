@@ -1,0 +1,24 @@
+{
+  "participant_id": "00",
+  "survey_id": "econoMI",
+  "saved_at": "2026-05-20T03:17:12",
+  "is_draft": true,
+  "current_page_index": 3,
+  "answers": {
+    "hands_difficulty": 58,
+    "hands_description": "а",
+    "shapes_difficulty": 78,
+    "shapes_description": "авы",
+    "Real_ability": 5,
+    "MI_timing_ability": 4,
+    "MI_ability": 58,
+    "MI_vividness": 71,
+    "MI_difficulty": 78,
+    "MI_description": "авыаы",
+    "TMS_distraction": 30,
+    "TMS_real": null,
+    "TMS_MI": null,
+    "TMS_amplitude": 49,
+    "comment": null
+  }
+}

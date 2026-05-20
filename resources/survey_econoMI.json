@@ -8,7 +8,7 @@
       "questions": [
         {
           "id": "hands_difficulty",
-          "text": "Насколько сложно Вам было распознавать руку?",
+          "text": "Насколько сложно Вам было распознавать руки?",
           "type": "analog",
           "left": "очень сложно",
           "right": "очень легко",
@@ -108,6 +108,24 @@
           "type": "analog",
           "left": "Не обращал(а) совсем",
           "right": "Обращала каждый раз",
+          "required": true
+        },
+        {
+          "id": "TMS_real",
+          "text": "Влияли ли ТМС-импульсы на выполнение движений?",
+          "type": "analog",
+          "left": "мешали",
+          "right": "помогали",
+          "center_mark": true,
+          "required": true
+        },
+        {
+          "id": "TMS_MI",
+          "text": "Влияли ли ТМС-импульсы на представление движений?",
+          "type": "analog",
+          "left": "мешали",
+          "right": "помогали",
+          "center_mark": true,
           "required": true
         },
         {
