@@ -178,7 +178,12 @@ class SettingsHandler:
         self._apply_dict_to_settings(self.settings, data)
         self.sync_ui_from_settings()
 
-        self.data_processor.create_full_transform()
+        self.update_averaging(apply=False)
+        self.update_baseline(apply=False)
+        self.update_lowpass(apply=False)
+        self.update_rereference(apply=False)
+        self.update_CAR(apply=False)
+        self._apply()
         if len(self.data_processor._epochs) != 0:
             self.plot_updater.update_plots(self.data_processor)
 
@@ -208,12 +213,14 @@ class SettingsHandler:
         self.ui.spin_box_lowpass.setValue(s.lowpass_freq_Hz)
         
         self.ui.check_box_rereference.setChecked(s.do_rereferencing)
-        # self.ui.combo_box_rereference.setCurrentText(s.rereference_channel)       # it is not so simple because of custom class
+        self.ui.combo_box_rereference.setCheckedItems(s.rereference_channel)
 
         self.ui.check_box_car.setChecked(s.do_CAR_filtering)
-        # self.ui.combo_box_channels.setCurrentText(s.car_except_channels)          # it is not so simple because of custom class
+        self.ui.combo_box_channels.setCheckedItems(s.car_except_channels)
 
         self.ui.check_box_baseline.setChecked(s.do_baseline_correction)
         self.ui.spin_box_baseline_from.setValue(s.baseline_from_ms)
         self.ui.spin_box_baseline_to.setValue(s.baseline_to_ms)
         self.ui.combo_box_baseline.setCurrentText(s.curr_baseline_method)
+
+        self.ui.sync_last_state_from_ui()

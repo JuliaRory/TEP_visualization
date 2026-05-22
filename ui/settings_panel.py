@@ -11,6 +11,7 @@ from utils.ui_helpers import (
 )
 from utils.layout_utils import create_hbox, create_vbox
 from utils.logic_helpers import are_equal
+from logic.sources.file import list_record_files
 
 
 
@@ -66,6 +67,12 @@ class SettingsPanel(QFrame):
 
         self.button_load = create_button(text='Load', disabled=False, parent=self)
         self.button_save = create_button(text='Save', disabled=True, parent=self)
+        self.combo_box_record_file = create_combo_box(items=list_record_files(), parent=self)
+        self.button_next_record_epoch = create_button(
+            text='Next epoch',
+            disabled=(self.combo_box_record_file.count() == 0),
+            parent=self
+        )
         self.button_restart = create_button(text='ОЧИСТИТЬ', disabled=False, parent=self)
                
 
@@ -101,6 +108,7 @@ class SettingsPanel(QFrame):
         layout_delete_epoch = create_hbox([self.button_remove_epoch, self.spin_box_remove_epoch])
         layout_data = create_hbox([self.combo_box_mode_data])
         layout_records = create_hbox([self.button_load, self.button_save])
+        layout_record_epoch_step = create_hbox([self.combo_box_record_file, self.button_next_record_epoch])
         layout_clear_history = create_hbox([self.button_restart])
 
                                                                 # Vertical layout
@@ -110,6 +118,7 @@ class SettingsPanel(QFrame):
         layout.addLayout(layout_delete_epoch)                   # | Delete   #       |
         layout.addLayout(layout_data)                           # | Новые/Загрузить  |
         layout.addLayout(layout_records)                        # | Load   Save      |
+        layout.addLayout(layout_record_epoch_step)
         layout.addLayout(layout_clear_history)                  # | Clear            |
                                                                 # +------------------+
     

@@ -15,6 +15,7 @@ from ui import (SettingsPanel, ProcessingPanel, NVXControlPanel, StimuliControlP
                 TopoTEPsPanel, overviewPanel, MEPsPanel)
  
 from logic.sources.stream import StreamSource
+from logic.sources.file import load_record_epochs
 from logic.data_processor import DataProcessor
 from logic.epoch_record_buffer import EpochRecordBuffer
 from ui.widgets.mep_condition_analysis_window import MEPConditionAnalysisWindow
@@ -118,6 +119,10 @@ class MainWindow(QWidget):
 
         self._session_loaded = []                              # список с подгруженными датасетами
         self._session_loaded_labels = []                       # список с названиями подгруженных файлов (для легенды)
+        self._record_epoch_path = None
+        self._record_epochs = None
+        self._record_timestamps = None
+        self._record_epoch_idx = 0
         self._mep_movement_detection_window = None
         self._mep_condition_analysis_window = None
 
@@ -265,6 +270,8 @@ class MainWindow(QWidget):
         # self._settings_panel.combo_box_mode_data.currentIndexChanged[int].connect(self._on_change_mode_data)
         self._settings_panel.button_save.clicked.connect(self._on_button_save_click)
         # self._settings_panel.button_load.clicked.connect(self._on_button_load_click)
+        self._settings_panel.button_next_record_epoch.clicked.connect(self._on_next_record_epoch_button_click)
+        self._settings_panel.combo_box_record_file.currentTextChanged.connect(self._on_record_epoch_file_changed)
         self._settings_panel.button_restart.clicked.connect(self._on_restart_button_click)
         self._settings_panel.button_remove_epoch.clicked.connect(self._on_remove_epoch_button_click)
         self._settings_panel.button_show_epoch.clicked.connect(self._on_show_epoch_button_click)
@@ -360,6 +367,46 @@ class MainWindow(QWidget):
     # --- Логика ---
     
     # === работа с эпохами === 
+    def _on_record_epoch_file_changed(self, *_args):
+        self._record_epoch_path = None
+        self._record_epochs = None
+        self._record_timestamps = None
+        self._record_epoch_idx = 0
+
+    def _selected_record_epoch_path(self):
+        filename = self._settings_panel.combo_box_record_file.currentText().strip()
+        if not filename:
+            return None
+        return os.path.join("data", "records", filename)
+
+    def _on_next_record_epoch_button_click(self):
+        path = self._selected_record_epoch_path()
+        if not path or not os.path.exists(path):
+            QMessageBox.information(self, "Record epochs", f"Файл не найден:\n{path}")
+            return
+
+        try:
+            if self._record_epoch_path != path or self._record_epochs is None:
+                self._record_epochs, self._record_timestamps = load_record_epochs(
+                    path,
+                    expected_channels=len(self.settings.channels) + 2,
+                    eeg_channels=len(self.settings.channels),
+                )
+                self._record_epoch_path = path
+                self._record_epoch_idx = 0
+
+            if len(self._record_epochs) == 0:
+                QMessageBox.information(self, "Record epochs", f"В файле нет эпох:\n{path}")
+                return
+
+            idx = self._record_epoch_idx % len(self._record_epochs)
+            epoch = self._record_epochs[idx]
+            timestamp = float(self._record_timestamps[idx]) if self._record_timestamps is not None else float(idx)
+            self._record_epoch_idx = (idx + 1) % len(self._record_epochs)
+            self._data_processor.add_epoch(epoch, timestamp)
+        except Exception as exc:
+            QMessageBox.warning(self, "Record epochs", f"Не удалось взять эпоху из файла:\n{path}\n\n{exc}")
+
     def _on_restart_button_click(self):
         """обновить все графики и удалить всё из памяти"""
         self._data_processor.reset_sessions()

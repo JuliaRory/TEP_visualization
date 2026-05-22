@@ -31,6 +31,13 @@ class CheckableComboBox(QComboBox):
                 checked_list.append(item.text())
         return checked_list
 
+    def setCheckedItems(self, checked_items):
+        checked_items = set(checked_items)
+        for i in range(self.model().rowCount()):
+            item = self.model().item(i)
+            state = Qt.Checked if item.text() in checked_items else Qt.Unchecked
+            item.setCheckState(state)
+
 
     def _setup_connections(self):
         self.model().dataChanged.connect(self._on_current_text_changed)

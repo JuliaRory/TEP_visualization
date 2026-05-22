@@ -47,6 +47,21 @@ class ProcessingPanel(QFrame):
         self._last_baseline_from = self.settings.baseline_from_ms
         self._last_baseline_to = self.settings.baseline_to_ms
 
+    def sync_last_state_from_ui(self):
+        self._last_do_averaging = self.check_box_average.isChecked()
+        self._last_do_lowpass_filtering = self.check_box_lowpass.isChecked()
+        self._last_do_rereferencing = self.check_box_rereference.isChecked()
+        self._last_do_CAR_filtering = self.check_box_car.isChecked()
+        self._last_do_baseline_correction = self.check_box_baseline.isChecked()
+
+        self._last_aver_method = self.combo_box_aver.currentText()
+        self._last_lowpass_freq = self.spin_box_lowpass.value()
+        self._last_rereference_channel = self.combo_box_rereference.checkedItems()
+        self._last_CAR_except_channels = self.combo_box_channels.checkedItems()
+        self._last_baseline_method = self.combo_box_baseline.currentText()
+        self._last_baseline_from = self.spin_box_baseline_from.value()
+        self._last_baseline_to = self.spin_box_baseline_to.value()
+
     
     # =======================
     # =====     UI      =====
@@ -134,30 +149,49 @@ class ProcessingPanel(QFrame):
 
 
     def _on_processing_button_click(self):
-        if not are_equal(self.check_box_average.isChecked(), self._last_do_averaging):
+        is_averaging_changed = not are_equal(self.check_box_average.isChecked(), self._last_do_averaging)
+        is_aver_method_changed = not are_equal(self.combo_box_aver.currentText(), self._last_aver_method)
+        if is_averaging_changed:
             self._last_do_averaging = self.check_box_average.isChecked()
-            self.settings_handler.update_averaging()
-
-        if not are_equal(self.combo_box_aver.currentText(), self._last_aver_method):
+        if is_aver_method_changed:
             self._last_aver_method = self.combo_box_aver.currentText()
+        if is_averaging_changed or is_aver_method_changed:
             self.settings_handler.update_averaging()
         
-        if not are_equal(self.spin_box_lowpass.value(), self._last_lowpass_freq):
+        is_lowpass_changed = not are_equal(self.check_box_lowpass.isChecked(), self._last_do_lowpass_filtering)
+        is_lowpass_freq_changed = not are_equal(self.spin_box_lowpass.value(), self._last_lowpass_freq)
+        if is_lowpass_changed:
+            self._last_do_lowpass_filtering = self.check_box_lowpass.isChecked()
+        if is_lowpass_freq_changed:
             self._last_lowpass_freq = self.spin_box_lowpass.value()
+        if is_lowpass_changed or is_lowpass_freq_changed:
             self.settings_handler.update_lowpass()
         
-        if not are_equal(self.combo_box_rereference.checkedItems(), self._last_rereference_channel):
+        is_rereference_changed = not are_equal(self.check_box_rereference.isChecked(), self._last_do_rereferencing)
+        is_rereference_channels_changed = not are_equal(self.combo_box_rereference.checkedItems(), self._last_rereference_channel)
+        if is_rereference_changed:
+            self._last_do_rereferencing = self.check_box_rereference.isChecked()
+        if is_rereference_channels_changed:
             self._last_rereference_channel = self.combo_box_rereference.checkedItems()
+        if is_rereference_changed or is_rereference_channels_changed:
             self.settings_handler.update_rereference()
 
-        if not are_equal(self.combo_box_channels.checkedItems(), self._last_CAR_except_channels):
+        is_car_changed = not are_equal(self.check_box_car.isChecked(), self._last_do_CAR_filtering)
+        is_car_channels_changed = not are_equal(self.combo_box_channels.checkedItems(), self._last_CAR_except_channels)
+        if is_car_changed:
+            self._last_do_CAR_filtering = self.check_box_car.isChecked()
+        if is_car_channels_changed:
             self._last_CAR_except_channels = self.combo_box_channels.checkedItems()
+        if is_car_changed or is_car_channels_changed:
             self.settings_handler.update_CAR()
 
+        is_baseline_changed = not are_equal(self.check_box_baseline.isChecked(), self._last_do_baseline_correction)
         is_baseline_method_changed = not are_equal(self.combo_box_baseline.currentText(), self._last_baseline_method)
         is_baseline_from_changed = not are_equal(self.spin_box_baseline_from.value(), self._last_baseline_from)
         is_baseline_to_changed = not are_equal(self.spin_box_baseline_to.value(), self._last_baseline_to)
         
+        if is_baseline_changed:
+            self._last_do_baseline_correction = self.check_box_baseline.isChecked()
         if is_baseline_method_changed:
             self._last_baseline_method = self.combo_box_baseline.currentText()
         if is_baseline_from_changed:
@@ -165,7 +199,7 @@ class ProcessingPanel(QFrame):
         if is_baseline_to_changed:
             self._last_baseline_to = self.spin_box_baseline_to.value()
 
-        if is_baseline_method_changed or is_baseline_from_changed or is_baseline_to_changed:
+        if is_baseline_changed or is_baseline_method_changed or is_baseline_from_changed or is_baseline_to_changed:
             self.settings_handler.update_baseline()
 
 

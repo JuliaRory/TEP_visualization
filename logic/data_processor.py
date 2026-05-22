@@ -169,22 +169,23 @@ class DataProcessor(QObject):
         else:
             self._baseline = lambda x: x
 
-    def configure_lowpass(self, enabled=True, freq=250, Fs=5000):
+    def configure_lowpass(self, enabled=True, freq=250, Fs=None):
         if enabled:
-            sos = signal.butter(2, freq/Fs*2, btype='lowpass', output='sos')
-            self._lowpass_filter = lambda x: signal.sosfilt(sos, x, axis=0)
+            Fs = Fs or self.settings.speed.Fs
+            nyquist = Fs / 2
+            normalized_freq = max(
+                np.nextafter(0.0, 1.0),
+                min(freq / nyquist, np.nextafter(1.0, 0.0))
+            )
+            sos = signal.butter(2, normalized_freq, btype='lowpass', output='sos')
+            self._lowpass_filter = lambda x: signal.sosfilt(sos, x, axis=1)
         else:
             self._lowpass_filter = lambda x: x
 
     def configure_rereference(self, enabled=False, channels=None):
         if enabled and channels:
             idx = [self.settings.channels.index(ch) for ch in channels]
-            n_channels = len(self.settings.channels)
-            e_r = np.zeros((n_channels, len(idx)))
-            for i, idc in enumerate(idx):
-                e_r[idc, i] = 1
-            R = np.eye(n_channels) - e_r @ e_r.T / len(idx)
-            self._referef = lambda x: R @ x
+            self._referef = lambda x: x - np.mean(x[idx, :], axis=0, keepdims=True)
         else:
             self._referef = lambda x: x
 
