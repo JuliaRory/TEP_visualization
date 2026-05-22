@@ -75,6 +75,7 @@ class SettingsPanel(QFrame):
         )
         self.button_restart = create_button(text='ОЧИСТИТЬ', disabled=False, parent=self)
                
+        self._update_record_file_tooltips()
 
     # =======================
     # =====   LAYOUT    =====
@@ -132,5 +133,10 @@ class SettingsPanel(QFrame):
     # =====   Логика    =====
     # =======================
 
-    
+    def _update_record_file_tooltips(self):
+        combo = self.combo_box_record_file
+        for i in range(combo.count()):
+            filename = combo.itemText(i)
+            combo.setItemData(i, filename, Qt.ToolTipRole)
+        combo.setToolTip(combo.currentText())
 

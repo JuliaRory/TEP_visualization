@@ -272,6 +272,7 @@ class MainWindow(QWidget):
         # self._settings_panel.button_load.clicked.connect(self._on_button_load_click)
         self._settings_panel.button_next_record_epoch.clicked.connect(self._on_next_record_epoch_button_click)
         self._settings_panel.combo_box_record_file.currentTextChanged.connect(self._on_record_epoch_file_changed)
+        self._settings_panel.combo_box_record_file.currentTextChanged.connect(self._settings_panel.combo_box_record_file.setToolTip)
         self._settings_panel.button_restart.clicked.connect(self._on_restart_button_click)
         self._settings_panel.button_remove_epoch.clicked.connect(self._on_remove_epoch_button_click)
         self._settings_panel.button_show_epoch.clicked.connect(self._on_show_epoch_button_click)
