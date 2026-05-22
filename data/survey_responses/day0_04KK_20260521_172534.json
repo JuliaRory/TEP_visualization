@@ -1,0 +1,24 @@
+{
+  "participant_id": "04KK",
+  "survey_id": "day0",
+  "saved_at": "2026-05-21T17:25:34",
+  "answers": {
+    "task_quality_1": 6,
+    "task_quality_2": 4,
+    "task_quality_3": 3,
+    "task_quality_4": 4,
+    "Real_ability": 6,
+    "SST_ability": 5,
+    "SST_difficulty": 86,
+    "SST_TMS_distraction": 40,
+    "SST_comments": null,
+    "MI_timing_ability": 5,
+    "MI_ability": 67,
+    "MI_vividness": 68,
+    "MI_difficulty": 53,
+    "MI_description": "Представляла сгибание сустава, напряжение в суставе(на пальце), напряжение в мышцеFDI, и пыталась представить всё это вместе.",
+    "TMS_distraction": 30,
+    "TMS_amplitude": 76,
+    "comment": null
+  }
+}

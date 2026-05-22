@@ -1,0 +1,22 @@
+{
+  "participant_id": "E002",
+  "survey_id": "econoMI",
+  "saved_at": "2026-05-20T20:02:14",
+  "answers": {
+    "hands_difficulty": 65,
+    "hands_description": "представляла, чтоэто мои руки и крутила их ипонимала, какя именно это рука",
+    "shapes_difficulty": 33,
+    "shapes_description": "пыталась передвинуть правую фигуру и вставить в левую",
+    "Real_ability": 4,
+    "MI_timing_ability": 4,
+    "MI_ability": 52,
+    "MI_vividness": 60,
+    "MI_difficulty": 33,
+    "MI_description": "я следила за шкалой и в нужный момент старалсь представить свое движение рукой, представляла картинку своей кисти как она лежит а палец разгибается и представляла ощущение напряжения мыщцы и движение ее вперед",
+    "TMS_distraction": 62,
+    "TMS_real": 91,
+    "TMS_MI": 66,
+    "TMS_amplitude": 32,
+    "comment": null
+  }
+}

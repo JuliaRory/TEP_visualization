@@ -1,0 +1,24 @@
+{
+  "participant_id": "da",
+  "survey_id": "econoMI",
+  "saved_at": "2026-05-20T14:50:17",
+  "is_draft": true,
+  "current_page_index": 2,
+  "answers": {
+    "hands_difficulty": 46,
+    "hands_description": "fds",
+    "shapes_difficulty": 64,
+    "shapes_description": "sdf",
+    "Real_ability": null,
+    "MI_timing_ability": null,
+    "MI_ability": null,
+    "MI_vividness": null,
+    "MI_difficulty": null,
+    "MI_description": null,
+    "TMS_distraction": null,
+    "TMS_real": null,
+    "TMS_MI": null,
+    "TMS_amplitude": null,
+    "comment": null
+  }
+}

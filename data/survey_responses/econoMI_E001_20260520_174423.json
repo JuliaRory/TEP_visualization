@@ -1,0 +1,22 @@
+{
+  "participant_id": "E001",
+  "survey_id": "econoMI",
+  "saved_at": "2026-05-20T17:44:23",
+  "answers": {
+    "hands_difficulty": 65,
+    "hands_description": "пытался подстваить мысленно правую руку  данное положение",
+    "shapes_difficulty": 47,
+    "shapes_description": "поворачивал левую фигуру и пытался наложить на правую",
+    "Real_ability": 5,
+    "MI_timing_ability": 4,
+    "MI_ability": 25,
+    "MI_vividness": 14,
+    "MI_difficulty": 14,
+    "MI_description": "воображал как двигаю палец, вспоминал ощущения от движения пальца",
+    "TMS_distraction": 90,
+    "TMS_real": 40,
+    "TMS_MI": 89,
+    "TMS_amplitude": 59,
+    "comment": null
+  }
+}

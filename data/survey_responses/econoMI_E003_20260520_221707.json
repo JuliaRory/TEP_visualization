@@ -1,0 +1,22 @@
+{
+  "participant_id": "E003",
+  "survey_id": "econoMI",
+  "saved_at": "2026-05-20T22:17:07",
+  "answers": {
+    "hands_difficulty": 70,
+    "hands_description": "мысленно представлял одну из своих рук в это форме",
+    "shapes_difficulty": 91,
+    "shapes_description": "мысленно повернуть правую фигуру, чтобы сопоставить её с левой",
+    "Real_ability": 4,
+    "MI_timing_ability": 5,
+    "MI_ability": 54,
+    "MI_vividness": 51,
+    "MI_difficulty": 22,
+    "MI_description": "представление напряжения в мышце",
+    "TMS_distraction": 74,
+    "TMS_real": 14,
+    "TMS_MI": 19,
+    "TMS_amplitude": 50,
+    "comment": null
+  }
+}
