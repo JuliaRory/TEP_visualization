@@ -190,6 +190,7 @@ class MainWindow(QWidget):
                                     settings_dl=self.settings_plot.meps_deeper_look,
                                     init_size=[self._center_plots_width, self._center_meps_height])
         
+        self.settings_plot.overview_panel.butts_plot.MEP.amp = self.settings_plot.single_meps.max_amp_mV
         self._overview_panel = overviewPanel(parent=self,
                                          settings=self.settings_plot.overview_panel, 
                                          Fs=self.settings.speed.Fs,

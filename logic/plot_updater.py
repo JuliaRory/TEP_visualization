@@ -19,7 +19,7 @@ class PlotUpdater:
         self.update_topoteps(processor)
 
         self.update_avg_teps(processor) # ????
-        # self.update_avg_meps(processor)
+        self.update_avg_meps(processor)
 
         self.update_meps(processor)
         
@@ -80,15 +80,15 @@ class PlotUpdater:
             if self.settings.overview_panel.butts_plot.MEP.do_averaging:
                 if not processor.average_mep_data:
                     processor.update_avg_mep(True)
-                processor._ensure_average_functions(which="MEPs")
-                emg = processor.calculate_avg_MEP() # взять все сохранённые эпохи и вернуть усреднённые ТЕР
+                emg, emg_std = processor.calculate_avg_MEP_stats()
 
             else:
                 emg = processor._baseline(processor._epochs[-1][-2:, :] * 1E3)  # вычесть бейзлайн и перевести в мВ
                 emg = np.diff(emg, axis=0).flatten()                            # посчитать разницу каналов
+                emg_std = None
             
             #emg2plot = processor.cut_mep_epoch(emg, self.settings.single_meps.xmin_ms, self.settings.single_meps.xmax_ms)
-            self.overview_panel.figure_MEP.update_MEPs(emg)
+            self.overview_panel.figure_MEP.update_MEPs(emg, spread=emg_std)
 
     def add_mep_deeper_look(self, ui):
         self.mep_deeper_look_window = ui
@@ -156,7 +156,7 @@ class PlotUpdater:
 
         emg = processor._baseline(processor._epochs[n_epoch-1][-2:, :] * 1E3)  # вычесть бейзлайн и перевести в мВ
         emg = np.diff(emg, axis=0).flatten()                            # посчитать разницу каналов
-        self.overview_panel.figure_MEP.update_MEPs(emg)
+        self.overview_panel.figure_MEP.update_MEPs(emg, spread=None)
     
     def set_show_epoch_mode(self, mode):
         self._show_specific_epoch = mode

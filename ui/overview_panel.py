@@ -86,6 +86,16 @@ class overviewPanel(QFrame):
         self.checkbox_average_teps = create_check_box(self.settings.butts_plot.TEP.do_averaging, text="Усреднение", parent=self)
 
         # MEPs 
+        self._spinbox_max_amp_mep = create_spin_box(
+            0.01,
+            1000,
+            self.settings.butts_plot.MEP.amp,
+            data_type="float",
+            decimals=2,
+            step=0.05,
+            parent=self,
+            w=60,
+        )
         self.checkbox_average_meps = create_check_box(self.settings.butts_plot.MEP.do_averaging, text="Усреднение", parent=self)
 
         # Для топоплотов
@@ -134,19 +144,20 @@ class overviewPanel(QFrame):
         self._frame_settings.move(0, settings_pos_y)
 
     def _setup_settings_frame(self):
+        self._max_amp_mep = create_hbox([QLabel("MEP max:", self), self._spinbox_max_amp_mep, QLabel("mV", self)])
         self._max_amp = create_hbox([QLabel("Макс:", self), self._spinbox_max_amp_tep, QLabel(MICROVOLT, self)])
         self._time_range = create_hbox([QLabel("от:   ", self), self._spinbox_min_time,  
                                         QLabel("до:   ", self), self._spinbox_max_time, 
                                         QLabel("мс", self)])
         layout_settings = QVBoxLayout(self._frame_settings)
-        for layout in [self._max_amp,self._time_range]:
+        for layout in [self._max_amp, self._max_amp_mep, self._time_range]:
             layout_settings.addLayout(layout)
         # layout_settings.addWidget(self._button_apply)
         
 
     # --- Сигналы ---
     def _setup_connections(self):
-        for spin_box in [self._spinbox_min_time, self._spinbox_max_time, self._spinbox_max_amp_tep]:
+        for spin_box in [self._spinbox_min_time, self._spinbox_max_time, self._spinbox_max_amp_tep, self._spinbox_max_amp_mep]:
             spin_box.valueChanged.connect(self._update_scale)
         
         self._button_interactive_plot.clicked.connect(self._on_interactive_plot_button_clicked)
@@ -156,9 +167,11 @@ class overviewPanel(QFrame):
         xmax = self._spinbox_max_time.value()
         xmin = self._spinbox_min_time.value()
         ymax = self._spinbox_max_amp_tep.value()
+        ymax_mep = self._spinbox_max_amp_mep.value()
 
+        self.settings.butts_plot.MEP.amp = ymax_mep
         self.figure_TEP.update_axes(xmax, xmin, ymax)
-        self.figure_MEP.update_axes(xmax, xmin, self.settings.butts_plot.MEP.amp, which='MEPs')
+        self.figure_MEP.update_axes(xmax, xmin, ymax_mep, which='MEPs')
 
         
 

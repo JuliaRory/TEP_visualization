@@ -1,0 +1,24 @@
+{
+  "participant_id": "E004",
+  "survey_id": "econoMI",
+  "saved_at": "2026-05-23T18:12:58",
+  "is_draft": true,
+  "current_page_index": 3,
+  "answers": {
+    "hands_difficulty": 89,
+    "hands_description": "В первом раунде мысленно представлял повороты своих кистей, проверял совпадает ли положение. Во втором раунде понял алгоритм: если кисть развернута внутрь то куда смотрит палец = какая рука, если кисть показана с внешней стороны, то положение пальца противоположно руке (палец влево относитльно руки = правая рука и наоборот)",
+    "shapes_difficulty": 38,
+    "shapes_description": "Насколько можно было пытался развернуть одну из фигур и проверить совпадение со второй",
+    "Real_ability": 1,
+    "MI_timing_ability": 1,
+    "MI_ability": 0,
+    "MI_vividness": 0,
+    "MI_difficulty": 0,
+    "MI_description": "авы",
+    "TMS_distraction": null,
+    "TMS_real": null,
+    "TMS_MI": null,
+    "TMS_amplitude": null,
+    "comment": null
+  }
+}

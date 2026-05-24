@@ -1,0 +1,2 @@
+﻿participant_id,survey_id,saved_at,hands_difficulty,hands_description,shapes_difficulty,shapes_description,Real_ability,MI_timing_ability,MI_ability,MI_vividness,MI_difficulty,MI_description,TMS_distraction,TMS_real,TMS_MI,TMS_amplitude,comment
+E005,econoMI,2026-05-23T20:23:57,70,"представлял рукопожатие(мне протягивают ту руку, которой нужно отвечать), если расположена, как собственная, то и так понятно",34,"искал ось симметрии, поворачивал",4,3,31,18,15,Представлял движение в суставах,85,83,73,27,

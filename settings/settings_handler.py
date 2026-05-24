@@ -56,7 +56,7 @@ class SettingsHandler:
             self.data_processor.create_average_functions()
 
         if apply:
-            self._apply(topoteps_draw=True, avg_teps_draw=True)
+            self._apply(topoteps_draw=True, avg_teps_draw=True, avg_meps_draw=True)
 
     # --- Baseline ---
 
@@ -76,7 +76,7 @@ class SettingsHandler:
         )
 
         if apply:
-            self._apply(topoteps_draw=True, avg_teps_draw=True)
+            self._apply(topoteps_draw=True, avg_teps_draw=True, avg_meps_draw=True)
 
     # --- Lowpass ---
 
