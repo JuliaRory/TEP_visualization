@@ -1,0 +1,22 @@
+{
+  "participant_id": "E005",
+  "survey_id": "econoMI",
+  "saved_at": "2026-05-23T20:23:57",
+  "answers": {
+    "hands_difficulty": 70,
+    "hands_description": "представлял рукопожатие(мне протягивают ту руку, которой нужно отвечать), если расположена, как собственная, то и так понятно",
+    "shapes_difficulty": 34,
+    "shapes_description": "искал ось симметрии, поворачивал",
+    "Real_ability": 4,
+    "MI_timing_ability": 3,
+    "MI_ability": 31,
+    "MI_vividness": 18,
+    "MI_difficulty": 15,
+    "MI_description": "Представлял движение в суставах",
+    "TMS_distraction": 85,
+    "TMS_real": 83,
+    "TMS_MI": 73,
+    "TMS_amplitude": 27,
+    "comment": null
+  }
+}

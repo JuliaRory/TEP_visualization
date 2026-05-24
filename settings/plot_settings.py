@@ -44,7 +44,7 @@ class SingleMEPsPlotDeeperLook:
 
 @dataclass
 class MEPBlock:
-    amp: float = 1
+    amp: float = 0.1
     units: str = "mV"
     title: str = "Averaged MEP"
     round: int = 1

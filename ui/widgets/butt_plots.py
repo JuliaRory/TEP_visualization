@@ -102,6 +102,8 @@ class buttPlot(FigureCanvas):
         (color, lw) = ("black", 1.5)
         self._line = Line2D(self._x, y_empty, lw=lw, color=color)
         self._ax.add_line(self._line)
+        self._mep_shadow = None
+        self._mep_spread = None
 
     def update_axes(self, xmax_ms=100, xmin_ms=-20, amp=100, which='TEPs'):
         # self.fig.canvas.restore_region(self._background)  # восстанавливаем чистый фон
@@ -128,12 +130,16 @@ class buttPlot(FigureCanvas):
             pos = np.arange(0, amp + y_tick,  y_tick)         # положительная часть
             y_ticks = np.concatenate([neg, pos]).round(self.settings.round)              # чтобы гарантировать 0
             self._ax.set_yticks(y_ticks)
+            self._ax.set_ylim(-amp, amp)
         
         if hasattr(self, "_lines"):
             for line in self._lines:
                 line.set_visible(False)
         if hasattr(self, "_line"):
             self._line.set_visible(False)
+        if getattr(self, "_mep_shadow", None) is not None:
+            self._mep_shadow.remove()
+            self._mep_shadow = None
 
         self.fig.canvas.draw()
         self._background_clear = self.fig.canvas.copy_from_bbox(self._ax.bbox)
@@ -177,11 +183,28 @@ class buttPlot(FigureCanvas):
 
         self.fig.canvas.blit(self._ax.bbox)
     
-    def update_MEPs(self, meps):
+    def update_MEPs(self, meps, spread=None):
         """Нарисовать новые MEPs"""
         self.fig.canvas.restore_region(self._background)  # восстанавливаем чистый фон
 
+        if getattr(self, "_mep_shadow", None) is not None:
+            self._mep_shadow.remove()
+            self._mep_shadow = None
+
         meps = self._fit_to_x(meps)
+        if spread is not None:
+            spread = self._fit_to_x(spread)
+            self._mep_shadow = self._ax.fill_between(
+                self._x,
+                meps - spread,
+                meps + spread,
+                color="black",
+                alpha=0.16,
+                linewidth=0,
+            )
+            self._ax.draw_artist(self._mep_shadow)
+        self._mep_spread = spread
+
         self._line.set_ydata(meps)
         self._ax.draw_artist(self._line)
 
@@ -196,9 +219,11 @@ class buttPlot(FigureCanvas):
             self.update_TEPs(teps)
         else:
             meps = self._line.get_ydata()
+            spread = getattr(self, "_mep_spread", None)
             if empty:
                 meps = np.full_like(meps, fill_value=np.nan)
-            self.update_MEPs(meps)
+                spread = None
+            self.update_MEPs(meps, spread=spread)
 
     def _fit_to_x(self, data):
         data = np.asarray(data)

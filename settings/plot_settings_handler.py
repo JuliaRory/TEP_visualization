@@ -38,6 +38,7 @@ class PlotSettingsHandler:
         self._setup_connections()
 
         self._update_averaging_teps()
+        self._update_averaging_meps()
     
     def _setup_connections(self):
         self.ui_overview_panel.checkbox_average_teps.toggled.connect(self._update_averaging_teps)

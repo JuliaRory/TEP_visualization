@@ -93,15 +93,17 @@ class DataProcessor(QObject):
             self.updateCounter.emit(self._n_epoch)
 
             if self.average_data or self.average_tep_data:
-                self._ensure_average_functions(which="TEPs")
+                recreated = self._ensure_average_functions(which="TEPs")
                 TEPs2plot = self._transform(epoch[:-2, :] * 1e6)     # without emg channels
-                self.update_average_functions(TEPs2plot)
+                if not recreated:
+                    self.update_average_functions(TEPs2plot)
             
             if self.average_mep_data:
-                self._ensure_average_functions(which="MEPs")
+                recreated = self._ensure_average_functions(which="MEPs")
                 emg = self._baseline(epoch[-2:, :] * 1e3)  # вычесть бейзлайн и перевести в мВ
                 emg = np.diff(emg, axis=0).flatten()                            # посчитать разницу каналов
-                self.update_average_functions(emg, which="MEPs")
+                if not recreated:
+                    self.update_average_functions(emg, which="MEPs")
 
             self.newDataProcessed.emit()        # --> plot_updater
 
@@ -134,7 +136,7 @@ class DataProcessor(QObject):
                     avg_funcs[j].add(ch_data[j])
         else:   # MEPs
             avg_funcs = self.average_functions_mep
-            for j in range(len(avg_funcs)):
+            for j in range(min(len(avg_funcs), len(TEPs))):
                 avg_funcs[j].add(TEPs[j])
 
     def calculate_avg_TEP(self):
@@ -151,6 +153,13 @@ class DataProcessor(QObject):
         self._ensure_average_functions(which="MEPs")
         data_aver = [f.calculate() for f in self.average_functions_mep]
         return np.array(data_aver)
+
+    def calculate_avg_MEP_stats(self):
+        emg_epochs = self._mep_average_window(self.get_emg_epochs())
+        if emg_epochs.size == 0:
+            return np.array([]), np.array([])
+        ddof = 1 if emg_epochs.shape[0] > 1 else 0
+        return np.mean(emg_epochs, axis=0), np.std(emg_epochs, axis=0, ddof=ddof)
 
     # --- Конфигурация фильтров ---
 
@@ -218,9 +227,16 @@ class DataProcessor(QObject):
         return np.array([self._transform(np.array(TEPs[:-2, :] * 1e6, dtype=float)) for TEPs in self._epochs])
     
     def get_emg_epochs(self):
+        if len(self._epochs) == 0:
+            return np.empty((0, self._n_samples))
         epochs = np.array(self._epochs)[:, -2:] * 10**3
         emg_epochs = np.array([np.diff(self._baseline(emg), axis=0).flatten() for emg in epochs])
         return emg_epochs
+
+    def _mep_average_window(self, data):
+        if self._aver_all:
+            return data
+        return data[-self._n_aver_max:]
 
     def create_average_functions(self, which="TEPs"):
         """Создать функции для усреднения TEPs"""
@@ -236,9 +252,10 @@ class DataProcessor(QObject):
                 ]
             else:
                 data = self.get_emg_epochs()
+                n_samples = data.shape[1] if data.ndim == 2 else self._n_samples
                 self.average_functions_mep = [
                     function(data[:, j], self._n_aver_max, self._aver_all)
-                    for j in range(self._n_samples)
+                    for j in range(n_samples)
                 ]
         else:
             if which == 'TEPs':
@@ -248,9 +265,10 @@ class DataProcessor(QObject):
                     for _ in range(len(self.settings.channels))
                 ]
             else:
+                n_samples = self._expected_mep_samples()
                 self.average_functions_mep = [
                         function([], self._n_aver_max, self._aver_all)
-                        for j in range(self._n_samples)
+                        for j in range(n_samples)
                     ]
 
     def _ensure_average_functions(self, which="TEPs"):
@@ -261,13 +279,20 @@ class DataProcessor(QObject):
                 or any(len(avg_funcs) != self._n_samples for avg_funcs in self.average_functions)
             )
         else:
+            n_samples = self._expected_mep_samples()
             needs_create = (
                 not self.average_functions_mep
-                or len(self.average_functions_mep) != self._n_samples
+                or len(self.average_functions_mep) != n_samples
             )
 
         if needs_create:
             self.create_average_functions(which=which)
+        return needs_create
+
+    def _expected_mep_samples(self):
+        if len(self._epochs) == 0:
+            return self._n_samples
+        return int(np.asarray(self._epochs[-1]).shape[-1])
     
     def update_avg_mep(self, do_average):
         self.average_mep_data = do_average
