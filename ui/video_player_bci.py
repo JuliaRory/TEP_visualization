@@ -56,7 +56,13 @@ class StimuliPresentation_BCI(QWidget):
         self._cross_remaining_ms = 0
         self._isi_min_s = 1.5
         self._isi_max_s = 3.0
-        self._stimuli_dur_ms = 5000
+        self._stimuli_dur_ms = self._settings.stimuli_dur
+
+        self._isi_bci_ponk_ms = 1000
+        self._isi_bci_min_ms = self._settings.bci_ponk_isi_min_ms
+        self._isi_bci_max_ms = self._settings.bci_ponk_isi_max_ms
+
+        self._photomark_status = "white"
 
         self._decipher = {"1": "hand", "2": "rest"}
 
@@ -92,6 +98,18 @@ class StimuliPresentation_BCI(QWidget):
         self._stimuli_timer = QTimer(self)
         self._stimuli_timer.setSingleShot(True)
         self._stimuli_timer.timeout.connect(self._stop_stimuli)
+
+        # self._ponk_timer = QTimer(self)
+        # self._ponk_timer.setSingleShot(False)
+        # self._ponk_timer.timeout.connect(self._launch_ponk)
+
+        self._ponk_timer = QTimer(self)
+        self._ponk_timer.setSingleShot(True)
+        self._ponk_timer.timeout.connect(self._ponk_timer_stop)
+
+        self._photomark_timer = QTimer(self)
+        self._photomark_timer.setSingleShot(True)
+        self._photomark_timer.timeout.connect(self._show_marker)        
 
         # self._video_widget = QWidget(self)
         # self._video_widget.setStyleSheet("background-color: black;")
@@ -175,17 +193,27 @@ class StimuliPresentation_BCI(QWidget):
         self._cross_started_at = None
         self._cross_remaining_ms = 0
 
-        if self._next_media is None:
+        # if self._next_media is None:
+        #     print("[VLC player]: stimuli sequence has ended.")
+        #     QTimer.singleShot(2000, self.stimuliFinished.emit)
+        #     self._finished = True
+        #     self._waiting_for_first_frame = False
+        #     self._placeholder_widget.setPixmap(self._final_pic)
+        #     self._placeholder_widget.show()
+        #     self._show_marker()
+        #     return
+        if self._current_index >= len(self.order):
             print("[VLC player]: stimuli sequence has ended.")
             QTimer.singleShot(2000, self.stimuliFinished.emit)
             self._finished = True
-            self._waiting_for_first_frame = False
+            self._ponk_timer.stop()
+            # self._waiting_for_first_frame = False
             self._placeholder_widget.setPixmap(self._final_pic)
             self._placeholder_widget.show()
             self._show_marker()
-            return
 
-        next_stimuli = self._hand_pic if self.order[self._current_index] else self._rest_pic
+            return
+        next_stimuli = self._hand_pic if self.order[self._current_index] == 1 else self._rest_pic
         self._placeholder_widget.setPixmap(next_stimuli)
         self._placeholder_widget.show()
 
@@ -203,7 +231,10 @@ class StimuliPresentation_BCI(QWidget):
         self._stimuli_started_at = None
         self._stimuli_remaining_ms = 0
 
-        self._start_cross_interval(self, self._get_random_isi_ms())
+        self._placeholder_widget.setPixmap(self._intro_pic)
+        self._placeholder_widget.show()
+
+        self._start_cross_interval(self._get_random_isi_ms())
 
 
     def _handle_video_frame_ready(self, playback_token):
@@ -234,14 +265,18 @@ class StimuliPresentation_BCI(QWidget):
         self._isi_max_s = max_s
 
     def _get_random_isi_ms(self):
-        return int(random.uniform(self._isi_min_s, self._isi_max_s) * 1000)
+        isi_min_ms = self._settings.bci_isi_min_ms
+        isi_max_ms = self._settings.bci_isi_max_ms
+        return int(random.uniform(isi_min_ms, isi_max_ms))
 
     def _show_marker(self):
         self._marker_widget.show()
         self._marker_widget.raise_()
+        # print("show")
 
     def _hide_marker(self):
         self._marker_widget.hide()
+        # print("hide")
 
     def _start_cross_interval(self, duration_ms):
         self._cross_remaining_ms = max(0, int(duration_ms))
@@ -252,7 +287,7 @@ class StimuliPresentation_BCI(QWidget):
         self._stimuli_remaining_ms = max(0, int(duration_ms))
         self._stimuli_started_at = time.monotonic()
         self._stimuli_timer.start(self._stimuli_remaining_ms)
-
+    
     def _pause_cross_interval(self):
         if not self._cross_timer.isActive():
             return False
@@ -289,6 +324,22 @@ class StimuliPresentation_BCI(QWidget):
         self._stimuli_started_at = time.monotonic()
         self._stimuli_timer.start(self._stimuli_remaining_ms)
 
+    def _launch_ponk(self):
+        self._hide_marker()
+        self._photomark_timer.start(50)
+    
+    def _get_new_bci_isi(self):
+        # ВРЕМЯ МЕЖДУ ПОНЬКАМИ
+        isi_min_ms = self._settings.bci_ponk_isi_min_ms
+        isi_max_ms = self._settings.bci_ponk_isi_max_ms
+        return 1000 + int(random.uniform(isi_min_ms, isi_max_ms))
+
+    def _ponk_timer_stop(self):
+        self._launch_ponk()
+        new_isi = self._get_new_bci_isi()
+        print("PONK ISI", new_isi)
+        self._ponk_timer.start(new_isi)
+    
     def keyPressEvent(self, event):
         if event.key() == Qt.Key_Space:
             self._on_space_pressed()
@@ -319,6 +370,7 @@ class StimuliPresentation_BCI(QWidget):
     def _on_space_pressed(self):
         if not self._sequence_started:
             print("[VLC player]: start the stimuli presentation.")
+            self._ponk_timer.start(self._get_new_bci_isi())
             self._sequence_started = True
             self.stimuliStarted.emit()
             self._is_paused = False
@@ -333,6 +385,7 @@ class StimuliPresentation_BCI(QWidget):
                 self._pause_stimuli_interval()
             self._is_paused = True
             self.stimuliPaused.emit()
+            self._ponk_timer.stop()
             return
 
         if self._is_paused:
@@ -344,14 +397,16 @@ class StimuliPresentation_BCI(QWidget):
                 # self._player.play()
             self._is_paused = False
             self.stimuliPaused.emit()
+            self._ponk_timer.start(self._get_new_bci_isi())
 
     def pause_video(self):
         self._on_space_pressed()
 
     def restart_sequence(self):
         print("[VLC player]: restart stimuli presentation.")
-        self._player.stop()
+        # self._player.stop()
 
+        self._ponk_timer.stop()
         self._is_paused = False
         self._sequence_started = False
         self._stopped = False
@@ -385,6 +440,7 @@ class StimuliPresentation_BCI(QWidget):
         self._show_marker()
 
         self._stimuli_timer.stop()
+        self._ponk_timer.stop()
         # self._player.stop()
         # self._player.release()
         # self._instance.release()

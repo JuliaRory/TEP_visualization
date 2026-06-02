@@ -89,12 +89,13 @@ class StimuliSettings:
     ])
     rest_video_selected: List[str] = field(default_factory=lambda: ["rest1500_tms_0ms_bar"])
     
+    stimuli_bci_filename: str = "resources/bci_stimuli.json"
     hand_pic: str = r"resources/bci/hand_proba_full.png"
     rest_pic: str = r"resources/bci/rest.png"
     background_pic: str = r"resources/bci/background.png"
     stimuli_dur: int = 5000
-    bci_isi_min_ms: int = 1000 
-    bci_isi_max_ms: int = 1500
+    bci_isi_min_ms: int = 500 
+    bci_isi_max_ms: int = 1000
     bci_ponk_isi_max_ms: int = 500
     bci_ponk_isi_min_ms: int = 200
 

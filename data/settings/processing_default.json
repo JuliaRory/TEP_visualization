@@ -135,7 +135,7 @@
         "use_yaw_angle": false,
         "use_power": true,
         "use_comments": true,
-        "number": "09",
+        "number": "00",
         "subject": "09TI",
         "spot": "SMA",
         "coil": "",
@@ -176,7 +176,16 @@
         ],
         "rest_video_selected": [
             "rest1500_tms_0ms_bar"
-        ]
+        ],
+        "stimuli_bci_filename": "resources/bci_stimuli.json",
+        "hand_pic": "resources/bci/hand_proba_full.png",
+        "rest_pic": "resources/bci/rest.png",
+        "background_pic": "resources/bci/background.png",
+        "stimuli_dur": 5000,
+        "bci_isi_min_ms": 1000,
+        "bci_isi_max_ms": 1500,
+        "bci_ponk_isi_max_ms": 500,
+        "bci_ponk_isi_min_ms": 200
     },
     "layout": {
         "horizontal_ratios": [

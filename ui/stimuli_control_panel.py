@@ -9,6 +9,7 @@ from utils.ui_helpers import create_button, create_spin_box, create_check_box, c
 from utils.layout_utils import create_hbox, create_vbox
 
 from .video_player import StimuliPresentation_one_by_one
+from .video_player_bci import StimuliPresentation_BCI
 from .stimuli_window import StimuliCreation
 from ui.widgets.slider_with_labels import VerticalSliderWithLabel, HorizontalSliderWithLabel
 from .audio_player import AudioPlayer
@@ -90,6 +91,8 @@ class StimuliControlPanel(QFrame):
         create_shortcut("S+Up", self._up_stimuli_volume, parent=self.parent)
         create_shortcut("S+Down", self._down_stimuli_volume, parent=self.parent)
 
+        self.button_bci_stimuli = create_button(text="Запуск BCI", disabled=False, parent=self)
+
     def _setup_layout(self):
         layout_stimuli_creation = create_vbox([QLabel("СТИМУЛЫ", self), self.button_create_stimuli])
         layout_stimuli = create_hbox([self.combo_box_stimuli, self._button_update_stimuli])
@@ -112,6 +115,7 @@ class StimuliControlPanel(QFrame):
         layout_params.addLayout(layout_nvx)
         layout_params.addLayout(layout_stimuli_launch)
         layout_params.addLayout(layout_stimuli_control)
+        layout_params.addWidget(self.button_bci_stimuli)
         layout_params.addWidget(self.label_stimuli_idx)
 
         layout_center = QHBoxLayout()
@@ -149,6 +153,8 @@ class StimuliControlPanel(QFrame):
         self.combo_box_white_noise.currentTextChanged[str].connect(self._change_audio_filename)
         self.combo_box_rest_video.textChanged.connect(self._on_change_rest_video_variants)
 
+        self.button_bci_stimuli.clicked.connect(self._on_bci_stimmuli_button_click)
+
     def _update_connections(self):
         self._player_window.stimuliStarted.connect(self._on_start_stimuli)
         self._player_window.stimuliPaused.connect(self._change_button_pause_stimuli_text)
@@ -163,6 +169,32 @@ class StimuliControlPanel(QFrame):
     def _on_create_stimuli_button_click(self):
         self._create_stimuli_window = StimuliCreation()
         self._create_stimuli_window.show()
+
+    def _on_bci_stimmuli_button_click(self):
+        pw = getattr(self, "_player_window", None)
+        if isinstance(pw, QWidget) and not pw.isHidden() and not self._restart_stimuli:
+            self.button_stimuli.setText("Запуск")
+            self.button_stimuli_restart.setEnabled(True)
+            self._player_window.finish()
+        else:
+            self._player_window = StimuliPresentation_BCI(
+                    monitor=self.spin_box_monitor.value(),
+                    volume=self.stimuli_volume_slider.slider.value(),
+                    rest_stimulus_variants=self.settings.rest_video_selected,
+                    settings=self.settings
+                )
+            self._player_window.set_isi_range(self.settings.isi_min_s, self.settings.isi_max_s)
+            self._player_window.show()
+            self._player_window.raise_()
+
+            self._update_connections()
+
+            self._player_window.set_rest_stimulus_variants(self.settings.rest_video_selected)
+            seq_name = "0"  # self.combo_box_stimuli.currentText()
+            sequence = self._get_sequence_bci(seq_name)
+            self._player_window.set_sequence(sequence, seq_name)
+
+            self._player_window.restart_sequence()
 
     def _on_stimuli_button_click(self):
         pw = getattr(self, "_player_window", None)
@@ -351,6 +383,17 @@ class StimuliControlPanel(QFrame):
             return None
         try:
             with open(self.settings.stimuli_filename, "r", encoding="utf-8") as f:
+                data = json.load(f)
+        except (FileNotFoundError, json.JSONDecodeError):
+            data = {}
+
+        return data.get(seq_name)
+    
+    def _get_sequence_bci(self, seq_name):
+        if not seq_name:
+            return None
+        try:
+            with open(self.settings.stimuli_bci_filename, "r", encoding="utf-8") as f:
                 data = json.load(f)
         except (FileNotFoundError, json.JSONDecodeError):
             data = {}
