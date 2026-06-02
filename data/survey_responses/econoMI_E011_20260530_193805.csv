@@ -1,0 +1,2 @@
+﻿participant_id,survey_id,saved_at,hands_difficulty,hands_description,shapes_difficulty,shapes_description,Real_ability,MI_timing_ability,MI_ability,MI_vividness,MI_difficulty,MI_description,TMS_distraction,TMS_real,TMS_MI,TMS_amplitude,comment
+E011,econoMI,2026-05-30T19:38:05,98,По расположению правого пальца на ладони/тыле,54,поворот по углу и сопоставление,6,5,52,45,21,Представлял нагрузку на фалангу пальца,54,50,79,70,"Уставал/засыпал со временем, чем дальше тем сильнее"

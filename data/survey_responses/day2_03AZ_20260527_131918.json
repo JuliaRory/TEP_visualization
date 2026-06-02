@@ -1,0 +1,25 @@
+{
+  "participant_id": "03AZ",
+  "survey_id": "day2",
+  "saved_at": "2026-05-27T13:19:18",
+  "answers": {
+    "task_quality_1": 5,
+    "task_quality_2": 3,
+    "task_quality_3": 2,
+    "task_quality_4": 2,
+    "Real_SST_ability": 5,
+    "SST_ability": 6,
+    "SST_difficulty": 65,
+    "SST_TMS_distraction": 18,
+    "SST_comments": null,
+    "Real_timing_ability": 5,
+    "MI_timing_ability": 5,
+    "MI_ability": 61,
+    "MI_vividness": 57,
+    "MI_difficulty": 35,
+    "MI_description": "Проигрывала в голове ощущения движения в сустсавах, костно-мышечные чувства.",
+    "TMS_distraction": 1,
+    "TMS_amplitude": 67,
+    "comment": null
+  }
+}

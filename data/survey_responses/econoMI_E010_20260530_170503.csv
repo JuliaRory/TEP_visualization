@@ -1,0 +1,2 @@
+﻿participant_id,survey_id,saved_at,hands_difficulty,hands_description,shapes_difficulty,shapes_description,Real_ability,MI_timing_ability,MI_ability,MI_vividness,MI_difficulty,MI_description,TMS_distraction,TMS_real,TMS_MI,TMS_amplitude,comment
+E010,econoMI,2026-05-30T17:05:03,90,Смотрел на большой палец и/или представлял свои в голове,44,"Пытался прокрутить фигыру в голове или заметить, что одни и те же части смотрят в разные стороны",5,3,23,24,24,"Пытался напрячь мышцу, удерживая само движение",8,50,60,65,

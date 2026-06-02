@@ -1,0 +1,22 @@
+{
+  "participant_id": "E007",
+  "survey_id": "econoMI",
+  "saved_at": "2026-06-01T01:48:39",
+  "answers": {
+    "hands_difficulty": 96,
+    "hands_description": "До эксперимента проходил игру, где мысленно представлял руку на себе, после выстроил алгоритм, где определял руку по направлению большого пальца в зависимости от тыльной или лицевой стороны ладони.",
+    "shapes_difficulty": 45,
+    "shapes_description": "Мысленно поворачивая, где-то обращал внимание на глубокие вырезы фигур, где-то на углы.",
+    "Real_ability": 5,
+    "MI_timing_ability": 3,
+    "MI_ability": 0,
+    "MI_vividness": 0,
+    "MI_difficulty": 0,
+    "MI_description": "Мысленно старался посылать сигнал, после этого представлял как бы он подействовал",
+    "TMS_distraction": 0,
+    "TMS_real": 0,
+    "TMS_MI": 0,
+    "TMS_amplitude": 0,
+    "comment": null
+  }
+}

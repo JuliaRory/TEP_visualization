@@ -1,0 +1,22 @@
+{
+  "participant_id": "E011",
+  "survey_id": "econoMI",
+  "saved_at": "2026-05-30T19:38:05",
+  "answers": {
+    "hands_difficulty": 98,
+    "hands_description": "По расположению правого пальца на ладони/тыле",
+    "shapes_difficulty": 54,
+    "shapes_description": "поворот по углу и сопоставление",
+    "Real_ability": 6,
+    "MI_timing_ability": 5,
+    "MI_ability": 52,
+    "MI_vividness": 45,
+    "MI_difficulty": 21,
+    "MI_description": "Представлял нагрузку на фалангу пальца",
+    "TMS_distraction": 54,
+    "TMS_real": 50,
+    "TMS_MI": 79,
+    "TMS_amplitude": 70,
+    "comment": "Уставал/засыпал со временем, чем дальше тем сильнее"
+  }
+}

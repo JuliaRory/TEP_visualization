@@ -1,0 +1,20 @@
+{
+  "participant_id": "09TI",
+  "survey_id": "day1",
+  "saved_at": "2026-06-01T21:07:19",
+  "answers": {
+    "task_quality_1": 3,
+    "task_quality_2": 3,
+    "task_quality_3": 3,
+    "task_quality_4": 4,
+    "Real_timing_ability": 6,
+    "MI_timing_ability": 5,
+    "MI_ability": 82,
+    "MI_vividness": 76,
+    "MI_difficulty": 39,
+    "MI_description": "Представление движениея мышц в двух фалангах, представление ощущения давления на подушку пальца",
+    "TMS_distraction": 5,
+    "TMS_amplitude": 60,
+    "comment": "Наушники и звук усыпляют и ухудшают реакцию. Я несколько раз как будто бы засыпала. Но это не точно, но мне так показалось."
+  }
+}

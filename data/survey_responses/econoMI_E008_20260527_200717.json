@@ -1,0 +1,22 @@
+{
+  "participant_id": "E008",
+  "survey_id": "econoMI",
+  "saved_at": "2026-05-27T20:07:17",
+  "answers": {
+    "hands_difficulty": 77,
+    "hands_description": "Представлял рандомную свою руку в положении, заданном на картинке",
+    "shapes_difficulty": 46,
+    "shapes_description": "поворачивал правую фигуру так, чтобы она соответсвовала положению левой, если не одинаковые - отраженные",
+    "Real_ability": 3,
+    "MI_timing_ability": 4,
+    "MI_ability": 43,
+    "MI_vividness": 30,
+    "MI_difficulty": 61,
+    "MI_description": "Вспоминал ощущения в указательном пальце, при сокращении мышцы FDI, трение кожи складок указательного пальца. В уме говорил да или сейчас.",
+    "TMS_distraction": 28,
+    "TMS_real": 50,
+    "TMS_MI": 50,
+    "TMS_amplitude": 50,
+    "comment": null
+  }
+}

@@ -1,0 +1,25 @@
+{
+  "participant_id": "09TI",
+  "survey_id": "day2",
+  "saved_at": "2026-06-02T21:39:55",
+  "answers": {
+    "task_quality_1": 2,
+    "task_quality_2": 7,
+    "task_quality_3": 2,
+    "task_quality_4": 2,
+    "Real_SST_ability": 5,
+    "SST_ability": 6,
+    "SST_difficulty": 92,
+    "SST_TMS_distraction": 50,
+    "SST_comments": "В наушниках я засыпаю.",
+    "Real_timing_ability": 5,
+    "MI_timing_ability": 5,
+    "MI_ability": 67,
+    "MI_vividness": 64,
+    "MI_difficulty": 26,
+    "MI_description": "то же что и в предыдущий день",
+    "TMS_distraction": 0,
+    "TMS_amplitude": 50,
+    "comment": null
+  }
+}

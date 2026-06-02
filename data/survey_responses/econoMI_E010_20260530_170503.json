@@ -1,0 +1,22 @@
+{
+  "participant_id": "E010",
+  "survey_id": "econoMI",
+  "saved_at": "2026-05-30T17:05:03",
+  "answers": {
+    "hands_difficulty": 90,
+    "hands_description": "Смотрел на большой палец и/или представлял свои в голове",
+    "shapes_difficulty": 44,
+    "shapes_description": "Пытался прокрутить фигыру в голове или заметить, что одни и те же части смотрят в разные стороны",
+    "Real_ability": 5,
+    "MI_timing_ability": 3,
+    "MI_ability": 23,
+    "MI_vividness": 24,
+    "MI_difficulty": 24,
+    "MI_description": "Пытался напрячь мышцу, удерживая само движение",
+    "TMS_distraction": 8,
+    "TMS_real": 50,
+    "TMS_MI": 60,
+    "TMS_amplitude": 65,
+    "comment": null
+  }
+}

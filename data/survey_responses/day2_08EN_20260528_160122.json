@@ -1,0 +1,25 @@
+{
+  "participant_id": "08EN",
+  "survey_id": "day2",
+  "saved_at": "2026-05-28T16:01:22",
+  "answers": {
+    "task_quality_1": 4,
+    "task_quality_2": 3,
+    "task_quality_3": 3,
+    "task_quality_4": 3,
+    "Real_SST_ability": 4,
+    "SST_ability": 5,
+    "SST_difficulty": 65,
+    "SST_TMS_distraction": 50,
+    "SST_comments": null,
+    "Real_timing_ability": 4,
+    "MI_timing_ability": 5,
+    "MI_ability": 67,
+    "MI_vividness": 68,
+    "MI_difficulty": 33,
+    "MI_description": "Припоминание содружественных движению костно-мышечных систем",
+    "TMS_distraction": 18,
+    "TMS_amplitude": 96,
+    "comment": null
+  }
+}

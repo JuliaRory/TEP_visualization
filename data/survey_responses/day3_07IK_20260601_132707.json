@@ -1,0 +1,22 @@
+{
+  "participant_id": "07IK",
+  "survey_id": "day3",
+  "saved_at": "2026-06-01T13:27:07",
+  "answers": {
+    "task_quality_1": 7,
+    "task_quality_2": 6,
+    "task_quality_3": 6,
+    "task_quality_4": 4,
+    "task_quality_5": 4,
+    "task_quality_6": 6,
+    "Real_SST_ability": 7,
+    "SST_ability": 6,
+    "SST_difficulty": 85,
+    "SST_comments": "опять обратил внимание, что я чувствовал когда ТМС бил синхронно - усилиение движения, когда запаздывание - ампилтуда движений была меньше.",
+    "TMS_distraction": 9,
+    "SST_TMS_distraction": 41,
+    "left_TMS_distraction": 63,
+    "foot_TMS_distraction": 57,
+    "comment": null
+  }
+}
