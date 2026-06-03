@@ -1,5 +1,7 @@
 ﻿import numpy as np
 
+from scipy.ndimage import median_filter
+
 class PlotUpdater:
     def __init__(self, topo_panel, overview_panel, meps_panel, settings):
         """
@@ -67,7 +69,7 @@ class PlotUpdater:
             return
 
         if not self._show_specific_epoch:
-            emg = self._mep_from_epoch(processor, processor._epochs[-1])
+            emg = self._mep_from_epoch(processor, processor._epochs[-1], self.settings.single_meps)
             emg2plot = processor.cut_mep_epoch(emg, self.settings.single_meps.xmin_ms, self.settings.single_meps.xmax_ms)
 
             self.meps_panel.figure.update_emg(emg2plot)
@@ -108,7 +110,7 @@ class PlotUpdater:
             return
 
         settings = self.mep_deeper_look_window.settings
-        emg = self._mep_from_epoch(processor, processor._epochs[-1])
+        emg = self._mep_from_epoch(processor, processor._epochs[-1], settings)
         emg2plot = processor.cut_mep_epoch(emg, settings.xmin_ms, settings.xmax_ms)
 
         # self.mep_deeper_look_window.update_emg(emg2plot)
@@ -132,13 +134,39 @@ class PlotUpdater:
 
         n_plots = max(1, int(getattr(settings, "n_plots", 1)))
         for epoch in processor._epochs[-n_plots:]:
-            emg = self._mep_from_epoch(processor, epoch)
+            emg = self._mep_from_epoch(processor, epoch, settings)
             emg2plot = processor.cut_mep_epoch(emg, settings.xmin_ms, settings.xmax_ms)
             ui.figure.update_emg(emg2plot)
 
-    def _mep_from_epoch(self, processor, epoch):
+    def _mep_from_epoch(self, processor, epoch, settings=None):
         emg = processor._baseline(epoch[-2:, :] * 1E3)  # вычесть бейзлайн и перевести в мВ
-        return np.diff(emg, axis=0).flatten()           # посчитать разницу каналов
+        emg = np.diff(emg, axis=0).flatten()           # посчитать разницу каналов
+        return self._remove_mep_slow_trend(processor, emg, settings)
+
+    def _remove_mep_slow_trend(self, processor, emg, settings):
+        if settings is None or not getattr(settings, "remove_slow_trend", True):
+            return emg
+
+        emg = np.asarray(emg, dtype=float)
+        if emg.size < 3:
+            return emg
+
+        speed = getattr(getattr(processor, "settings", None), "speed", None)
+        fs = float(getattr(speed, "Fs", 0) or 0)
+        if fs <= 0:
+            return emg
+
+        window_ms = max(float(getattr(settings, "trend_window_ms", 100.0)), 1000.0 / fs * 3)
+        kernel = max(3, int(round(window_ms / 1000.0 * fs)))
+        if kernel % 2 == 0:
+            kernel += 1
+        if kernel >= emg.size:
+            kernel = emg.size - 1 if emg.size % 2 == 0 else emg.size
+        if kernel < 3:
+            return emg
+
+        trend = median_filter(emg, size=kernel, mode="nearest")
+        return emg - trend
     
     def clear_plots(self):
         self.topo_panel.figure.refresh_plot()

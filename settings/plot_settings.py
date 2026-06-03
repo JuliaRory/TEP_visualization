@@ -29,6 +29,8 @@ class SingleMEPsPlot:
     amp_end_ms: int = 40
     thr: float = .05
     n_plots_thr: int = 5
+    remove_slow_trend: bool = True
+    trend_window_ms: float = 100.0
 
 @dataclass
 class SingleMEPsPlotDeeperLook:
@@ -41,6 +43,8 @@ class SingleMEPsPlotDeeperLook:
     amp_end_ms: int = 40
     thr: float = .05
     n_plots_thr: int = 10
+    remove_slow_trend: bool = True
+    trend_window_ms: float = 100.0
 
 @dataclass
 class MEPBlock:

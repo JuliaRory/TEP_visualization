@@ -1,5 +1,5 @@
 from PyQt5.QtCore import Qt, pyqtSignal
-from PyQt5.QtWidgets import QWidget, QGridLayout, QLabel,  QFrame,  QVBoxLayout
+from PyQt5.QtWidgets import QCheckBox, QWidget, QGridLayout, QLabel,  QFrame,  QVBoxLayout
 
 from utils.ui_helpers import create_spin_box, create_button
 from utils.layout_utils import create_hbox
@@ -94,6 +94,9 @@ class MEPsDeeperLook(QWidget):
         self._spinbox_amp_end = create_spin_box(-300, 500, self.settings.amp_end_ms, parent=self._frame_mep_settings, w=50)
         self._amp_end = create_hbox([label2, self._spinbox_amp_end, label3])
 
+        self._check_remove_trend = QCheckBox("Remove slow trend", self._frame_mep_settings)
+        self._check_remove_trend.setChecked(bool(getattr(self.settings, "remove_slow_trend", True)))
+
         self._button_apply = create_button('Применить', disabled=False, parent=self._frame_mep_settings, w=150)
         
     def _setup_layout(self):
@@ -150,6 +153,7 @@ class MEPsDeeperLook(QWidget):
         self.layout_settings = QVBoxLayout(self._frame_mep_settings)
         for layout in [self._max_amp, self._n_plots, self._time_range_min, self._time_range_max, self._amp_start, self._amp_end]:
             self.layout_settings.addLayout(layout)
+        self.layout_settings.addWidget(self._check_remove_trend)
         self.layout_settings.addWidget(self._button_apply)
 
         self.layout_settings.addStretch()
@@ -163,6 +167,7 @@ class MEPsDeeperLook(QWidget):
         self.spinbox_thr.valueChanged.connect(self._on_threshold_changed)
         self.spinbox_thr_n_plots.valueChanged.connect(self._on_threshold_changed)
         self._button_apply.clicked.connect(self._apply_mep_settings)
+        self._check_remove_trend.stateChanged.connect(self._on_remove_trend_changed)
 
     def _on_change_amp_counter(self, value):
         self._label_thr.setText(f"Выше порога: {value}/{self.settings.n_plots_thr}")
@@ -171,6 +176,10 @@ class MEPsDeeperLook(QWidget):
         self.settings.thr = self.spinbox_thr.value()
         self.settings.n_plots_thr = self._coerce_threshold_window(self.spinbox_thr_n_plots.value())
         self.figure.emit_threshold_count()
+
+    def _on_remove_trend_changed(self, _state):
+        self.settings.remove_slow_trend = self._check_remove_trend.isChecked()
+        self.settingsChanged.emit()
 
     def _apply_mep_settings(self):
         xmin = self._spinbox_min_time.value()
@@ -197,6 +206,7 @@ class MEPsDeeperLook(QWidget):
         self.settings.amp_end_ms = amp_end
         self.settings.thr = self.spinbox_thr.value()
         self.settings.n_plots_thr = self._coerce_threshold_window(self.spinbox_thr_n_plots.value())
+        self.settings.remove_slow_trend = self._check_remove_trend.isChecked()
 
         self.figure.titles_label = [f"# {i+1}" for i in range(self.settings.n_plots)]
         self.figure.rebuild_from_settings(reset_history=True)

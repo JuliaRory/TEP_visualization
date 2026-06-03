@@ -11,6 +11,7 @@ from utils.layout_utils import create_hbox, create_vbox
 from .video_player import StimuliPresentation_one_by_one
 from .video_player_bci import StimuliPresentation_BCI
 from .stimuli_window import StimuliCreation
+from .widgets.bci_mep_bins_window import BCIMEPDelayWindow
 from ui.widgets.slider_with_labels import VerticalSliderWithLabel, HorizontalSliderWithLabel
 from .audio_player import AudioPlayer
 
@@ -92,6 +93,7 @@ class StimuliControlPanel(QFrame):
         create_shortcut("S+Down", self._down_stimuli_volume, parent=self.parent)
 
         self.button_bci_stimuli = create_button(text="Запуск BCI", disabled=False, parent=self)
+        self.button_bci_mep_bins = create_button(text="MEP bins", disabled=False, parent=self)
 
     def _setup_layout(self):
         layout_stimuli_creation = create_vbox([QLabel("СТИМУЛЫ", self), self.button_create_stimuli])
@@ -116,6 +118,7 @@ class StimuliControlPanel(QFrame):
         layout_params.addLayout(layout_stimuli_launch)
         layout_params.addLayout(layout_stimuli_control)
         layout_params.addWidget(self.button_bci_stimuli)
+        layout_params.addWidget(self.button_bci_mep_bins)
         layout_params.addWidget(self.label_stimuli_idx)
 
         layout_center = QHBoxLayout()
@@ -154,6 +157,7 @@ class StimuliControlPanel(QFrame):
         self.combo_box_rest_video.textChanged.connect(self._on_change_rest_video_variants)
 
         self.button_bci_stimuli.clicked.connect(self._on_bci_stimmuli_button_click)
+        self.button_bci_mep_bins.clicked.connect(self._on_bci_mep_bins_button_click)
 
     def _update_connections(self):
         self._player_window.stimuliStarted.connect(self._on_start_stimuli)
@@ -195,6 +199,31 @@ class StimuliControlPanel(QFrame):
             self._player_window.set_sequence(sequence, seq_name)
 
             self._player_window.restart_sequence()
+
+    def _on_bci_mep_bins_button_click(self):
+        if (
+            getattr(self, "_bci_mep_bins_window", None) is not None
+            and self._bci_mep_bins_window.isVisible()
+        ):
+            self._bci_mep_bins_window.raise_()
+            self._bci_mep_bins_window.activateWindow()
+            return
+
+        root_settings = getattr(self.parent, "settings", None)
+        speed_settings = getattr(root_settings, "speed", None)
+        self._bci_mep_bins_window = BCIMEPDelayWindow(self.settings, speed_settings=speed_settings)
+        self._bci_mep_bins_window.show()
+        self._bci_mep_bins_window.raise_()
+
+        processor = getattr(self.parent, "_data_processor", None)
+        if processor is not None:
+            self.update_bci_mep_epoch(processor)
+
+    def update_bci_mep_epoch(self, processor):
+        window = getattr(self, "_bci_mep_bins_window", None)
+        if window is None or not window.isVisible():
+            return
+        window.update_from_processor(processor)
 
     def _on_stimuli_button_click(self):
         pw = getattr(self, "_player_window", None)

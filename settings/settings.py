@@ -90,7 +90,7 @@ class StimuliSettings:
     rest_video_selected: List[str] = field(default_factory=lambda: ["rest1500_tms_0ms_bar"])
     
     stimuli_bci_filename: str = "resources/bci_stimuli.json"
-    hand_pic: str = r"resources/bci/hand_proba_full.png"
+    hand_pic: str = r"resources/bci/FDI_r_style1_base.png"
     rest_pic: str = r"resources/bci/rest.png"
     background_pic: str = r"resources/bci/background.png"
     stimuli_dur: int = 5000
@@ -98,6 +98,20 @@ class StimuliSettings:
     bci_isi_max_ms: int = 1000
     bci_ponk_isi_max_ms: int = 500
     bci_ponk_isi_min_ms: int = 200
+    bci_mep_bins: List[dict] = field(default_factory=lambda: [
+        {"name": "-400", "from_ms": -550, "to_ms": -250},
+        {"name": "-200", "from_ms": -250, "to_ms": -150},
+        {"name": "-100", "from_ms": -150, "to_ms": -75},
+        {"name": "-50", "from_ms": -75, "to_ms": 25},
+        {"name": "0", "from_ms": -25, "to_ms": 25},
+    ])
+    bci_mep_threshold: float = 4.0
+    bci_mep_threshold_scale: int = -9
+    bci_mep_plot_ymax_mV: float = 0.5
+    bci_mep_tkeo_ymax: float = 1.0
+    bci_mep_tkeo_scale: int = -8
+    bci_mep_remove_trend: bool = True
+    bci_mep_trend_window_ms: float = 100.0
 
 # --- Layout ---
 

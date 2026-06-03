@@ -178,14 +178,48 @@
             "rest1500_tms_0ms_bar"
         ],
         "stimuli_bci_filename": "resources/bci_stimuli.json",
-        "hand_pic": "resources/bci/hand_proba_full.png",
+        "hand_pic": "resources/bci/FDI_r_style1_base.png",
         "rest_pic": "resources/bci/rest.png",
         "background_pic": "resources/bci/background.png",
         "stimuli_dur": 5000,
         "bci_isi_min_ms": 1000,
         "bci_isi_max_ms": 1500,
         "bci_ponk_isi_max_ms": 500,
-        "bci_ponk_isi_min_ms": 200
+        "bci_ponk_isi_min_ms": 200,
+        "bci_mep_bins": [
+            {
+                "name": "-400",
+                "from_ms": -550,
+                "to_ms": -250
+            },
+            {
+                "name": "-200",
+                "from_ms": -250,
+                "to_ms": -150
+            },
+            {
+                "name": "-100",
+                "from_ms": -150,
+                "to_ms": -75
+            },
+            {
+                "name": "-50",
+                "from_ms": -75,
+                "to_ms": -25
+            },
+            {
+                "name": "0",
+                "from_ms": -25,
+                "to_ms": 25
+            }
+        ],
+        "bci_mep_threshold": 6.000000000000007,
+        "bci_mep_threshold_scale": -9,
+        "bci_mep_plot_ymax_mV": 0.3,
+        "bci_mep_tkeo_ymax": 1.0,
+        "bci_mep_tkeo_scale": -8,
+        "bci_mep_remove_trend": true,
+        "bci_mep_trend_window_ms": 100.0
     },
     "layout": {
         "horizontal_ratios": [

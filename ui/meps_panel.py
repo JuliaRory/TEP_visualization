@@ -1,4 +1,4 @@
-from PyQt5.QtWidgets import QFrame,  QHBoxLayout, QLabel,  QSplitter, QVBoxLayout, QSizePolicy
+from PyQt5.QtWidgets import QCheckBox, QFrame,  QHBoxLayout, QLabel,  QSplitter, QVBoxLayout, QSizePolicy
 from PyQt5.QtCore import Qt, pyqtSignal
 
 from utils.ui_helpers import  create_button
@@ -15,6 +15,7 @@ class MEPsPanel(QFrame):
     deeperLookActivate = pyqtSignal()
     movementDetectionActivate = pyqtSignal()
     conditionAnalysisActivate = pyqtSignal()
+    processingChanged = pyqtSignal()
     def __init__(self, parent=None,   Fs=5000, settings=None, settings_dl=None, init_size=[600, 800]):
         super().__init__(parent)
         """Внешний вид виджета"""
@@ -68,12 +69,15 @@ class MEPsPanel(QFrame):
         self._button_deeper_look = create_button("MEP threshold", parent=self, w=100)
         self._button_movement_detection = create_button("MEP delays", parent=self, w=100)
         self._button_condition_analysis = create_button("MEP conditions", parent=self, w=120)
+        self._check_remove_trend = QCheckBox("Remove slow trend", self)
+        self._check_remove_trend.setChecked(bool(getattr(self.settings, "remove_slow_trend", True)))
 
     # --- Layout ---
     def _setup_layout(self):
         layout_settings = QVBoxLayout(self._frame_settings)
         layout_settings.addWidget(self._label)
         layout_settings.addWidget(self._label_counter)
+        layout_settings.addWidget(self._check_remove_trend)
         layout_settings.addWidget(self._button_deeper_look)
         layout_settings.addWidget(self._button_movement_detection)
         layout_settings.addWidget(self._button_condition_analysis)
@@ -107,12 +111,17 @@ class MEPsPanel(QFrame):
         self._button_deeper_look.clicked.connect(self._on_deeper_look_button_clicked)
         self._button_movement_detection.clicked.connect(self.movementDetectionActivate.emit)
         self._button_condition_analysis.clicked.connect(self.conditionAnalysisActivate.emit)
+        self._check_remove_trend.stateChanged.connect(self._on_remove_trend_changed)
     
     def _on_change_amp_counter(self, value):
         self._label_counter.setText(self._counter_text(value))
 
     def _counter_text(self, value):
         return f"≥ {self.settings.thr:g} mV:\n    {value} / {self.settings.n_plots_thr}.  "
+
+    def _on_remove_trend_changed(self, _state):
+        self.settings.remove_slow_trend = self._check_remove_trend.isChecked()
+        self.processingChanged.emit()
 
     def _on_deeper_look_button_clicked(self):
         if hasattr(self, "_deeper_look_window") and self._deeper_look_window.isVisible():

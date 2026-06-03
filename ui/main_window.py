@@ -255,6 +255,7 @@ class MainWindow(QWidget):
         self._input_stream.dataReady.connect(self._epoch_record_buffer.add_epoch)
         self._input_stream.dataReady.connect(lambda epoch, ts: self._data_processor.add_epoch(epoch, ts))
         self._data_processor.newDataProcessed.connect(lambda: self._plot_updater.update_plots(self._data_processor))
+        self._data_processor.newDataProcessed.connect(lambda: self._stimuli_control_panel.update_bci_mep_epoch(self._data_processor))
 
         # отрисовка изменений в количестве эпох
         self._data_processor.updateCounter.connect(lambda n: self._update_label_counter(n))
@@ -263,6 +264,7 @@ class MainWindow(QWidget):
         self._meps_panel.deeperLookActivate.connect(lambda: self._plot_updater.add_mep_deeper_look(self._meps_panel._deeper_look_window))
         self._meps_panel.movementDetectionActivate.connect(self._on_mep_movement_detection_button_click)
         self._meps_panel.conditionAnalysisActivate.connect(self._on_mep_condition_analysis_button_click)
+        self._meps_panel.processingChanged.connect(lambda: self._plot_updater.update_meps(self._data_processor))
 
         # начальная замедленная инициализиация всех вычислений для уменьшения подтупливаний при запуске приложения
         # self.start_calc_signal.connect(self._initial_calculations)

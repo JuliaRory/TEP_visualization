@@ -123,17 +123,24 @@ class StimuliPresentation_BCI(QWidget):
         self._placeholder_widget = QLabel(self)     # здесь мы будем менять стимулы
         self._marker_widget = QLabel(self)
 
+        self._hand_pic_path = self._settings.hand_pic
+        self._rest_pic_path = self._settings.rest_pic
+
         self._final_pic = QPixmap(self.final_pic_path).scaled(
             self.size(), Qt.KeepAspectRatio, Qt.SmoothTransformation
         )
         self._intro_pic = QPixmap(self._settings.background_pic).scaled(
             self.size(), Qt.KeepAspectRatio, Qt.SmoothTransformation
         )
-        self._hand_pic = QPixmap(self._settings.hand_pic).scaled(
+        self._hand_pic = QPixmap(self._hand_pic_path).scaled(
             self.size(), Qt.KeepAspectRatio, Qt.SmoothTransformation
         )
-        self._rest_pic = QPixmap(self._settings.rest_pic).scaled(
+        self._rest_pic = QPixmap(self._rest_pic_path).scaled(
             self.size(), Qt.KeepAspectRatio, Qt.SmoothTransformation
+        )
+        print(
+            "[VLC player BCI]: loaded stimuli images:",
+            {"hand": self._hand_pic_path, "rest": self._rest_pic_path},
         )
 
         self._placeholder_widget.setPixmap(self._intro_pic)
