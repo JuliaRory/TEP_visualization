@@ -14,6 +14,8 @@ REST_STIMULUS_VARIANTS = (
     "rest1500_tms_-200ms_bar.mkv",
     "rest1500_tms_+200ms_bar.mkv",
 )
+START_COUNTDOWN_VIDEO = r"resources/videoSamples/audio_countdown_3.mkv"
+INTRO_AFTER_COUNTDOWN_MS = 1000
 
 
 class StimuliPresentation_BCI(QWidget):
@@ -42,8 +44,8 @@ class StimuliPresentation_BCI(QWidget):
         self.showFullScreen()
 
         self._init_state()
-        # self._videoEnded.connect(self._handle_video_end)
-        # self._videoFrameReady.connect(self._handle_video_frame_ready)
+        self._videoEnded.connect(self._handle_video_end)
+        self._videoFrameReady.connect(self._handle_video_frame_ready)
 
     def _init_state(self):
         self._stopped = False
@@ -52,15 +54,21 @@ class StimuliPresentation_BCI(QWidget):
         self._is_paused = False
         self._playback_token = 0
         self._waiting_for_first_frame = False
+        self._countdown_running = False
+        self._ponk_started = False
         self._cross_started_at = None
         self._cross_remaining_ms = 0
+        self._intro_after_countdown_started_at = None
+        self._intro_after_countdown_remaining_ms = 0
         self._isi_min_s = 1.5
         self._isi_max_s = 3.0
         self._stimuli_dur_ms = self._settings.stimuli_dur
 
         self._isi_bci_ponk_ms = 1000
-        self._isi_bci_min_ms = self._settings.bci_ponk_isi_min_ms
-        self._isi_bci_max_ms = self._settings.bci_ponk_isi_max_ms
+        self._isi_bci_min_ms = self._settings.bci_isi_min_ms
+        self._isi_bci_max_ms = self._settings.bci_isi_max_ms
+        self._ponk_isi_min_ms = self._settings.bci_ponk_isi_min_ms
+        self._ponk_isi_max_ms = self._settings.bci_ponk_isi_max_ms
 
         self._photomark_status = "white"
 
@@ -78,22 +86,26 @@ class StimuliPresentation_BCI(QWidget):
         self._configure_player()
 
     def _configure_player(self):
-        # self._instance = vlc.Instance(
-        #     "--file-caching=100",
-        #     "--no-video-title-show",
-        #     "--quiet",
-        #     "--no-sub-autodetect-file",
-        #     "--no-spu",
-        # )
-        # self._player = self._instance.media_player_new()
+        self._instance = vlc.Instance(
+            "--file-caching=100",
+            "--no-video-title-show",
+            "--quiet",
+            "--no-sub-autodetect-file",
+            "--no-spu",
+        )
+        self._player = self._instance.media_player_new()
 
-        # events = self._player.event_manager()
-        # events.event_attach(vlc.EventType.MediaPlayerEndReached, self._on_end_reached)
-        # events.event_attach(vlc.EventType.MediaPlayerTimeChanged, self._on_time_changed)
+        events = self._player.event_manager()
+        events.event_attach(vlc.EventType.MediaPlayerEndReached, self._on_end_reached)
+        events.event_attach(vlc.EventType.MediaPlayerTimeChanged, self._on_time_changed)
 
         self._cross_timer = QTimer(self)
         self._cross_timer.setSingleShot(True)
         self._cross_timer.timeout.connect(self._play_next_stimuli)
+
+        self._intro_after_countdown_timer = QTimer(self)
+        self._intro_after_countdown_timer.setSingleShot(True)
+        self._intro_after_countdown_timer.timeout.connect(self._start_bci_sequence_after_intro)
 
         self._stimuli_timer = QTimer(self)
         self._stimuli_timer.setSingleShot(True)
@@ -111,14 +123,14 @@ class StimuliPresentation_BCI(QWidget):
         self._photomark_timer.setSingleShot(True)
         self._photomark_timer.timeout.connect(self._show_marker)        
 
-        # self._video_widget = QWidget(self)
-        # self._video_widget.setStyleSheet("background-color: black;")
-        # layout = QVBoxLayout(self)
-        # layout.setContentsMargins(0, 0, 0, 0)
-        # layout.addWidget(self._video_widget)
+        self._video_widget = QWidget(self)
+        self._video_widget.setStyleSheet("background-color: black;")
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.addWidget(self._video_widget)
 
-        # winid = int(self._video_widget.winId())
-        # self._player.set_hwnd(winid)
+        winid = int(self._video_widget.winId())
+        self._player.set_hwnd(winid)
 
         self._placeholder_widget = QLabel(self)     # здесь мы будем менять стимулы
         self._marker_widget = QLabel(self)
@@ -258,6 +270,16 @@ class StimuliPresentation_BCI(QWidget):
             return
 
         self._waiting_for_first_frame = False
+        self._player.stop()
+
+        if self._countdown_running:
+            self._countdown_running = False
+            self._placeholder_widget.setPixmap(self._intro_pic)
+            self._placeholder_widget.show()
+            self._show_marker()
+            self._start_intro_after_countdown_interval(INTRO_AFTER_COUNTDOWN_MS)
+            return
+
         self._placeholder_widget.show()
         self._show_marker()
         self._start_cross_interval(self._get_random_isi_ms())
@@ -271,9 +293,36 @@ class StimuliPresentation_BCI(QWidget):
         self._isi_min_s = min_s
         self._isi_max_s = max_s
 
+    def set_bci_timing(
+        self,
+        stimuli_dur_ms=None,
+        isi_min_ms=None,
+        isi_max_ms=None,
+        ponk_isi_min_ms=None,
+        ponk_isi_max_ms=None,
+    ):
+        if stimuli_dur_ms is not None:
+            self._stimuli_dur_ms = max(0, int(stimuli_dur_ms))
+
+        if isi_min_ms is not None and isi_max_ms is not None:
+            isi_min_ms = int(isi_min_ms)
+            isi_max_ms = int(isi_max_ms)
+            if isi_min_ms > isi_max_ms:
+                isi_min_ms, isi_max_ms = isi_max_ms, isi_min_ms
+            self._isi_bci_min_ms = isi_min_ms
+            self._isi_bci_max_ms = isi_max_ms
+
+        if ponk_isi_min_ms is not None and ponk_isi_max_ms is not None:
+            ponk_isi_min_ms = int(ponk_isi_min_ms)
+            ponk_isi_max_ms = int(ponk_isi_max_ms)
+            if ponk_isi_min_ms > ponk_isi_max_ms:
+                ponk_isi_min_ms, ponk_isi_max_ms = ponk_isi_max_ms, ponk_isi_min_ms
+            self._ponk_isi_min_ms = ponk_isi_min_ms
+            self._ponk_isi_max_ms = ponk_isi_max_ms
+
     def _get_random_isi_ms(self):
-        isi_min_ms = self._settings.bci_isi_min_ms
-        isi_max_ms = self._settings.bci_isi_max_ms
+        isi_min_ms = self._isi_bci_min_ms
+        isi_max_ms = self._isi_bci_max_ms
         return int(random.uniform(isi_min_ms, isi_max_ms))
 
     def _show_marker(self):
@@ -289,6 +338,11 @@ class StimuliPresentation_BCI(QWidget):
         self._cross_remaining_ms = max(0, int(duration_ms))
         self._cross_started_at = time.monotonic()
         self._cross_timer.start(self._cross_remaining_ms)
+
+    def _start_intro_after_countdown_interval(self, duration_ms):
+        self._intro_after_countdown_remaining_ms = max(0, int(duration_ms))
+        self._intro_after_countdown_started_at = time.monotonic()
+        self._intro_after_countdown_timer.start(self._intro_after_countdown_remaining_ms)
 
     def _start_stimuli_interval(self, duration_ms):
         self._stimuli_remaining_ms = max(0, int(duration_ms))
@@ -312,6 +366,26 @@ class StimuliPresentation_BCI(QWidget):
 
         self._cross_started_at = time.monotonic()
         self._cross_timer.start(self._cross_remaining_ms)
+
+    def _pause_intro_after_countdown_interval(self):
+        if not self._intro_after_countdown_timer.isActive():
+            return False
+
+        elapsed_ms = int((time.monotonic() - self._intro_after_countdown_started_at) * 1000)
+        self._intro_after_countdown_remaining_ms = max(
+            0, self._intro_after_countdown_remaining_ms - elapsed_ms
+        )
+        self._intro_after_countdown_started_at = None
+        self._intro_after_countdown_timer.stop()
+        return True
+
+    def _resume_intro_after_countdown_interval(self):
+        if self._intro_after_countdown_remaining_ms <= 0:
+            self._start_bci_sequence_after_intro()
+            return
+
+        self._intro_after_countdown_started_at = time.monotonic()
+        self._intro_after_countdown_timer.start(self._intro_after_countdown_remaining_ms)
 
     def _pause_stimuli_interval(self):
         if not self._stimuli_timer.isActive():
@@ -337,8 +411,8 @@ class StimuliPresentation_BCI(QWidget):
     
     def _get_new_bci_isi(self):
         # ВРЕМЯ МЕЖДУ ПОНЬКАМИ
-        isi_min_ms = self._settings.bci_ponk_isi_min_ms
-        isi_max_ms = self._settings.bci_ponk_isi_max_ms
+        isi_min_ms = self._ponk_isi_min_ms
+        isi_max_ms = self._ponk_isi_max_ms
         return 1000 + int(random.uniform(isi_min_ms, isi_max_ms))
 
     def _ponk_timer_stop(self):
@@ -346,6 +420,35 @@ class StimuliPresentation_BCI(QWidget):
         new_isi = self._get_new_bci_isi()
         print("PONK ISI", new_isi)
         self._ponk_timer.start(new_isi)
+
+    def _play_countdown_video(self):
+        if self._stopped:
+            return
+
+        self._playback_token += 1
+        self._countdown_running = True
+        self._waiting_for_first_frame = True
+        self._placeholder_widget.setPixmap(self._intro_pic)
+        self._placeholder_widget.show()
+        self._show_marker()
+
+        media = self._instance.media_new(START_COUNTDOWN_VIDEO)
+        media.parse_async()
+        self._player.stop()
+        self._player.set_media(media)
+        self._player.audio_set_volume(self._volume)
+        self._player.play()
+
+    def _start_bci_sequence_after_intro(self):
+        if self._stopped:
+            return
+
+        self._intro_after_countdown_timer.stop()
+        self._intro_after_countdown_started_at = None
+        self._intro_after_countdown_remaining_ms = 0
+        self._ponk_started = True
+        self._ponk_timer.start(self._get_new_bci_isi())
+        self._play_next_stimuli()
     
     def keyPressEvent(self, event):
         if event.key() == Qt.Key_Space:
@@ -377,41 +480,50 @@ class StimuliPresentation_BCI(QWidget):
     def _on_space_pressed(self):
         if not self._sequence_started:
             print("[VLC player]: start the stimuli presentation.")
-            self._ponk_timer.start(self._get_new_bci_isi())
             self._sequence_started = True
             self.stimuliStarted.emit()
             self._is_paused = False
-            self._play_next_stimuli()
+            self._play_countdown_video()
             return
 
         if not self._is_paused:
             print("[VLC player]: pause the stimuli presentation.")
-            paused_during_cross = self._pause_cross_interval()
-            if not paused_during_cross:
-                # self._player.pause()
+            paused_during_countdown = self._countdown_running
+            if paused_during_countdown:
+                self._player.pause()
+            paused_during_intro = False if paused_during_countdown else self._pause_intro_after_countdown_interval()
+            paused_during_cross = (
+                False if paused_during_countdown or paused_during_intro else self._pause_cross_interval()
+            )
+            if not paused_during_countdown and not paused_during_intro and not paused_during_cross:
                 self._pause_stimuli_interval()
             self._is_paused = True
             self.stimuliPaused.emit()
-            self._ponk_timer.stop()
+            if self._ponk_started:
+                self._ponk_timer.stop()
             return
 
         if self._is_paused:
             print("[VLC player]: continue the stimuli presentation.")
-            if self._cross_remaining_ms > 0 and not self._waiting_for_first_frame:
+            if self._countdown_running:
+                self._player.play()
+            elif self._intro_after_countdown_remaining_ms > 0:
+                self._resume_intro_after_countdown_interval()
+            elif self._cross_remaining_ms > 0 and not self._waiting_for_first_frame:
                 self._resume_cross_interval()
             else:
                 self._resume_stimuli_interval()
-                # self._player.play()
             self._is_paused = False
             self.stimuliPaused.emit()
-            self._ponk_timer.start(self._get_new_bci_isi())
+            if self._ponk_started:
+                self._ponk_timer.start(self._get_new_bci_isi())
 
     def pause_video(self):
         self._on_space_pressed()
 
     def restart_sequence(self):
         print("[VLC player]: restart stimuli presentation.")
-        # self._player.stop()
+        self._player.stop()
 
         self._ponk_timer.stop()
         self._is_paused = False
@@ -420,9 +532,15 @@ class StimuliPresentation_BCI(QWidget):
         self._finished = False
         self._playback_token += 1
         self._waiting_for_first_frame = False
+        self._countdown_running = False
+        self._ponk_started = False
         self._cross_timer.stop()
         self._cross_started_at = None
         self._cross_remaining_ms = 0
+
+        self._intro_after_countdown_timer.stop()
+        self._intro_after_countdown_started_at = None
+        self._intro_after_countdown_remaining_ms = 0
 
         self._stimuli_timer.stop()
         self._stimuli_started_at = None
@@ -441,16 +559,18 @@ class StimuliPresentation_BCI(QWidget):
         self._stopped = True
         self._playback_token += 1
         self._waiting_for_first_frame = False
+        self._countdown_running = False
         self._cross_timer.stop()
         self._cross_started_at = None
         self._cross_remaining_ms = 0
         self._show_marker()
 
+        self._intro_after_countdown_timer.stop()
         self._stimuli_timer.stop()
         self._ponk_timer.stop()
-        # self._player.stop()
-        # self._player.release()
-        # self._instance.release()
+        self._player.stop()
+        self._player.release()
+        self._instance.release()
         if not self._finished:
             QTimer.singleShot(2000, self.stimuliFinished.emit)
         self.close()
@@ -476,9 +596,9 @@ class StimuliPresentation_BCI(QWidget):
         self._videoFrameReady.emit(self._playback_token)
 
     def update_volume(self, value):
-        # self._volume = value
-        # self._player.audio_set_volume(self._volume)
-        # self.volumeChanged.emit(self._volume)
+        self._volume = value
+        self._player.audio_set_volume(self._volume)
+        self.volumeChanged.emit(self._volume)
         print("Volume:", self._volume)
 
     def get_last_volume(self):

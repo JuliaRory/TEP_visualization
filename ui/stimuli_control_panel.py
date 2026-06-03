@@ -69,6 +69,21 @@ class StimuliControlPanel(QFrame):
         self.spin_box_isi_max = create_spin_box(
             0.1, 30.0, self.settings.isi_max_s, data_type="float", step=0.1, decimals=1, parent=self
         )
+        self.spin_box_bci_stimuli_dur = create_spin_box(
+            100, 60000, self.settings.stimuli_dur, step=100, parent=self, w=70
+        )
+        self.spin_box_bci_isi_min = create_spin_box(
+            0, 60000, self.settings.bci_isi_min_ms, step=100, parent=self, w=70
+        )
+        self.spin_box_bci_isi_max = create_spin_box(
+            0, 60000, self.settings.bci_isi_max_ms, step=100, parent=self, w=70
+        )
+        self.spin_box_bci_ponk_isi_min = create_spin_box(
+            0, 10000, self.settings.bci_ponk_isi_min_ms, step=50, parent=self, w=70
+        )
+        self.spin_box_bci_ponk_isi_max = create_spin_box(
+            0, 10000, self.settings.bci_ponk_isi_max_ms, step=50, parent=self, w=70
+        )
 
         self.check_box_stimuli_record = create_check_box(self.settings.stimuli_with_record, "Запись NVX", parent=self)
         self.check_box_noise = create_check_box(self.settings.use_noise, "Шум", parent=self)
@@ -107,6 +122,27 @@ class StimuliControlPanel(QFrame):
         layout_isi = create_hbox(
             [QLabel("ISI, s", self), self.spin_box_isi_min, QLabel("min", self), self.spin_box_isi_max, QLabel("max", self)]
         )
+        layout_bci_stimuli_dur = create_hbox(
+            [QLabel("BCI stim, ms", self), self.spin_box_bci_stimuli_dur]
+        )
+        layout_bci_isi = create_hbox(
+            [
+                QLabel("BCI ISI, ms", self),
+                self.spin_box_bci_isi_min,
+                QLabel("min", self),
+                self.spin_box_bci_isi_max,
+                QLabel("max", self),
+            ]
+        )
+        layout_bci_ponk_isi = create_hbox(
+            [
+                QLabel("PONK ISI, ms", self),
+                self.spin_box_bci_ponk_isi_min,
+                QLabel("min", self),
+                self.spin_box_bci_ponk_isi_max,
+                QLabel("max", self),
+            ]
+        )
 
         layout_stimuli_launch = create_hbox([self.button_stimuli])
         layout_stimuli_control = create_hbox([self.button_stimuli_pause, self.button_stimuli_restart])
@@ -131,6 +167,9 @@ class StimuliControlPanel(QFrame):
         layout.addLayout(layout_noise)
         layout.addLayout(layout_rest_video)
         layout.addLayout(layout_isi)
+        layout.addLayout(layout_bci_stimuli_dur)
+        layout.addLayout(layout_bci_isi)
+        layout.addLayout(layout_bci_ponk_isi)
         layout.addLayout(layout_center)
 
         layout = QHBoxLayout(self)
@@ -150,6 +189,11 @@ class StimuliControlPanel(QFrame):
         self.noise_volume_slider.valueChanged.connect(self._on_change_noise_volume)
         self.spin_box_isi_min.valueChanged.connect(self._on_change_isi_range)
         self.spin_box_isi_max.valueChanged.connect(self._on_change_isi_range)
+        self.spin_box_bci_stimuli_dur.valueChanged.connect(self._on_change_bci_timing)
+        self.spin_box_bci_isi_min.valueChanged.connect(self._on_change_bci_timing)
+        self.spin_box_bci_isi_max.valueChanged.connect(self._on_change_bci_timing)
+        self.spin_box_bci_ponk_isi_min.valueChanged.connect(self._on_change_bci_timing)
+        self.spin_box_bci_ponk_isi_max.valueChanged.connect(self._on_change_bci_timing)
 
         self._button_update_stimuli.clicked.connect(self._update_combo_box_stimuli)
         self.combo_box_noise_type.currentTextChanged[str].connect(self._change_audio_filename)
@@ -365,6 +409,47 @@ class StimuliControlPanel(QFrame):
         if isinstance(pw, QWidget) and not pw.isHidden():
             self._player_window.set_isi_range(min_s, max_s)
 
+    def _on_change_bci_timing(self, _value):
+        stimuli_dur = int(self.spin_box_bci_stimuli_dur.value())
+        isi_min_ms = int(self.spin_box_bci_isi_min.value())
+        isi_max_ms = int(self.spin_box_bci_isi_max.value())
+        ponk_isi_min_ms = int(self.spin_box_bci_ponk_isi_min.value())
+        ponk_isi_max_ms = int(self.spin_box_bci_ponk_isi_max.value())
+
+        if isi_min_ms > isi_max_ms:
+            isi_min_ms, isi_max_ms = isi_max_ms, isi_min_ms
+            self.spin_box_bci_isi_min.blockSignals(True)
+            self.spin_box_bci_isi_max.blockSignals(True)
+            self.spin_box_bci_isi_min.setValue(isi_min_ms)
+            self.spin_box_bci_isi_max.setValue(isi_max_ms)
+            self.spin_box_bci_isi_min.blockSignals(False)
+            self.spin_box_bci_isi_max.blockSignals(False)
+
+        if ponk_isi_min_ms > ponk_isi_max_ms:
+            ponk_isi_min_ms, ponk_isi_max_ms = ponk_isi_max_ms, ponk_isi_min_ms
+            self.spin_box_bci_ponk_isi_min.blockSignals(True)
+            self.spin_box_bci_ponk_isi_max.blockSignals(True)
+            self.spin_box_bci_ponk_isi_min.setValue(ponk_isi_min_ms)
+            self.spin_box_bci_ponk_isi_max.setValue(ponk_isi_max_ms)
+            self.spin_box_bci_ponk_isi_min.blockSignals(False)
+            self.spin_box_bci_ponk_isi_max.blockSignals(False)
+
+        self.settings.stimuli_dur = stimuli_dur
+        self.settings.bci_isi_min_ms = isi_min_ms
+        self.settings.bci_isi_max_ms = isi_max_ms
+        self.settings.bci_ponk_isi_min_ms = ponk_isi_min_ms
+        self.settings.bci_ponk_isi_max_ms = ponk_isi_max_ms
+
+        pw = getattr(self, "_player_window", None)
+        if isinstance(pw, StimuliPresentation_BCI) and not pw.isHidden():
+            pw.set_bci_timing(
+                stimuli_dur_ms=stimuli_dur,
+                isi_min_ms=isi_min_ms,
+                isi_max_ms=isi_max_ms,
+                ponk_isi_min_ms=ponk_isi_min_ms,
+                ponk_isi_max_ms=ponk_isi_max_ms,
+            )
+
     def _on_change_rest_video_variants(self, selected):
         if not selected:
             selected = [self.settings.rest_video_variants[0]]
@@ -455,3 +540,17 @@ class StimuliControlPanel(QFrame):
             selected = [self.settings.rest_video_variants[0]]
         self.settings.rest_video_selected = selected
         self._set_rest_video_checked_items(selected)
+        self._set_bci_timing_spinbox_values()
+
+    def _set_bci_timing_spinbox_values(self):
+        spinbox_values = [
+            (self.spin_box_bci_stimuli_dur, self.settings.stimuli_dur),
+            (self.spin_box_bci_isi_min, self.settings.bci_isi_min_ms),
+            (self.spin_box_bci_isi_max, self.settings.bci_isi_max_ms),
+            (self.spin_box_bci_ponk_isi_min, self.settings.bci_ponk_isi_min_ms),
+            (self.spin_box_bci_ponk_isi_max, self.settings.bci_ponk_isi_max_ms),
+        ]
+        for spinbox, value in spinbox_values:
+            spinbox.blockSignals(True)
+            spinbox.setValue(value)
+            spinbox.blockSignals(False)

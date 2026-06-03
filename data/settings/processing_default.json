@@ -182,8 +182,8 @@
         "rest_pic": "resources/bci/rest.png",
         "background_pic": "resources/bci/background.png",
         "stimuli_dur": 5000,
-        "bci_isi_min_ms": 1000,
-        "bci_isi_max_ms": 1500,
+        "bci_isi_min_ms": 500,
+        "bci_isi_max_ms": 1000,
         "bci_ponk_isi_max_ms": 500,
         "bci_ponk_isi_min_ms": 200,
         "bci_mep_bins": [
