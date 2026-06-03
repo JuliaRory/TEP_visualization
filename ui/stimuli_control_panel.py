@@ -200,6 +200,9 @@ class StimuliControlPanel(QFrame):
 
             self._player_window.restart_sequence()
 
+            self.button_stimuli_pause.setEnabled(True)
+            self.button_stimuli_pause.setText(PLAY_LABEL)
+
     def _on_bci_mep_bins_button_click(self):
         if (
             getattr(self, "_bci_mep_bins_window", None) is not None
