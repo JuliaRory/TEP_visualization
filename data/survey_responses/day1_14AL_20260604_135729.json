@@ -1,0 +1,20 @@
+{
+  "participant_id": "14AL",
+  "survey_id": "day1",
+  "saved_at": "2026-06-04T13:57:29",
+  "answers": {
+    "task_quality_1": 7,
+    "task_quality_2": 6,
+    "task_quality_3": 6,
+    "task_quality_4": 6,
+    "Real_timing_ability": 5,
+    "MI_timing_ability": 5,
+    "MI_ability": 88,
+    "MI_vividness": 88,
+    "MI_difficulty": 88,
+    "MI_description": "Представляла как мышцы сокращаются и суставы двигаются. И как я нажимаю на  на подушку. но пальцем не двигаю.",
+    "TMS_distraction": 48,
+    "TMS_amplitude": 50,
+    "comment": null
+  }
+}

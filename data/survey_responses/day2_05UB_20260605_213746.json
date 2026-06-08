@@ -1,0 +1,25 @@
+{
+  "participant_id": "05UB",
+  "survey_id": "day2",
+  "saved_at": "2026-06-05T21:37:46",
+  "answers": {
+    "task_quality_1": 5,
+    "task_quality_2": 3,
+    "task_quality_3": 2,
+    "task_quality_4": 4,
+    "Real_SST_ability": 5,
+    "SST_ability": 6,
+    "SST_difficulty": 74,
+    "SST_TMS_distraction": 50,
+    "SST_comments": null,
+    "Real_timing_ability": 6,
+    "MI_timing_ability": 4,
+    "MI_ability": 35,
+    "MI_vividness": 41,
+    "MI_difficulty": 25,
+    "MI_description": "Представляла напряжение в мышце и ощущения в суставе как во время реального движения",
+    "TMS_distraction": 50,
+    "TMS_amplitude": 56,
+    "comment": null
+  }
+}

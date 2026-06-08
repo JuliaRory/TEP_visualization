@@ -238,7 +238,7 @@ class StimuliControlPanel(QFrame):
             self._update_connections()
 
             self._player_window.set_rest_stimulus_variants(self.settings.rest_video_selected)
-            seq_name = "0"  # self.combo_box_stimuli.currentText()
+            seq_name = "1"  # self.combo_box_stimuli.currentText()
             sequence = self._get_sequence_bci(seq_name)
             self._player_window.set_sequence(sequence, seq_name)
 
