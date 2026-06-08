@@ -153,6 +153,8 @@
         "isi_min_s": 1.5,
         "isi_max_s": 3.0,
         "phases_delay_ms": 0,
+        "antiponk_wait_tension": false,
+        "antiponk_tension_timeout_ms": 1000,
         "noise_volume": 37,
         "noise_folder": "resources/noise",
         "noise_filename": "CN2_blocked_canal_M1_9min_cor.wav",

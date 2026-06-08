@@ -71,7 +71,15 @@ class MainWindow(QWidget):
     
     start_calc_signal = pyqtSignal()
 
-    def __init__(self, input_stream, resonance, output_stream, filename_params):
+    def __init__(
+        self,
+        input_stream,
+        resonance,
+        output_stream,
+        filename_params,
+        tension_wait_stream=None,
+        tension_on_stream=None,
+    ):
         super().__init__()
 
         place_widget(self, monitor=1, coordinates=(50, 50))
@@ -80,6 +88,8 @@ class MainWindow(QWidget):
 
         self._resonance = resonance                       # прокси для управления резонансными модулями
         self._output_stream = output_stream
+        self._tension_wait_stream = tension_wait_stream
+        self._tension_on_stream = tension_on_stream
 
         with open(filename_params) as json_data:          # вгрузить настройки приложения
             self.params = json.load(json_data)  
@@ -156,7 +166,9 @@ class MainWindow(QWidget):
     
         self._stimuli_control_panel = StimuliControlPanel(parent=self,
                                                 settings=self.settings.stimuli_control,
-                                                output_stream=self._output_stream)
+                                                output_stream=self._output_stream,
+                                                tension_wait_stream=self._tension_wait_stream,
+                                                tension_on_stream=self._tension_on_stream)
 
         self._survey_panel = SurveyPanel(
             parent=self,

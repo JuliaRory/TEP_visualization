@@ -74,6 +74,8 @@ class StimuliSettings:
     isi_min_s: float = 1.5
     isi_max_s: float = 3.0
     phases_delay_ms: int = 0
+    antiponk_wait_tension: bool = False
+    antiponk_tension_timeout_ms: int = 1000
     noise_volume: int = 67
     noise_folder: str = r"resources/noise/"
     #noise_filename: str = "TAAC_CN2_coil_42MSO_9minutes_louder.wav"     # standard

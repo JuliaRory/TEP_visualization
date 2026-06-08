@@ -1,5 +1,5 @@
 from PyQt5.QtWidgets import QFrame, QVBoxLayout, QHBoxLayout, QLabel, QWidget, QSizePolicy, QShortcut
-from PyQt5.QtCore import pyqtSignal, Qt
+from PyQt5.QtCore import QObject, pyqtSignal, Qt
 from PyQt5.QtGui import QKeySequence
 
 import json
@@ -9,6 +9,7 @@ from utils.ui_helpers import create_button, create_spin_box, create_check_box, c
 from utils.layout_utils import create_hbox, create_vbox
 
 from .video_player import StimuliPresentation_one_by_one
+from .video_player_antiponk import StimuliPresentationAntiponk
 from .video_player_phases import StimuliPresentationPhases
 from .video_player_bci import StimuliPresentation_BCI
 from .stimuli_window import StimuliCreation
@@ -20,18 +21,31 @@ PLAY_LABEL = "▶"
 STOP_LABEL = "⏸"
 
 
+class _TensionOnRelay(QObject):
+    messageReceived = pyqtSignal(object)
+
+
 class StimuliControlPanel(QFrame):
     """ --- UI для контроля за стимулами --- """
 
     stimuliPresentation = pyqtSignal(bool)
 
-    def __init__(self, settings, output_stream, parent=None):
+    def __init__(
+        self,
+        settings,
+        output_stream,
+        parent=None,
+        tension_wait_stream=None,
+        tension_on_stream=None,
+    ):
         super().__init__(parent)
         self.parent = parent
         self.setMinimumWidth(200)
 
         self.settings = settings
         self.output_stream = output_stream
+        self.tension_wait_stream = tension_wait_stream
+        self.tension_on_stream = tension_on_stream
 
         self._init_state()
         self._setup_ui()
@@ -42,6 +56,12 @@ class StimuliControlPanel(QFrame):
     def _init_state(self):
         self._restart_stimuli = False
         self._player_window = None
+        self._tension_on_relay = _TensionOnRelay(self)
+        self._tension_on_relay.messageReceived.connect(self._on_tension_on_message)
+        if self.tension_on_stream is not None and hasattr(self.tension_on_stream, "set_callback"):
+            self.tension_on_stream.set_callback(
+                lambda *args: self._tension_on_relay.messageReceived.emit(args)
+            )
 
         audio_file = os.path.join(r"resources\noise", self.settings.noise_filename)
         self._audio_player = AudioPlayer(audio_file, initial_volume=self.settings.noise_volume)
@@ -73,6 +93,14 @@ class StimuliControlPanel(QFrame):
         self.spin_box_phases_delay = create_spin_box(
             -1000, 1000, getattr(self.settings, "phases_delay_ms", 0), step=10, parent=self, w=70
         )
+        self.spin_box_tension_timeout = create_spin_box(
+            0,
+            10000,
+            getattr(self.settings, "antiponk_tension_timeout_ms", 1000),
+            step=100,
+            parent=self,
+            w=70,
+        )
         self.spin_box_bci_stimuli_dur = create_spin_box(
             100, 60000, self.settings.stimuli_dur, step=100, parent=self, w=70
         )
@@ -91,6 +119,11 @@ class StimuliControlPanel(QFrame):
 
         self.check_box_stimuli_record = create_check_box(self.settings.stimuli_with_record, "Запись NVX", parent=self)
         self.check_box_noise = create_check_box(self.settings.use_noise, "Шум", parent=self)
+        self.check_box_wait_tension = create_check_box(
+            getattr(self.settings, "antiponk_wait_tension", False),
+            "ждать напряжение",
+            parent=self,
+        )
         self.button_noise = create_button(text=PLAY_LABEL, disabled=False, parent=self)
 
         self.button_stimuli = create_button(text="Запуск", disabled=False, parent=self, w=100)
@@ -128,6 +161,13 @@ class StimuliControlPanel(QFrame):
         )
         layout_phases_delay = create_hbox(
             [QLabel("Delay, ms", self), self.spin_box_phases_delay]
+        )
+        layout_antiponk = create_hbox(
+            [
+                self.check_box_wait_tension,
+                QLabel("timeout, ms", self),
+                self.spin_box_tension_timeout,
+            ]
         )
         layout_bci_stimuli_dur = create_hbox(
             [QLabel("BCI stim, ms", self), self.spin_box_bci_stimuli_dur]
@@ -175,6 +215,7 @@ class StimuliControlPanel(QFrame):
         layout.addLayout(layout_rest_video)
         layout.addLayout(layout_isi)
         layout.addLayout(layout_phases_delay)
+        layout.addLayout(layout_antiponk)
         layout.addLayout(layout_bci_stimuli_dur)
         layout.addLayout(layout_bci_isi)
         layout.addLayout(layout_bci_ponk_isi)
@@ -198,6 +239,8 @@ class StimuliControlPanel(QFrame):
         self.spin_box_isi_min.valueChanged.connect(self._on_change_isi_range)
         self.spin_box_isi_max.valueChanged.connect(self._on_change_isi_range)
         self.spin_box_phases_delay.valueChanged.connect(self._on_change_phases_delay)
+        self.spin_box_tension_timeout.valueChanged.connect(self._on_change_antiponk_tension)
+        self.check_box_wait_tension.stateChanged.connect(self._on_change_antiponk_tension)
         self.spin_box_bci_stimuli_dur.valueChanged.connect(self._on_change_bci_timing)
         self.spin_box_bci_isi_min.valueChanged.connect(self._on_change_bci_timing)
         self.spin_box_bci_isi_max.valueChanged.connect(self._on_change_bci_timing)
@@ -291,14 +334,20 @@ class StimuliControlPanel(QFrame):
             seq_name = self.combo_box_stimuli.currentText()
             sequence = self._get_sequence(seq_name)
             phases_mode = self._is_phases_sequence(seq_name, sequence)
+            antiponk_mode = self._is_antiponk_sequence(seq_name, sequence)
 
             if not self._restart_stimuli:
-                self._player_window = self._create_stimuli_player(phases_mode)
+                self._player_window = self._create_stimuli_player(
+                    phases_mode=phases_mode,
+                    antiponk_mode=antiponk_mode,
+                )
                 self._player_window.show()
                 self._player_window.raise_()
                 self._update_connections()
 
-            if phases_mode:
+            if antiponk_mode:
+                self._apply_antiponk_tension_settings()
+            elif phases_mode:
                 self._player_window.set_phase_delay(getattr(self.settings, "phases_delay_ms", 0))
             else:
                 self._player_window.set_isi_range(self.settings.isi_min_s, self.settings.isi_max_s)
@@ -312,7 +361,19 @@ class StimuliControlPanel(QFrame):
 
             self._restart_stimuli = False
 
-    def _create_stimuli_player(self, phases_mode=False):
+    def _create_stimuli_player(self, phases_mode=False, antiponk_mode=False):
+        if antiponk_mode:
+            player = StimuliPresentationAntiponk(
+                monitor=self.spin_box_monitor.value(),
+                volume=self.stimuli_volume_slider.slider.value(),
+                rest_stimulus_variants=self.settings.rest_video_selected,
+                wait_for_tension=getattr(self.settings, "antiponk_wait_tension", False),
+                tension_timeout_ms=getattr(self.settings, "antiponk_tension_timeout_ms", 1000),
+                tension_wait_stream=self.tension_wait_stream,
+            )
+            player.set_isi_range(self.settings.isi_min_s, self.settings.isi_max_s)
+            return player
+
         if phases_mode:
             return StimuliPresentationPhases(
                 monitor=self.spin_box_monitor.value(),
@@ -335,6 +396,13 @@ class StimuliControlPanel(QFrame):
         if not sequence:
             return False
         return any("_phases_" in str(filename).lower() for filename in sequence.get("set", {}).values())
+
+    def _is_antiponk_sequence(self, seq_name, sequence=None):
+        if seq_name and "_antiponk_" in seq_name.lower():
+            return True
+        if not sequence:
+            return False
+        return any("_antiponk_" in str(filename).lower() for filename in sequence.get("set", {}).values())
 
     def _change_audio_filename(self, _level):
         noise_type = self.combo_box_noise_type.currentText()
@@ -492,6 +560,22 @@ class StimuliControlPanel(QFrame):
         if window is not None and window.isVisible():
             window.update_delay_from_settings()
 
+    def _on_change_antiponk_tension(self, _value=None):
+        self.settings.antiponk_wait_tension = self.check_box_wait_tension.isChecked()
+        self.settings.antiponk_tension_timeout_ms = int(self.spin_box_tension_timeout.value())
+        self._apply_antiponk_tension_settings()
+
+    def _apply_antiponk_tension_settings(self):
+        pw = getattr(self, "_player_window", None)
+        if isinstance(pw, StimuliPresentationAntiponk) and not pw.isHidden():
+            pw.set_tension_wait_enabled(getattr(self.settings, "antiponk_wait_tension", False))
+            pw.set_tension_timeout_ms(getattr(self.settings, "antiponk_tension_timeout_ms", 1000))
+
+    def _on_tension_on_message(self, message):
+        pw = getattr(self, "_player_window", None)
+        if isinstance(pw, StimuliPresentationAntiponk) and not pw.isHidden():
+            pw.on_tension_on_message(message)
+
     def _on_change_rest_video_variants(self, selected):
         if not selected:
             selected = [self.settings.rest_video_variants[0]]
@@ -583,10 +667,14 @@ class StimuliControlPanel(QFrame):
         self.settings.rest_video_selected = selected
         self._set_rest_video_checked_items(selected)
         self._set_bci_timing_spinbox_values()
+        self.check_box_wait_tension.blockSignals(True)
+        self.check_box_wait_tension.setChecked(getattr(self.settings, "antiponk_wait_tension", False))
+        self.check_box_wait_tension.blockSignals(False)
 
     def _set_bci_timing_spinbox_values(self):
         spinbox_values = [
             (self.spin_box_phases_delay, getattr(self.settings, "phases_delay_ms", 0)),
+            (self.spin_box_tension_timeout, getattr(self.settings, "antiponk_tension_timeout_ms", 1000)),
             (self.spin_box_bci_stimuli_dur, self.settings.stimuli_dur),
             (self.spin_box_bci_isi_min, self.settings.bci_isi_min_ms),
             (self.spin_box_bci_isi_max, self.settings.bci_isi_max_ms),
