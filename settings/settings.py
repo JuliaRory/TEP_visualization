@@ -73,6 +73,7 @@ class StimuliSettings:
     stimuli_volume: int = 60
     isi_min_s: float = 1.5
     isi_max_s: float = 3.0
+    phases_delay_ms: int = 0
     noise_volume: int = 67
     noise_folder: str = r"resources/noise/"
     #noise_filename: str = "TAAC_CN2_coil_42MSO_9minutes_louder.wav"     # standard
@@ -99,7 +100,7 @@ class StimuliSettings:
     bci_ponk_isi_max_ms: int = 500
     bci_ponk_isi_min_ms: int = 200
     bci_mep_bins: List[dict] = field(default_factory=lambda: [
-        {"name": "-400", "from_ms": -550, "to_ms": -250},
+        {"name": "-400", "from_ms": -500, "to_ms": -250},
         {"name": "-200", "from_ms": -250, "to_ms": -150},
         {"name": "-100", "from_ms": -150, "to_ms": -75},
         {"name": "-50", "from_ms": -75, "to_ms": 25},

@@ -135,7 +135,7 @@
         "use_yaw_angle": true,
         "use_power": true,
         "use_comments": true,
-        "number": "12",
+        "number": "00",
         "subject": "04KK",
         "spot": "M1",
         "coil": "",
@@ -152,6 +152,7 @@
         "stimuli_volume": 60,
         "isi_min_s": 1.5,
         "isi_max_s": 3.0,
+        "phases_delay_ms": 0,
         "noise_volume": 37,
         "noise_folder": "resources/noise",
         "noise_filename": "CN2_blocked_canal_M1_9min_cor.wav",
@@ -189,31 +190,51 @@
         "bci_mep_bins": [
             {
                 "name": "-400",
-                "from_ms": -550,
-                "to_ms": -250
+                "from_ms": -500,
+                "to_ms": -250,
+                "base_name_ms": -400,
+                "base_from_ms": -500,
+                "base_to_ms": -250,
+                "auto_delay": true
             },
             {
                 "name": "-200",
                 "from_ms": -250,
-                "to_ms": -150
+                "to_ms": -150,
+                "base_name_ms": -200,
+                "base_from_ms": -250,
+                "base_to_ms": -150,
+                "auto_delay": true
             },
             {
                 "name": "-100",
                 "from_ms": -150,
-                "to_ms": -75
+                "to_ms": -75,
+                "base_name_ms": -100,
+                "base_from_ms": -150,
+                "base_to_ms": -75,
+                "auto_delay": true
             },
             {
                 "name": "-50",
                 "from_ms": -75,
-                "to_ms": -25
+                "to_ms": 25,
+                "base_name_ms": -50,
+                "base_from_ms": -75,
+                "base_to_ms": 25,
+                "auto_delay": true
             },
             {
                 "name": "0",
                 "from_ms": -25,
-                "to_ms": 25
+                "to_ms": 25,
+                "base_name_ms": 0,
+                "base_from_ms": -25,
+                "base_to_ms": 25,
+                "auto_delay": true
             }
         ],
-        "bci_mep_threshold": 6.000000000000007,
+        "bci_mep_threshold": 2.0,
         "bci_mep_threshold_scale": -9,
         "bci_mep_plot_ymax_mV": 0.3,
         "bci_mep_tkeo_ymax": 1.0,

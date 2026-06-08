@@ -9,6 +9,7 @@ from utils.ui_helpers import create_button, create_spin_box, create_check_box, c
 from utils.layout_utils import create_hbox, create_vbox
 
 from .video_player import StimuliPresentation_one_by_one
+from .video_player_phases import StimuliPresentationPhases
 from .video_player_bci import StimuliPresentation_BCI
 from .stimuli_window import StimuliCreation
 from .widgets.bci_mep_bins_window import BCIMEPDelayWindow
@@ -69,6 +70,9 @@ class StimuliControlPanel(QFrame):
         self.spin_box_isi_max = create_spin_box(
             0.1, 30.0, self.settings.isi_max_s, data_type="float", step=0.1, decimals=1, parent=self
         )
+        self.spin_box_phases_delay = create_spin_box(
+            -1000, 1000, getattr(self.settings, "phases_delay_ms", 0), step=10, parent=self, w=70
+        )
         self.spin_box_bci_stimuli_dur = create_spin_box(
             100, 60000, self.settings.stimuli_dur, step=100, parent=self, w=70
         )
@@ -107,7 +111,7 @@ class StimuliControlPanel(QFrame):
         create_shortcut("S+Up", self._up_stimuli_volume, parent=self.parent)
         create_shortcut("S+Down", self._down_stimuli_volume, parent=self.parent)
 
-        self.button_bci_stimuli = create_button(text="Запуск BCI", disabled=False, parent=self)
+        self.button_bci_stimuli = create_button(text="Запуск offBCI", disabled=False, parent=self)
         self.button_bci_mep_bins = create_button(text="MEP bins", disabled=False, parent=self)
 
     def _setup_layout(self):
@@ -121,6 +125,9 @@ class StimuliControlPanel(QFrame):
         layout_rest_video = create_hbox([QLabel("REST", self), self.combo_box_rest_video])
         layout_isi = create_hbox(
             [QLabel("ISI, s", self), self.spin_box_isi_min, QLabel("min", self), self.spin_box_isi_max, QLabel("max", self)]
+        )
+        layout_phases_delay = create_hbox(
+            [QLabel("Delay, ms", self), self.spin_box_phases_delay]
         )
         layout_bci_stimuli_dur = create_hbox(
             [QLabel("BCI stim, ms", self), self.spin_box_bci_stimuli_dur]
@@ -167,6 +174,7 @@ class StimuliControlPanel(QFrame):
         layout.addLayout(layout_noise)
         layout.addLayout(layout_rest_video)
         layout.addLayout(layout_isi)
+        layout.addLayout(layout_phases_delay)
         layout.addLayout(layout_bci_stimuli_dur)
         layout.addLayout(layout_bci_isi)
         layout.addLayout(layout_bci_ponk_isi)
@@ -189,6 +197,7 @@ class StimuliControlPanel(QFrame):
         self.noise_volume_slider.valueChanged.connect(self._on_change_noise_volume)
         self.spin_box_isi_min.valueChanged.connect(self._on_change_isi_range)
         self.spin_box_isi_max.valueChanged.connect(self._on_change_isi_range)
+        self.spin_box_phases_delay.valueChanged.connect(self._on_change_phases_delay)
         self.spin_box_bci_stimuli_dur.valueChanged.connect(self._on_change_bci_timing)
         self.spin_box_bci_isi_min.valueChanged.connect(self._on_change_bci_timing)
         self.spin_box_bci_isi_max.valueChanged.connect(self._on_change_bci_timing)
@@ -279,23 +288,21 @@ class StimuliControlPanel(QFrame):
             self.button_stimuli_restart.setEnabled(True)
             self._player_window.finish()
         else:
-            if not self._restart_stimuli:
-                self._player_window = StimuliPresentation_one_by_one(
-                    monitor=self.spin_box_monitor.value(),
-                    volume=self.stimuli_volume_slider.slider.value(),
-                    rest_stimulus_variants=self.settings.rest_video_selected,
-                )
-                self._player_window.set_isi_range(self.settings.isi_min_s, self.settings.isi_max_s)
-                self._player_window.show()
-                self._player_window.raise_()
-
-                self._update_connections()
-
             seq_name = self.combo_box_stimuli.currentText()
             sequence = self._get_sequence(seq_name)
+            phases_mode = self._is_phases_sequence(seq_name, sequence)
 
-            self._player_window.set_isi_range(self.settings.isi_min_s, self.settings.isi_max_s)
-            self._player_window.set_rest_stimulus_variants(self.settings.rest_video_selected)
+            if not self._restart_stimuli:
+                self._player_window = self._create_stimuli_player(phases_mode)
+                self._player_window.show()
+                self._player_window.raise_()
+                self._update_connections()
+
+            if phases_mode:
+                self._player_window.set_phase_delay(getattr(self.settings, "phases_delay_ms", 0))
+            else:
+                self._player_window.set_isi_range(self.settings.isi_min_s, self.settings.isi_max_s)
+                self._player_window.set_rest_stimulus_variants(self.settings.rest_video_selected)
             self._player_window.set_sequence(sequence, seq_name)
             self._player_window.restart_sequence()
 
@@ -304,6 +311,30 @@ class StimuliControlPanel(QFrame):
             self.button_stimuli.setText("Закрыть")
 
             self._restart_stimuli = False
+
+    def _create_stimuli_player(self, phases_mode=False):
+        if phases_mode:
+            return StimuliPresentationPhases(
+                monitor=self.spin_box_monitor.value(),
+                volume=self.stimuli_volume_slider.slider.value(),
+                rest_stimulus_variants=self.settings.rest_video_selected,
+                delay_ms=getattr(self.settings, "phases_delay_ms", 0),
+            )
+
+        player = StimuliPresentation_one_by_one(
+            monitor=self.spin_box_monitor.value(),
+            volume=self.stimuli_volume_slider.slider.value(),
+            rest_stimulus_variants=self.settings.rest_video_selected,
+        )
+        player.set_isi_range(self.settings.isi_min_s, self.settings.isi_max_s)
+        return player
+
+    def _is_phases_sequence(self, seq_name, sequence=None):
+        if seq_name and "_phases_" in seq_name.lower():
+            return True
+        if not sequence:
+            return False
+        return any("_phases_" in str(filename).lower() for filename in sequence.get("set", {}).values())
 
     def _change_audio_filename(self, _level):
         noise_type = self.combo_box_noise_type.currentText()
@@ -450,6 +481,17 @@ class StimuliControlPanel(QFrame):
                 ponk_isi_max_ms=ponk_isi_max_ms,
             )
 
+    def _on_change_phases_delay(self, value):
+        self.settings.phases_delay_ms = int(value)
+
+        pw = getattr(self, "_player_window", None)
+        if isinstance(pw, StimuliPresentationPhases) and not pw.isHidden():
+            pw.set_phase_delay(self.settings.phases_delay_ms)
+
+        window = getattr(self, "_bci_mep_bins_window", None)
+        if window is not None and window.isVisible():
+            window.update_delay_from_settings()
+
     def _on_change_rest_video_variants(self, selected):
         if not selected:
             selected = [self.settings.rest_video_variants[0]]
@@ -544,6 +586,7 @@ class StimuliControlPanel(QFrame):
 
     def _set_bci_timing_spinbox_values(self):
         spinbox_values = [
+            (self.spin_box_phases_delay, getattr(self.settings, "phases_delay_ms", 0)),
             (self.spin_box_bci_stimuli_dur, self.settings.stimuli_dur),
             (self.spin_box_bci_isi_min, self.settings.bci_isi_min_ms),
             (self.spin_box_bci_isi_max, self.settings.bci_isi_max_ms),

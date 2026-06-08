@@ -21,6 +21,15 @@ from PyQt5.QtWidgets import (
 from utils.ui_helpers import create_button, create_spin_box
 
 
+DEFAULT_BCI_MEP_BINS = [
+    {"name": "-400", "from_ms": -500, "to_ms": -250},
+    {"name": "-200", "from_ms": -250, "to_ms": -150},
+    {"name": "-100", "from_ms": -150, "to_ms": -75},
+    {"name": "-50", "from_ms": -75, "to_ms": 25},
+    {"name": "0", "from_ms": -25, "to_ms": 25},
+]
+
+
 class BCIMEPDelayWindow(QWidget):
     def __init__(self, settings, speed_settings=None, parent=None):
         super().__init__(parent)
@@ -29,6 +38,8 @@ class BCIMEPDelayWindow(QWidget):
         self.speed_settings = speed_settings
         self._latest_processor = None
         self._latest_epoch_index = 0
+        self._last_added_epoch_index = 0
+        self._last_added_epoch_id = None
         self._latest_result = None
         self._all_delays = []
         self._bin_values = [[] for _ in self._bin_settings()]
@@ -52,6 +63,7 @@ class BCIMEPDelayWindow(QWidget):
         self._label_delay.setAlignment(Qt.AlignCenter)
         self._label_delay.setStyleSheet("font-size: 42px; font-weight: 700;")
 
+        self._button_refresh = create_button("Обновить", parent=self)
         self._button_clear = create_button("Очистить", parent=self)
         self._button_add_bin = create_button("Добавить бин", parent=self)
 
@@ -121,6 +133,9 @@ class BCIMEPDelayWindow(QWidget):
         self.figure = Figure(figsize=(9, 6), dpi=100)
         self.canvas = FigureCanvas(self.figure)
 
+        self.summary_figure = Figure(figsize=(4.2, 3.2), dpi=100)
+        self.summary_canvas = FigureCanvas(self.summary_figure)
+
     def _setup_layout(self):
         scale_grid = QGridLayout()
         scale_grid.addWidget(QLabel("TKEO threshold", self), 0, 0)
@@ -142,7 +157,9 @@ class BCIMEPDelayWindow(QWidget):
         controls_layout.addWidget(self._label_epoch_len)
         controls_layout.addWidget(self._label_delay)
         controls_layout.addLayout(scale_grid)
+        controls_layout.addWidget(self._button_refresh)
         controls_layout.addWidget(self._table)
+        controls_layout.addWidget(self.summary_canvas)
         controls_layout.addWidget(self._button_add_bin)
         controls_layout.addWidget(self._button_clear)
 
@@ -155,6 +172,7 @@ class BCIMEPDelayWindow(QWidget):
         layout.addWidget(splitter)
 
     def _setup_connections(self):
+        self._button_refresh.clicked.connect(self.clear_bins)
         self._button_clear.clicked.connect(self.clear_bins)
         self._button_add_bin.clicked.connect(self.add_bin)
         self._table.itemChanged.connect(self._on_table_item_changed)
@@ -186,7 +204,10 @@ class BCIMEPDelayWindow(QWidget):
     def _add_bin_row(self, row, bin_cfg):
         self._table.insertRow(row)
 
-        item_name = QTableWidgetItem(str(bin_cfg.get("name", "")))
+        effective = self._effective_bin(bin_cfg)
+        item_name = QTableWidgetItem(str(effective.get("name", "")))
+        if self._is_auto_delay_bin(bin_cfg):
+            item_name.setFlags(item_name.flags() & ~Qt.ItemIsEditable)
         self._table.setItem(row, 0, item_name)
 
         item_count = QTableWidgetItem("0")
@@ -197,17 +218,20 @@ class BCIMEPDelayWindow(QWidget):
         spin_from = create_spin_box(
             -5000,
             5000,
-            int(bin_cfg.get("from_ms", 0)),
+            int(effective.get("from_ms", 0)),
             parent=self._table,
             w=85,
         )
         spin_to = create_spin_box(
             -5000,
             5000,
-            int(bin_cfg.get("to_ms", 0)),
+            int(effective.get("to_ms", 0)),
             parent=self._table,
             w=85,
         )
+        if self._is_auto_delay_bin(bin_cfg):
+            spin_from.setDisabled(True)
+            spin_to.setDisabled(True)
         spin_from.valueChanged.connect(lambda value, r=row: self._on_bin_changed(r, "from_ms", value))
         spin_to.valueChanged.connect(lambda value, r=row: self._on_bin_changed(r, "to_ms", value))
         self._table.setCellWidget(row, 2, spin_from)
@@ -220,20 +244,51 @@ class BCIMEPDelayWindow(QWidget):
     def _bin_settings(self):
         bins = getattr(self.settings, "bci_mep_bins", None)
         if not bins:
-            bins = [
-                {"name": "-400", "from_ms": -550, "to_ms": -250},
-                {"name": "-200", "from_ms": -250, "to_ms": -150},
-                {"name": "-100", "from_ms": -150, "to_ms": -75},
-                {"name": "-50", "from_ms": -75, "to_ms": 25},
-                {"name": "0", "from_ms": -25, "to_ms": 25},
-            ]
+            bins = [dict(bin_cfg) for bin_cfg in DEFAULT_BCI_MEP_BINS]
             self.settings.bci_mep_bins = bins
+        self._ensure_standard_bins(bins)
         return bins
+
+    def _ensure_standard_bins(self, bins):
+        for idx, base in enumerate(DEFAULT_BCI_MEP_BINS):
+            if idx >= len(bins):
+                bins.append(dict(base))
+            bins[idx].update(
+                {
+                    "name": base["name"],
+                    "from_ms": base["from_ms"],
+                    "to_ms": base["to_ms"],
+                    "base_name_ms": int(base["name"]),
+                    "base_from_ms": int(base["from_ms"]),
+                    "base_to_ms": int(base["to_ms"]),
+                    "auto_delay": True,
+                }
+            )
+
+    def _current_delay_ms(self):
+        return int(getattr(self.settings, "phases_delay_ms", 0))
+
+    def _is_auto_delay_bin(self, bin_cfg):
+        return bool(bin_cfg.get("auto_delay", False))
+
+    def _effective_bin(self, bin_cfg):
+        if not self._is_auto_delay_bin(bin_cfg):
+            return bin_cfg
+
+        delay_ms = self._current_delay_ms()
+        name_ms = int(bin_cfg.get("base_name_ms", bin_cfg.get("name", 0))) + delay_ms
+        from_ms = int(bin_cfg.get("base_from_ms", bin_cfg.get("from_ms", 0))) + delay_ms
+        to_ms = int(bin_cfg.get("base_to_ms", bin_cfg.get("to_ms", 0))) + delay_ms
+        return {"name": str(name_ms), "from_ms": from_ms, "to_ms": to_ms}
+
+    def update_delay_from_settings(self):
+        self._sync_table_from_settings()
+        self._rebuild_bins()
 
     def add_bin(self):
         bins = self._bin_settings()
         row = len(bins)
-        bin_cfg = {"name": f"bin {row + 1}", "from_ms": 0, "to_ms": 0}
+        bin_cfg = {"name": f"bin {row + 1}", "from_ms": 0, "to_ms": 0, "auto_delay": False}
         bins.append(bin_cfg)
         self._bin_values.append([])
         self._add_bin_row(row, bin_cfg)
@@ -244,7 +299,7 @@ class BCIMEPDelayWindow(QWidget):
             return
         row = item.row()
         bins = self._bin_settings()
-        if 0 <= row < len(bins):
+        if 0 <= row < len(bins) and not self._is_auto_delay_bin(bins[row]):
             bins[row]["name"] = item.text().strip() or f"bin {row + 1}"
 
     def update_from_processor(self, processor):
@@ -252,15 +307,24 @@ class BCIMEPDelayWindow(QWidget):
         self.speed_settings = getattr(processor.settings, "speed", self.speed_settings)
         n_epoch = int(getattr(processor, "_n_epoch", len(getattr(processor, "_epochs", []))))
         if n_epoch <= 0 or not getattr(processor, "_epochs", None):
+            self._latest_epoch_index = 0
+            self._latest_result = None
+            self._label_epoch.setText("Epoch: -")
+            self._label_epoch_len.setText("Epoch duration: -")
+            self._label_delay.setText("delay: -")
+            self._plot_empty()
             return
 
-        add_to_bins = n_epoch != self._latest_epoch_index
+        epoch_id = id(processor._epochs[-1])
+        add_to_bins = epoch_id != self._last_added_epoch_id
         self._latest_epoch_index = n_epoch
         self._process_epoch(processor, n_epoch, add_to_bins=add_to_bins)
 
     def clear_bins(self):
         self._all_delays = []
         self._bin_values = [[] for _ in self._bin_settings()]
+        self._last_added_epoch_index = 0
+        self._last_added_epoch_id = None
         self._update_bin_table()
 
     def _process_epoch(self, processor, n_epoch, add_to_bins):
@@ -297,6 +361,8 @@ class BCIMEPDelayWindow(QWidget):
             self._label_delay.setText(f"{delay_ms:.1f} ms")
             if add_to_bins:
                 self._all_delays.append(float(delay_ms))
+                self._last_added_epoch_index = n_epoch
+                self._last_added_epoch_id = id(processor._epochs[-1])
                 self._rebuild_bins()
         else:
             self._label_delay.setText("delay: -")
@@ -372,33 +438,50 @@ class BCIMEPDelayWindow(QWidget):
         return float(self._spin_threshold.value()) * (10.0 ** int(self._spin_threshold_scale.value()))
 
     def _append_delay_to_bins(self, delay_ms):
+        for idx in self._matching_bin_indices(delay_ms):
+            self._bin_values[idx].append(float(delay_ms))
+        self._update_bin_table()
+
+    def _matching_bin_indices(self, delay_ms):
+        matches = []
         for idx, bin_cfg in enumerate(self._bin_settings()):
-            lo = float(bin_cfg.get("from_ms", -math.inf))
-            hi = float(bin_cfg.get("to_ms", math.inf))
+            effective = self._effective_bin(bin_cfg)
+            lo = float(effective.get("from_ms", -math.inf))
+            hi = float(effective.get("to_ms", math.inf))
             if lo > hi:
                 lo, hi = hi, lo
             if lo < delay_ms <= hi or (idx == 0 and delay_ms == lo):
-                self._bin_values[idx].append(float(delay_ms))
-        self._update_bin_table()
+                matches.append(idx)
+        return matches
 
     def _rebuild_bins(self):
         self._bin_values = [[] for _ in self._bin_settings()]
         for delay_ms in self._all_delays:
-            self._append_delay_to_bins(delay_ms)
+            for idx in self._matching_bin_indices(delay_ms):
+                self._bin_values[idx].append(float(delay_ms))
         self._update_bin_table()
 
     def _update_bin_table(self):
         self._updating_table = True
         for row, bin_cfg in enumerate(self._bin_settings()):
+            while row >= len(self._bin_values):
+                self._bin_values.append([])
+            effective = self._effective_bin(bin_cfg)
+            self._table.item(row, 0).setText(str(effective.get("name", "")))
+            self._table.cellWidget(row, 2).setValue(int(effective.get("from_ms", 0)))
+            self._table.cellWidget(row, 3).setValue(int(effective.get("to_ms", 0)))
             values = self._bin_values[row] if row < len(self._bin_values) else []
             self._table.item(row, 1).setText(str(len(values)))
             text = ", ".join(f"{value:.1f}" for value in values)
             self._table.item(row, 4).setText(text)
         self._updating_table = False
+        self._plot_summary()
 
     def _on_bin_changed(self, row, key, value):
+        if self._updating_table:
+            return
         bins = self._bin_settings()
-        if 0 <= row < len(bins):
+        if 0 <= row < len(bins) and not self._is_auto_delay_bin(bins[row]):
             bins[row][key] = int(value)
         self._rebuild_bins()
 
@@ -431,6 +514,7 @@ class BCIMEPDelayWindow(QWidget):
         ax_tkeo.set_ylim(0, self._tkeo_ymax())
         self.figure.tight_layout()
         self.canvas.draw()
+        self._plot_summary()
 
     def _mep_ymax(self):
         return max(float(self._spin_mep_ymax.value()), 1e-9)
@@ -483,3 +567,37 @@ class BCIMEPDelayWindow(QWidget):
 
         self.figure.tight_layout()
         self.canvas.draw()
+
+    def _plot_summary(self):
+        self.summary_figure.clear()
+        ax_bar = self.summary_figure.add_subplot(211)
+        ax_hist = self.summary_figure.add_subplot(212)
+
+        bins = self._bin_settings()
+        labels = [str(self._effective_bin(bin_cfg).get("name", "")) for bin_cfg in bins]
+        counts = [
+            len(self._bin_values[idx]) if idx < len(self._bin_values) else 0
+            for idx in range(len(bins))
+        ]
+
+        x = np.arange(len(labels))
+        ax_bar.bar(x, counts, color="#4d7fa3")
+        ax_bar.set_xticks(x)
+        ax_bar.set_xticklabels(labels, fontsize=8)
+        ax_bar.set_ylabel("N")
+        ax_bar.set_title("Bins")
+        ax_bar.grid(True, axis="y", alpha=0.25)
+
+        finite_delays = np.asarray(
+            [value for value in self._all_delays if np.isfinite(value)],
+            dtype=float,
+        )
+        if finite_delays.size:
+            ax_hist.hist(finite_delays, bins="auto", color="#7b5db8", edgecolor="white")
+        ax_hist.set_xlabel("delay, ms")
+        ax_hist.set_ylabel("N")
+        ax_hist.set_title("Delay histogram")
+        ax_hist.grid(True, axis="y", alpha=0.25)
+
+        self.summary_figure.tight_layout()
+        self.summary_canvas.draw()
