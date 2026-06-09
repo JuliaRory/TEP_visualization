@@ -1,0 +1,20 @@
+{
+  "participant_id": "15SZ",
+  "survey_id": "day1",
+  "saved_at": "2026-06-09T18:54:03",
+  "answers": {
+    "task_quality_1": 3,
+    "task_quality_2": 3,
+    "task_quality_3": 3,
+    "task_quality_4": 3,
+    "Real_timing_ability": 3,
+    "MI_timing_ability": 2,
+    "MI_ability": 25,
+    "MI_vividness": 23,
+    "MI_difficulty": 14,
+    "MI_description": "Попытка представить ощущения в руке при движении указательного пальца",
+    "TMS_distraction": 11,
+    "TMS_amplitude": 50,
+    "comment": ":P"
+  }
+}

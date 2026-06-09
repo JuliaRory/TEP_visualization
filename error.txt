@@ -1,0 +1,16 @@
+Traceback (most recent call last):
+  File "D:\Resonance\TEP_visualization\ui\main_window.py", line 268, in <lambda>
+    self._input_stream.dataReady.connect(lambda epoch, ts: self._data_processor.add_epoch(epoch, ts))
+                                                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Resonance\TEP_visualization\logic\data_processor.py", line 98, in add_epoch
+    recreated = self._ensure_average_functions(which="TEPs")
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Resonance\TEP_visualization\logic\data_processor.py", line 293, in _ensure_average_functions
+    self.create_average_functions(which=which)
+  File "D:\Resonance\TEP_visualization\logic\data_processor.py", line 249, in create_average_functions
+    data = self.get_eeg_epochs()
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Resonance\TEP_visualization\logic\data_processor.py", line 229, in get_eeg_epochs
+    return np.array([self._transform(np.array(TEPs[:-2, :] * 1e6, dtype=float)) for TEPs in self._epochs])
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ValueError: setting an array element with a sequence. The requested array has an inhomogeneous shape after 2 dimensions. The detected shape was (12, 64) + inhomogeneous part.
