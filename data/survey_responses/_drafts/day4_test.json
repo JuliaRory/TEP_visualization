@@ -1,0 +1,26 @@
+{
+  "participant_id": "test",
+  "survey_id": "day4",
+  "saved_at": "2026-06-09T14:47:03",
+  "is_draft": true,
+  "current_page_index": 7,
+  "answers": {
+    "task_quality_1": 7,
+    "task_quality_2": 7,
+    "task_quality_3": 7,
+    "task_quality_4": 7,
+    "task_quality_5": null,
+    "MI_ability": 73,
+    "MI_vividness": 57,
+    "MI_difficulty": 72,
+    "MI_description": "rf",
+    "Real_relax_ability": 5,
+    "Real_relax_difficulty": 61,
+    "TMS_relax": 52,
+    "Real_relax_comments": null,
+    "TMS_distraction": null,
+    "TMS_BCI_distraction": null,
+    "TMS_amplitude": null,
+    "comment": null
+  }
+}
