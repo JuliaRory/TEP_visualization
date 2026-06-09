@@ -2,6 +2,7 @@
 from dataclasses import is_dataclass
 import json
 from dataclasses import asdict
+from pathlib import Path
 
 class SettingsHandler:
     """
@@ -176,6 +177,9 @@ class SettingsHandler:
             data = json.load(f)
 
         self._apply_dict_to_settings(self.settings, data)
+        self._load_speed_settings_json()
+        if hasattr(self.data_processor, "configure_speed"):
+            self.data_processor.configure_speed()
         self.sync_ui_from_settings()
 
         self.update_averaging(apply=False)
@@ -202,6 +206,20 @@ class SettingsHandler:
                 self._apply_dict_to_settings(attr, value)
             else:
                 setattr(obj, key, value)
+
+    def _load_speed_settings_json(self):
+        path = Path(getattr(self.settings, "SPEED_settings_path", ""))
+        if not path:
+            return
+        if not path.is_absolute():
+            path = Path.cwd() / path
+        if not path.exists():
+            return
+
+        with path.open("r", encoding="utf-8") as f:
+            data = json.load(f)
+
+        self._apply_dict_to_settings(self.settings.speed, data)
 
 
     def sync_ui_from_settings(self):

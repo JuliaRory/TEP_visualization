@@ -120,6 +120,13 @@ class MEPPlot(FigureCanvas):
         self.refresh_plots()
         self.emit_threshold_count()
 
+    def set_sampling_rate(self, Fs):
+        if Fs == self.Fs:
+            return
+        self.Fs = Fs
+        self.ms_to_sample = lambda x: int(x / 1000 * Fs)
+        self.rebuild_from_settings(reset_history=True)
+
 
     def create_axes(self):
         """Создаёт оси со всеми нужными параметрами"""

@@ -81,9 +81,21 @@ class buttPlot(FigureCanvas):
         """Задать смещение для оси х и на основе этого пустышки для накопления сигнала"""
         self._x = np.linspace(x_shift, window_dur+x_shift, window_dur)
         if signal == 'TEP':
-            self._create_empty_TEPs()
+            if hasattr(self, "_lines"):
+                for line in self._lines:
+                    line.set_xdata(self._x)
+                    line.set_ydata(self._fit_to_x(line.get_ydata()))
+            else:
+                self._create_empty_TEPs()
         elif signal == 'MEP':
-            self._create_empty_MEPs()
+            if getattr(self, "_mep_shadow", None) is not None:
+                self._mep_shadow.remove()
+                self._mep_shadow = None
+            if hasattr(self, "_line"):
+                self._line.set_xdata(self._x)
+                self._line.set_ydata(self._fit_to_x(self._line.get_ydata()))
+            else:
+                self._create_empty_MEPs()
 
     def _create_empty_TEPs(self):
         # --- копилка для сигнала ---
@@ -173,6 +185,7 @@ class buttPlot(FigureCanvas):
     def update_TEPs(self, teps):
         """Нарисовать новые TEPs"""
         self.fig.canvas.restore_region(self._background)  # восстанавливаем чистый фон
+        teps = np.asarray([self._fit_to_x(row) for row in np.asarray(teps)])
         
         for i in range(teps.shape[0]):          # для каждого канала
             self._lines[i].set_ydata(teps[i])

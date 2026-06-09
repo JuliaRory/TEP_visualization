@@ -18,6 +18,7 @@ class PlotUpdater:
 
     def update_plots(self, processor):
         self._latest_processor = processor
+        self._sync_plot_timebase(processor)
         self.update_topoteps(processor)
 
         self.update_avg_teps(processor) # ????
@@ -29,6 +30,7 @@ class PlotUpdater:
             self.update_mep_deeper_look(processor)
     
     def update_topoteps(self, processor):
+        self._sync_plot_timebase(processor)
         if len(processor._epochs) == 0:
             return
 
@@ -43,6 +45,7 @@ class PlotUpdater:
             self.topo_panel.figure.update_data(TEPs2plot)
 
     def update_avg_teps(self, processor):
+        self._sync_plot_timebase(processor)
         if len(processor._epochs) == 0:
             return
 
@@ -65,6 +68,7 @@ class PlotUpdater:
     def update_meps(self, processor):
         """MEPs"""
         self._latest_processor = processor
+        self._sync_plot_timebase(processor)
         if len(processor._epochs) == 0:
             return
 
@@ -75,6 +79,7 @@ class PlotUpdater:
             self.meps_panel.figure.update_emg(emg2plot)
 
     def update_avg_meps(self, processor):
+        self._sync_plot_timebase(processor)
         if len(processor._epochs) == 0:
             return
 
@@ -142,6 +147,50 @@ class PlotUpdater:
         emg = processor._baseline(epoch[-2:, :] * 1E3)  # вычесть бейзлайн и перевести в мВ
         emg = np.diff(emg, axis=0).flatten()           # посчитать разницу каналов
         return self._remove_mep_slow_trend(processor, emg, settings)
+
+    def _sync_plot_timebase(self, processor):
+        n_samples = int(getattr(processor, "_n_samples", 0) or 0)
+        if n_samples <= 0:
+            return
+
+        speed = getattr(getattr(processor, "settings", None), "speed", None)
+        fs = float(getattr(speed, "Fs", 0) or 0)
+        x_shift = -int(getattr(processor, "_time_shift", 0) or 0)
+        signature = (fs, x_shift, n_samples)
+
+        topo_signature = getattr(self.topo_panel, "_timebase_signature", None)
+        if topo_signature != signature:
+            if fs > 0:
+                self.topo_panel.ms_to_sample = lambda x, _fs=fs: int(x / 1000 * _fs)
+            self.topo_panel.speed_settings = speed
+            self.topo_panel.n_samples = n_samples
+            self.topo_panel.x_shift = -x_shift
+            self.topo_panel.figure.set_x_shift(x_shift, n_samples)
+            self.topo_panel._update_scale()
+            self.topo_panel._timebase_signature = signature
+
+        overview_settings = self.overview_panel.settings.butts_plot
+        for figure, signal in (
+            (self.overview_panel.figure_TEP, "TEP"),
+            (self.overview_panel.figure_MEP, "MEP"),
+        ):
+            figure_signature = getattr(figure, "_timebase_signature", None)
+            if figure_signature == signature:
+                continue
+            if fs > 0:
+                figure._ms_to_sample = lambda x, _fs=fs: int(x / 1000 * _fs)
+            figure.set_x_shift(x_shift, n_samples, signal=signal)
+            figure.update_axes(
+                xmax_ms=overview_settings.xmax_ms,
+                xmin_ms=overview_settings.xmin_ms,
+                amp=figure.settings.amp,
+                which=f"{signal}s",
+            )
+            figure._timebase_signature = signature
+
+        mep_figure = getattr(self.meps_panel, "figure", None)
+        if mep_figure is not None and fs > 0:
+            mep_figure.set_sampling_rate(fs)
 
     def _remove_mep_slow_trend(self, processor, emg, settings):
         if settings is None or not getattr(settings, "remove_slow_trend", True):

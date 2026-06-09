@@ -71,6 +71,7 @@ class DataProcessor(QObject):
             "median": lambda x, y, z: RollingMedian(x, y, z), 
             "trimmean": lambda x, y, z: RollingTrimMean(x, y, save_all=z)
         }
+        self.configure_speed()
 
 
     @pyqtSlot(object, float)
@@ -86,6 +87,7 @@ class DataProcessor(QObject):
         """
 
         if self.process_new_data:
+            self._sync_epoch_shape(epoch)
 
             self._epochs.append(epoch)
             self._timestamps.append(ts)
@@ -245,6 +247,8 @@ class DataProcessor(QObject):
         if len(self._epochs) != 0:
             if which == 'TEPs':
                 data = self.get_eeg_epochs()
+                n_samples = data.shape[-1] if data.ndim == 3 else self._n_samples
+                self._sync_n_samples(n_samples)
                 self.average_functions = [
                     [function(data[:, i, j], self._n_aver_max, self._aver_all)
                     for j in range(self._n_samples)]
@@ -293,6 +297,26 @@ class DataProcessor(QObject):
         if len(self._epochs) == 0:
             return self._n_samples
         return int(np.asarray(self._epochs[-1]).shape[-1])
+
+    def configure_speed(self):
+        """Refresh sample-rate dependent values after SPEED settings change."""
+        speed = self.settings.speed
+        fs = float(getattr(speed, "Fs", 0) or 0)
+        self._ms_to_sample = lambda x: int(x / 1000 * fs)
+        self._n_samples = self._ms_to_sample(speed.window_end - speed.window_start)
+        self._time_shift = self._ms_to_sample(0 - speed.window_start)
+        self.average_functions = None
+        self.average_functions_mep = None
+
+    def _sync_epoch_shape(self, epoch):
+        self._sync_n_samples(int(np.asarray(epoch).shape[-1]))
+
+    def _sync_n_samples(self, n_samples):
+        if n_samples <= 0 or n_samples == self._n_samples:
+            return
+        self._n_samples = n_samples
+        self.average_functions = None
+        self.average_functions_mep = None
     
     def update_avg_mep(self, do_average):
         self.average_mep_data = do_average

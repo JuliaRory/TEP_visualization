@@ -685,9 +685,22 @@ class MainWindow(QWidget):
         self._settings_handler_record.load_from_json(default=True)
 
         self._settings_handler.load_from_json(default=True)
+        self._sync_speed_from_settings()
         self._stimuli_control_panel.sync_ui_from_settings()
 
         self.show()
+
+    def _sync_speed_from_settings(self):
+        speed = self.settings.speed
+        self.SPEED = {
+            key: getattr(speed, key)
+            for key in getattr(speed, "__dataclass_fields__", {})
+        }
+        self._data_processor.configure_speed()
+        self._ms_to_sample = lambda x: int(x / 1000 * speed.Fs)
+        self._n_samples = self._ms_to_sample(speed.window_end - speed.window_start)
+        self._time_shift = self._ms_to_sample(0 - speed.window_start)
+        self._plot_updater._sync_plot_timebase(self._data_processor)
 
    
     # --- События ---
