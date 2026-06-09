@@ -35,6 +35,7 @@ class StimuliPresentationAntiponk(StimuliPresentation_one_by_one):
 
     def set_tension_wait_enabled(self, enabled):
         self._wait_for_tension = bool(enabled)
+        self._release_tension_wait()
         if not self._wait_for_tension and self._waiting_for_tension:
             self._release_tension_wait()
 

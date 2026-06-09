@@ -9,7 +9,7 @@ from utils.ui_helpers import create_button, create_spin_box, create_check_box, c
 from utils.layout_utils import create_hbox, create_vbox
 
 from .video_player import StimuliPresentation_one_by_one
-from .video_player_antiponk import StimuliPresentationAntiponk
+# from .video_player_antiponk import StimuliPresentationAntiponk
 from .video_player_phases import StimuliPresentationPhases
 from .video_player_bci import StimuliPresentation_BCI
 from .stimuli_window import StimuliCreation
@@ -346,7 +346,7 @@ class StimuliControlPanel(QFrame):
                 self._update_connections()
 
             if antiponk_mode:
-                self._apply_antiponk_tension_settings()
+                print("antiponk") #self._apply_antiponk_tension_settings()
             elif phases_mode:
                 self._player_window.set_phase_delay(getattr(self.settings, "phases_delay_ms", 0))
             else:
@@ -362,17 +362,17 @@ class StimuliControlPanel(QFrame):
             self._restart_stimuli = False
 
     def _create_stimuli_player(self, phases_mode=False, antiponk_mode=False):
-        if antiponk_mode:
-            player = StimuliPresentationAntiponk(
-                monitor=self.spin_box_monitor.value(),
-                volume=self.stimuli_volume_slider.slider.value(),
-                rest_stimulus_variants=self.settings.rest_video_selected,
-                wait_for_tension=getattr(self.settings, "antiponk_wait_tension", False),
-                tension_timeout_ms=getattr(self.settings, "antiponk_tension_timeout_ms", 1000),
-                tension_wait_stream=self.tension_wait_stream,
-            )
-            player.set_isi_range(self.settings.isi_min_s, self.settings.isi_max_s)
-            return player
+        # if antiponk_mode:
+        #     player = StimuliPresentationAntiponk(
+        #         monitor=self.spin_box_monitor.value(),
+        #         volume=self.stimuli_volume_slider.slider.value(),
+        #         rest_stimulus_variants=self.settings.rest_video_selected,
+        #         wait_for_tension=getattr(self.settings, "antiponk_wait_tension", False),
+        #         tension_timeout_ms=getattr(self.settings, "antiponk_tension_timeout_ms", 1000),
+        #         tension_wait_stream=self.tension_wait_stream,
+        #     )
+        #     player.set_isi_range(self.settings.isi_min_s, self.settings.isi_max_s)
+        #     return player
 
         if phases_mode:
             return StimuliPresentationPhases(
@@ -381,7 +381,7 @@ class StimuliControlPanel(QFrame):
                 rest_stimulus_variants=self.settings.rest_video_selected,
                 delay_ms=getattr(self.settings, "phases_delay_ms", 0),
             )
-
+        print("NORMAL MODE")
         player = StimuliPresentation_one_by_one(
             monitor=self.spin_box_monitor.value(),
             volume=self.stimuli_volume_slider.slider.value(),

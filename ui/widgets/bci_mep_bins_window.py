@@ -339,7 +339,7 @@ class BCIMEPDelayWindow(QWidget):
         tkeo = self._calculate_tkeo(mep_mV * 1e-3)
 
         threshold = self._threshold_value()
-        delay_ms = self._detect_delay(time_ms, tkeo, threshold)
+        delay_ms = -self._detect_delay(time_ms, tkeo, threshold)
 
         self._latest_result = {
             "time_ms": time_ms,
@@ -556,7 +556,7 @@ class BCIMEPDelayWindow(QWidget):
 
         if np.isfinite(delay_ms):
             for ax in (ax_mep, ax_tkeo):
-                ax.axvline(delay_ms, color="#d4772f", lw=2, label="movement onset")
+                ax.axvline(-delay_ms, color="#d4772f", lw=2, label="movement onset")
 
         for ax in (ax_mep, ax_tkeo):
             ax.grid(True, alpha=0.25)

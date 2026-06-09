@@ -1,0 +1,18 @@
+{
+  "participant_id": "01AV",
+  "survey_id": "day4",
+  "saved_at": "2026-06-08T19:49:03",
+  "answers": {
+    "task_quality_1": 4,
+    "task_quality_2": 3,
+    "task_quality_3": 4,
+    "task_quality_4": 3,
+    "MI_ability": 57,
+    "MI_vividness": 52,
+    "MI_difficulty": 76,
+    "MI_description": "поньки",
+    "TMS_distraction": 8,
+    "TMS_amplitude": 48,
+    "comment": null
+  }
+}

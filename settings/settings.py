@@ -130,7 +130,7 @@ class LayoutSettings:
 @dataclass
 class SpeedSettings:
     window_start: int = -100
-    window_end: int = 300
+    window_end: int = 500
     artifact: bool = True
     artifact_start: int = -5
     artifact_end: int = 15
