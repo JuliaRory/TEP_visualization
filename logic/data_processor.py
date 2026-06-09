@@ -134,7 +134,7 @@ class DataProcessor(QObject):
         if which == "TEPs":
             for i, ch_data in enumerate(TEPs):
                 avg_funcs = self.average_functions[i]
-                for j in range(len(avg_funcs)):
+                for j in range(min(len(avg_funcs), len(ch_data))):
                     avg_funcs[j].add(ch_data[j])
         else:   # MEPs
             avg_funcs = self.average_functions_mep
@@ -226,13 +226,22 @@ class DataProcessor(QObject):
     
     # --- Усреднение ---
     def get_eeg_epochs(self):
-        return np.array([self._transform(np.array(TEPs[:-2, :] * 1e6, dtype=float)) for TEPs in self._epochs])
+        epochs = self._current_length_epochs()
+        if len(epochs) == 0:
+            return np.empty((0, len(self.settings.channels), self._n_samples))
+        return np.stack([
+            self._transform(np.array(TEPs[:-2, :] * 1e6, dtype=float))
+            for TEPs in epochs
+        ], axis=0)
     
     def get_emg_epochs(self):
-        if len(self._epochs) == 0:
+        epochs = self._current_length_epochs()
+        if len(epochs) == 0:
             return np.empty((0, self._n_samples))
-        epochs = np.array(self._epochs)[:, -2:] * 10**3
-        emg_epochs = np.array([np.diff(self._baseline(emg), axis=0).flatten() for emg in epochs])
+        emg_epochs = np.stack([
+            np.diff(self._baseline(np.asarray(epoch[-2:], dtype=float) * 10**3), axis=0).flatten()
+            for epoch in epochs
+        ], axis=0)
         return emg_epochs
 
     def _mep_average_window(self, data):
@@ -317,6 +326,16 @@ class DataProcessor(QObject):
         self._n_samples = n_samples
         self.average_functions = None
         self.average_functions_mep = None
+
+    def _current_length_epochs(self):
+        return [epoch for epoch, _ in self._current_length_epoch_records()]
+
+    def _current_length_epoch_records(self):
+        return [
+            (epoch, ts)
+            for epoch, ts in zip(self._epochs, self._timestamps)
+            if int(np.asarray(epoch).shape[-1]) == self._n_samples
+        ]
     
     def update_avg_mep(self, do_average):
         self.average_mep_data = do_average

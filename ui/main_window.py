@@ -557,14 +557,19 @@ class MainWindow(QWidget):
             print("---> Сохранение отменено")
             return None 
         
-        data2save = np.array(self._data_processor._epochs[:]).transpose(0, 2, 1).reshape(-1, 66)      # (n_samples, n_channels)
-        ts2save = np.array(self._data_processor._timestamps)
+        epoch_records = self._data_processor._current_length_epoch_records()
+        epochs_to_save = [epoch for epoch, _ in epoch_records]
+        if len(epochs_to_save) == 0:
+            print("---> Нет эпох текущей длины для сохранения")
+            return None
+        data2save = np.array(epochs_to_save).transpose(0, 2, 1).reshape(-1, 66)      # (n_samples, n_channels)
+        ts2save = np.array([ts for _, ts in epoch_records])
         # если выбран файл
         with h5py.File(file_path, "w") as h5f:
             data = h5f.create_dataset("epochs", data=data2save, dtype='float32')      # для эпох (64 EEG + 2 EMG)
             data.attrs["Fs"] = self.SPEED["Fs"]
             data.attrs["n_samples"] = self._n_samples
-            data.attrs["n_epochs"] = len(self._data_processor._epochs)
+            data.attrs["n_epochs"] = len(epochs_to_save)
             
             tdata = h5f.create_dataset("timestamps", data=ts2save, dtype='int64')      # для таймстемпов резонанса (в нс)
             tdata.attrs["units"] = "ns"
