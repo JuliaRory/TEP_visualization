@@ -15,7 +15,8 @@ REST_STIMULUS_VARIANTS = (
     "rest1500_tms_+200ms_bar.mkv",
 )
 START_COUNTDOWN_VIDEO = r"resources/videoSamples/audio_countdown_3.mkv"
-INTRO_AFTER_COUNTDOWN_MS = 1000
+INTRO_AFTER_COUNTDOWN_MS = 2000
+FIRST_PONK_AFTER_COUNTDOWN_MS = 500
 
 
 class StimuliPresentation_BCI(QWidget):
@@ -277,6 +278,7 @@ class StimuliPresentation_BCI(QWidget):
             self._placeholder_widget.setPixmap(self._intro_pic)
             self._placeholder_widget.show()
             self._show_marker()
+            self._start_ponk_timer(FIRST_PONK_AFTER_COUNTDOWN_MS)
             self._start_intro_after_countdown_interval(INTRO_AFTER_COUNTDOWN_MS)
             return
 
@@ -421,6 +423,16 @@ class StimuliPresentation_BCI(QWidget):
         print("PONK ISI", new_isi)
         self._ponk_timer.start(new_isi)
 
+    def _start_ponk_timer(self, delay_ms=None):
+        if self._ponk_timer.isActive():
+            self._ponk_started = True
+            return
+
+        self._ponk_started = True
+        if delay_ms is None:
+            delay_ms = self._get_new_bci_isi()
+        self._ponk_timer.start(max(0, int(delay_ms)))
+
     def _play_countdown_video(self):
         if self._stopped:
             return
@@ -446,8 +458,7 @@ class StimuliPresentation_BCI(QWidget):
         self._intro_after_countdown_timer.stop()
         self._intro_after_countdown_started_at = None
         self._intro_after_countdown_remaining_ms = 0
-        self._ponk_started = True
-        self._ponk_timer.start(self._get_new_bci_isi())
+        self._start_ponk_timer()
         self._play_next_stimuli()
     
     def keyPressEvent(self, event):

@@ -71,6 +71,7 @@ class StimuliControlPanel(QFrame):
         self.button_create_stimuli = create_button(text="Создать", disabled=False, parent=self, w=100)
 
         self.combo_box_stimuli = create_combo_box([], parent=self, tooltips=True)
+        self.combo_box_bci_stimuli = create_combo_box([], parent=self, tooltips=True)
         self._button_update_stimuli = create_button(text="⟳", disabled=False, parent=self, w=30)
 
         self.combo_box_noise_type = create_combo_box(self.settings.noise_type, parent=self, tooltips=True)
@@ -150,6 +151,7 @@ class StimuliControlPanel(QFrame):
     def _setup_layout(self):
         layout_stimuli_creation = create_vbox([QLabel("СТИМУЛЫ", self), self.button_create_stimuli])
         layout_stimuli = create_hbox([self.combo_box_stimuli, self._button_update_stimuli])
+        layout_bci_stimuli = create_hbox([QLabel("offBCI seq", self), self.combo_box_bci_stimuli])
         layout_monitor = create_hbox([QLabel("монитор", self), self.spin_box_monitor])
         layout_nvx = create_hbox([self.check_box_stimuli_record])
         layout_noise = create_hbox(
@@ -211,6 +213,7 @@ class StimuliControlPanel(QFrame):
         layout = QVBoxLayout(self._settings_panel)
         layout.addLayout(layout_stimuli_creation)
         layout.addLayout(layout_stimuli)
+        layout.addLayout(layout_bci_stimuli)
         layout.addLayout(layout_noise)
         layout.addLayout(layout_rest_video)
         layout.addLayout(layout_isi)
@@ -248,6 +251,7 @@ class StimuliControlPanel(QFrame):
         self.spin_box_bci_ponk_isi_max.valueChanged.connect(self._on_change_bci_timing)
 
         self._button_update_stimuli.clicked.connect(self._update_combo_box_stimuli)
+        self._button_update_stimuli.clicked.connect(self._update_combo_box_bci_stimuli)
         self.combo_box_noise_type.currentTextChanged[str].connect(self._change_audio_filename)
         self.combo_box_white_noise.currentTextChanged[str].connect(self._change_audio_filename)
         self.combo_box_rest_video.textChanged.connect(self._on_change_rest_video_variants)
@@ -277,6 +281,12 @@ class StimuliControlPanel(QFrame):
             self.button_stimuli_restart.setEnabled(True)
             self._player_window.finish()
         else:
+            seq_name = self.combo_box_bci_stimuli.currentText()
+            sequence = self._get_sequence_bci(seq_name)
+            if not sequence:
+                print(f"[StimuliControlPanel]: BCI sequence '{seq_name}' is empty or not found.")
+                return
+
             self._player_window = StimuliPresentation_BCI(
                     monitor=self.spin_box_monitor.value(),
                     volume=self.stimuli_volume_slider.slider.value(),
@@ -290,8 +300,6 @@ class StimuliControlPanel(QFrame):
             self._update_connections()
 
             self._player_window.set_rest_stimulus_variants(self.settings.rest_video_selected)
-            seq_name = "1"  # self.combo_box_stimuli.currentText()
-            sequence = self._get_sequence_bci(seq_name)
             self._player_window.set_sequence(sequence, seq_name)
 
             self._player_window.restart_sequence()
@@ -653,13 +661,33 @@ class StimuliControlPanel(QFrame):
         except (FileNotFoundError, json.JSONDecodeError):
             print("файл пока пустой")
 
+    def _update_combo_box_bci_stimuli(self):
+        current = self.combo_box_bci_stimuli.currentText()
+        self.combo_box_bci_stimuli.clear()
+        try:
+            with open(self.settings.stimuli_bci_filename, "r", encoding="utf-8") as f:
+                data = json.load(f)
+        except (FileNotFoundError, json.JSONDecodeError):
+            data = {}
+
+        if not isinstance(data, dict):
+            return
+
+        self.combo_box_bci_stimuli.addItems(data.keys())
+        if current:
+            index = self.combo_box_bci_stimuli.findText(current)
+            if index >= 0:
+                self.combo_box_bci_stimuli.setCurrentIndex(index)
+
     def _update_combo_box_noise(self):
         return
 
     def _finilize(self):
         self._update_combo_box_stimuli()
+        self._update_combo_box_bci_stimuli()
 
     def sync_ui_from_settings(self):
+        self._update_combo_box_bci_stimuli()
         available = set(self.settings.rest_video_variants)
         selected = [item for item in self.settings.rest_video_selected if item in available]
         if not selected:
