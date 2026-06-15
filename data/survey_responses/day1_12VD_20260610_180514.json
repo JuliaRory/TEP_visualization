@@ -1,0 +1,20 @@
+{
+  "participant_id": "12VD",
+  "survey_id": "day1",
+  "saved_at": "2026-06-10T18:05:14",
+  "answers": {
+    "task_quality_1": 3,
+    "task_quality_2": 4,
+    "task_quality_3": 3,
+    "task_quality_4": 5,
+    "Real_timing_ability": 6,
+    "MI_timing_ability": 6,
+    "MI_ability": 69,
+    "MI_vividness": 53,
+    "MI_difficulty": 52,
+    "MI_description": "представил, что нажимаю клавишу фортепиано, причем обычно это вроде удара, а сейчас было как бы с проскальзыванием пальца вперед; представлял не визуальный образ, а ощущения, как если бы я в самом деле нажимал клавишу указательным пальцем",
+    "TMS_distraction": 0,
+    "TMS_amplitude": 50,
+    "comment": null
+  }
+}

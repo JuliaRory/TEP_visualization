@@ -1,0 +1,33 @@
+{
+  "participant_id": "02NS",
+  "survey_id": "day4",
+  "saved_at": "2026-06-10T13:59:53",
+  "answers": {
+    "task_quality_1": 4,
+    "task_quality_2": 5,
+    "task_quality_3": 4,
+    "task_quality_4": 3,
+    "task_quality_5": 3,
+    "PA_TMS_rest": 1,
+    "PA_TMS_real": 1,
+    "AP_TMS_rest": 2,
+    "AP_TMS_real": 2,
+    "TMS_PA_AP_comments": null,
+    "MI_ability": 59,
+    "MI_vividness": 86,
+    "MI_difficulty": 51,
+    "MI_description": "Представляла напряжение в мышце, ощущение тепла, изменение положения сустава в пространсве, ощущение легкого покалывания и небольшой боли в мышце при ее усталости",
+    "Real_relax_ability": 4,
+    "Real_relax_difficulty": 34,
+    "TMS_relax": 50,
+    "Real_relax_comments": "Между операциями напряжения и расслабления мышцы очень маленькие интервалы, мышца остается в напряжении, не успевает полноценно раслабиться. От этого дальнейшие циклы напряжения и расслабления мышцы выполнять сложнее",
+    "TMS_distraction": 5,
+    "TMS_amplitude": 50,
+    "comment": null,
+    "offBCI_n_movements": "около 8-10 движений",
+    "offBCI_TMS_distraction": 5,
+    "offBCI_TMS_MI_interferance": "никак не влияли",
+    "offBCI_TMS_rhythm_interferance": "нет, усилий не требовалось",
+    "offBCI_comment": null
+  }
+}

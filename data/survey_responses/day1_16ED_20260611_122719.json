@@ -1,0 +1,20 @@
+{
+  "participant_id": "16ED",
+  "survey_id": "day1",
+  "saved_at": "2026-06-11T12:27:19",
+  "answers": {
+    "task_quality_1": 3,
+    "task_quality_2": 4,
+    "task_quality_3": 3,
+    "task_quality_4": 4,
+    "Real_timing_ability": 5,
+    "MI_timing_ability": 5,
+    "MI_ability": 56,
+    "MI_vividness": 49,
+    "MI_difficulty": 46,
+    "MI_description": "Представление ощущения палца -- разгибательного движения",
+    "TMS_distraction": 17,
+    "TMS_amplitude": 48,
+    "comment": null
+  }
+}

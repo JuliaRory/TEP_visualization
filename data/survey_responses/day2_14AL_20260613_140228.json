@@ -1,0 +1,25 @@
+{
+  "participant_id": "14AL",
+  "survey_id": "day2",
+  "saved_at": "2026-06-13T14:02:28",
+  "answers": {
+    "task_quality_1": 5,
+    "task_quality_2": 4,
+    "task_quality_3": 4,
+    "task_quality_4": 4,
+    "Real_SST_ability": 5,
+    "SST_ability": 5,
+    "SST_difficulty": 92,
+    "SST_TMS_distraction": 90,
+    "SST_comments": null,
+    "Real_timing_ability": 6,
+    "MI_timing_ability": 6,
+    "MI_ability": 93,
+    "MI_vividness": 93,
+    "MI_difficulty": 93,
+    "MI_description": "Я представляла движение костей и суставов и сокращение мышц",
+    "TMS_distraction": 74,
+    "TMS_amplitude": 50,
+    "comment": null
+  }
+}
