@@ -56,10 +56,10 @@
     "bar_AAAA_rest_vs_motor_4":{
         "set": {
             "1": "animatedSingle1500_tms_-400ms_nosounds_bar.mkv", 
-            "2": "animatedSingle1500_tms_0ms_nosounds_bar.mkv",
-            "3": "animatedSingle1500_tms_-50ms_nosounds_bar.mkv",
-            "4": "animatedSingle1500_tms_-50ms_nosounds_bar.mkv",
-            "5": "animatedSingle1500_tms_0ms_nosounds_bar.mkv",
+            "2": "animatedSingle1500_tms_-200ms_nosounds_bar.mkv",
+            "3": "animatedSingle1500_tms_0ms_nosounds_bar.mkv",
+            "4": "animatedSingle1500_tms_-100ms_nosounds_bar.mkv",
+            "5": "animatedSingle1500_tms_-50ms_nosounds_bar.mkv",
             "6": "rest1500_tms_0ms_bar.mkv",
             "7": "audio_countdown_3.mkv"
         },
@@ -75,9 +75,9 @@
         "set": {
             "1": "animatedSingle1500_tms_-400ms_nosounds_bar.mkv", 
             "2": "animatedSingle1500_tms_-200ms_nosounds_bar.mkv",
-            "3": "animatedSingle1500_tms_-100ms_nosounds_bar.mkv",
-            "4": "animatedSingle1500_tms_-50ms_nosounds_bar.mkv",
-            "5": "animatedSingle1500_tms_-100ms_nosounds_bar.mkv",
+            "3": "animatedSingle1500_tms_0ms_nosounds_bar.mkv",
+            "4": "animatedSingle1500_tms_-100ms_nosounds_bar.mkv",
+            "5": "animatedSingle1500_tms_-50ms_nosounds_bar.mkv",
             "6": "rest1500_tms_0ms_bar.mkv",
             "7": "audio_countdown_3.mkv"
         },
@@ -93,9 +93,9 @@
         "set": {
             "1": "animatedSingle1500_tms_-400ms_nosounds_bar.mkv", 
             "2": "animatedSingle1500_tms_-200ms_nosounds_bar.mkv",
-            "3": "animatedSingle1500_tms_-100ms_nosounds_bar.mkv",
-            "4": "animatedSingle1500_tms_-50ms_nosounds_bar.mkv",
-            "5": "animatedSingle1500_tms_0ms_nosounds_bar.mkv",
+            "3": "animatedSingle1500_tms_0ms_nosounds_bar.mkv",
+            "4": "animatedSingle1500_tms_-100ms_nosounds_bar.mkv",
+            "5": "animatedSingle1500_tms_-50ms_nosounds_bar.mkv",
             "6": "rest1500_tms_0ms_bar.mkv",
             "7": "audio_countdown_3.mkv"
         },

@@ -105,7 +105,7 @@ class StimuliSettings:
         {"name": "-400", "from_ms": -500, "to_ms": -250},
         {"name": "-200", "from_ms": -250, "to_ms": -150},
         {"name": "-100", "from_ms": -150, "to_ms": -75},
-        {"name": "-50", "from_ms": -75, "to_ms": 25},
+        {"name": "-50", "from_ms": -75, "to_ms": -25},
         {"name": "0", "from_ms": -25, "to_ms": 25},
     ])
     bci_mep_threshold: float = 4.0

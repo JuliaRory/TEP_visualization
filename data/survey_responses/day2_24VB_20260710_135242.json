@@ -1,0 +1,25 @@
+{
+  "participant_id": "24VB",
+  "survey_id": "day2",
+  "saved_at": "2026-07-10T13:52:42",
+  "answers": {
+    "task_quality_1": 7,
+    "task_quality_2": 5,
+    "task_quality_3": 7,
+    "task_quality_4": 6,
+    "Real_SST_ability": 6,
+    "SST_ability": 6,
+    "SST_difficulty": 93,
+    "SST_TMS_distraction": 50,
+    "SST_comments": null,
+    "Real_timing_ability": 6,
+    "MI_timing_ability": 5,
+    "MI_ability": 5,
+    "MI_vividness": 5,
+    "MI_difficulty": 1,
+    "MI_description": "Воображал движение пальца",
+    "TMS_distraction": 3,
+    "TMS_amplitude": 50,
+    "comment": null
+  }
+}

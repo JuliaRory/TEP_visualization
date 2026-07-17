@@ -20,7 +20,6 @@ class SurveyPanel(QFrame):
             (2, os.path.join("resources", "survey_day2.json")),
             (3, os.path.join("resources", "survey_day3.json")),
             (4, os.path.join("resources", "survey_day4.json")),
-            (5, os.path.join("resources", "survey_day5.json")),
         ]
 
         self._setup_ui()

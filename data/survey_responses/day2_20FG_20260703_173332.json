@@ -1,0 +1,25 @@
+{
+  "participant_id": "20FG",
+  "survey_id": "day2",
+  "saved_at": "2026-07-03T17:33:32",
+  "answers": {
+    "task_quality_1": 3,
+    "task_quality_2": 4,
+    "task_quality_3": 2,
+    "task_quality_4": 5,
+    "Real_SST_ability": 6,
+    "SST_ability": 5,
+    "SST_difficulty": 81,
+    "SST_TMS_distraction": 50,
+    "SST_comments": null,
+    "Real_timing_ability": 5,
+    "MI_timing_ability": 4,
+    "MI_ability": 77,
+    "MI_vividness": 78,
+    "MI_difficulty": 80,
+    "MI_description": "Воображение ощущений в мышцах и суставах",
+    "TMS_distraction": 74,
+    "TMS_amplitude": 63,
+    "comment": null
+  }
+}

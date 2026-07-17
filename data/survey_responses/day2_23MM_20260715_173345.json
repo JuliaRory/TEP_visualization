@@ -1,0 +1,25 @@
+{
+  "participant_id": "23MM",
+  "survey_id": "day2",
+  "saved_at": "2026-07-15T17:33:45",
+  "answers": {
+    "task_quality_1": 5,
+    "task_quality_2": 7,
+    "task_quality_3": 7,
+    "task_quality_4": 7,
+    "Real_SST_ability": 6,
+    "SST_ability": 5,
+    "SST_difficulty": 90,
+    "SST_TMS_distraction": 67,
+    "SST_comments": null,
+    "Real_timing_ability": 5,
+    "MI_timing_ability": 6,
+    "MI_ability": 88,
+    "MI_vividness": 78,
+    "MI_difficulty": 81,
+    "MI_description": "представлял как двигается фаланга и пытался почувствовать это движение в пальце",
+    "TMS_distraction": 69,
+    "TMS_amplitude": 57,
+    "comment": null
+  }
+}

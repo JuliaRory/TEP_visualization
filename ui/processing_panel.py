@@ -82,9 +82,9 @@ class ProcessingPanel(QFrame):
         self.check_box_car = create_check_box(self.settings.do_CAR_filtering, 'CAR', parent=self)
         self.combo_box_channels = create_checkable_combobox(self.channels, self.settings.car_except_channels, w=70, parent=self)
 
-        self.check_box_ica = create_check_box(self.settings.apply_ICA, 'ICA', parent=self)
-        self.combo_box_ica = create_combo_box([], parent=self)
-        self._button_update_ica = create_button(text='⟳', disabled=False, parent=self, w=30)
+        self.check_box_ica = create_check_box(self.settings.apply_ICA, 'ICA')
+        self.combo_box_ica = create_combo_box([])
+        self._button_update_ica = create_button(text='⟳', disabled=False, w=30)
 
         self.check_box_baseline = create_check_box(self.settings.do_baseline_correction, 'Бейзлайн', parent=self)
         self.spin_box_baseline_from = create_spin_box(-1000, self.settings.baseline_to_ms, self.settings.baseline_from_ms, step=10, parent=self)
@@ -120,7 +120,7 @@ class ProcessingPanel(QFrame):
         layout.addLayout(layout_lowpass)                       # | _ФНЧ:  _____ Гц              |
         layout.addLayout(layout_rereference)                   # | _Референт:  _____            |
         layout.addLayout(layout_car)                           # | _CAR кроме: _____            |
-        layout.addLayout(layout_ica)                           # | _CAR кроме: _____            |
+        # layout.addLayout(layout_ica)                           # | _CAR кроме: _____            |
         layout.addLayout(layout_baseline)                      # | _Baseline метод: __mean__    |
                                                                # | от __ до __ мс               |
                                                                # +------------------------------+

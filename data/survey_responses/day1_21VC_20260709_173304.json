@@ -1,0 +1,20 @@
+{
+  "participant_id": "21VC",
+  "survey_id": "day1",
+  "saved_at": "2026-07-09T17:33:04",
+  "answers": {
+    "task_quality_1": 3,
+    "task_quality_2": 3,
+    "task_quality_3": 3,
+    "task_quality_4": 3,
+    "Real_timing_ability": 5,
+    "MI_timing_ability": 5,
+    "MI_ability": 71,
+    "MI_vividness": 58,
+    "MI_difficulty": 29,
+    "MI_description": "Вспоминала ощущения от движения, иногда автоматически визуализировала",
+    "TMS_distraction": 92,
+    "TMS_amplitude": 68,
+    "comment": "Неудобное движение; через 20 минут после начала ограничитель ползунка в правой части экрана вызывает ощущение косоглазия (отвлекает плюсик (крест) в паузе посередине)"
+  }
+}

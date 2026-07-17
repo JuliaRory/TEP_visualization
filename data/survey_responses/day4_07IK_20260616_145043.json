@@ -1,0 +1,33 @@
+{
+  "participant_id": "07IK",
+  "survey_id": "day4",
+  "saved_at": "2026-06-16T14:50:43",
+  "answers": {
+    "task_quality_1": 4,
+    "task_quality_2": 4,
+    "task_quality_3": 4,
+    "task_quality_4": 3,
+    "task_quality_5": 6,
+    "PA_TMS_rest": 2,
+    "PA_TMS_real": 1,
+    "AP_TMS_rest": 2,
+    "AP_TMS_real": 3,
+    "TMS_PA_AP_comments": null,
+    "MI_ability": 77,
+    "MI_vividness": 78,
+    "MI_difficulty": 58,
+    "MI_description": "Кинестетичекое, проприоцептивное воображение движения сустава и напряжения сухожилия, немного визуального представления образа нажатия на левую кнопку мыши в последнем задании",
+    "Real_relax_ability": 3,
+    "Real_relax_difficulty": 49,
+    "TMS_relax": 54,
+    "Real_relax_comments": "на расслабление влияла сила предварительного сокращения, а также постепенное утомление тоже снижало точность расслабления",
+    "TMS_distraction": 6,
+    "TMS_amplitude": 55,
+    "comment": null,
+    "offBCI_n_movements": "28",
+    "offBCI_TMS_distraction": 29,
+    "offBCI_TMS_MI_interferance": "никак",
+    "offBCI_TMS_rhythm_interferance": "собственный темп не был абсолюьно постоянным, были небольшие изменения",
+    "offBCI_comment": null
+  }
+}

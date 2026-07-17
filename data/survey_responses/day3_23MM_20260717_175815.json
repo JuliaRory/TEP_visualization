@@ -1,0 +1,22 @@
+{
+  "participant_id": "23MM",
+  "survey_id": "day3",
+  "saved_at": "2026-07-17T17:58:15",
+  "answers": {
+    "task_quality_1": 6,
+    "task_quality_2": 6,
+    "task_quality_3": 7,
+    "task_quality_4": 7,
+    "task_quality_5": 6,
+    "task_quality_6": 7,
+    "Real_SST_ability": 6,
+    "SST_ability": 6,
+    "SST_difficulty": 84,
+    "SST_comments": null,
+    "TMS_distraction": 11,
+    "SST_TMS_distraction": 82,
+    "left_TMS_distraction": 85,
+    "foot_TMS_distraction": 86,
+    "comment": null
+  }
+}

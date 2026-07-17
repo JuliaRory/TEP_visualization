@@ -1,0 +1,25 @@
+{
+  "participant_id": "12VD",
+  "survey_id": "day2",
+  "saved_at": "2026-06-16T18:01:52",
+  "answers": {
+    "task_quality_1": 4,
+    "task_quality_2": 3,
+    "task_quality_3": 4,
+    "task_quality_4": 3,
+    "Real_SST_ability": 6,
+    "SST_ability": 7,
+    "SST_difficulty": 78,
+    "SST_TMS_distraction": 46,
+    "SST_comments": null,
+    "Real_timing_ability": 6,
+    "MI_timing_ability": 6,
+    "MI_ability": 66,
+    "MI_vividness": 68,
+    "MI_difficulty": 40,
+    "MI_description": "Представлял нажатие клавиши фортепиано. Образ не визуальный, а скорее тактильный, вспоминал, какие ощущения у меня вызывает контакт с клавишей",
+    "TMS_distraction": 13,
+    "TMS_amplitude": 50,
+    "comment": null
+  }
+}

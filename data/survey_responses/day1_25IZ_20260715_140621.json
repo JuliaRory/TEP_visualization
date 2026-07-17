@@ -1,0 +1,20 @@
+{
+  "participant_id": "25IZ",
+  "survey_id": "day1",
+  "saved_at": "2026-07-15T14:06:21",
+  "answers": {
+    "task_quality_1": 5,
+    "task_quality_2": 3,
+    "task_quality_3": 2,
+    "task_quality_4": 5,
+    "Real_timing_ability": 4,
+    "MI_timing_ability": 3,
+    "MI_ability": 61,
+    "MI_vividness": 13,
+    "MI_difficulty": 34,
+    "MI_description": "представлял, как импульс идёт к пальцу, либо же представлял произвольное нажатие клавиши без участия самого пальца",
+    "TMS_distraction": 8,
+    "TMS_amplitude": 60,
+    "comment": "с каждой записей сильно падала концентрация, утомлялись глаза"
+  }
+}

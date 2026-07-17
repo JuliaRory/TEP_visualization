@@ -1,0 +1,20 @@
+{
+  "participant_id": "18EK",
+  "survey_id": "day1",
+  "saved_at": "2026-06-17T21:27:17",
+  "answers": {
+    "task_quality_1": 4,
+    "task_quality_2": 5,
+    "task_quality_3": 3,
+    "task_quality_4": 4,
+    "Real_timing_ability": 4,
+    "MI_timing_ability": 4,
+    "MI_ability": 25,
+    "MI_vividness": 31,
+    "MI_difficulty": 19,
+    "MI_description": "Вспоминал ощущения в мышцах",
+    "TMS_distraction": 88,
+    "TMS_amplitude": 50,
+    "comment": "Шум в наушниках усыпляет"
+  }
+}

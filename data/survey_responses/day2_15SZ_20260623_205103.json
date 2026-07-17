@@ -1,0 +1,25 @@
+{
+  "participant_id": "15SZ",
+  "survey_id": "day2",
+  "saved_at": "2026-06-23T20:51:03",
+  "answers": {
+    "task_quality_1": 4,
+    "task_quality_2": 4,
+    "task_quality_3": 3,
+    "task_quality_4": 3,
+    "Real_SST_ability": 5,
+    "SST_ability": 5,
+    "SST_difficulty": 79,
+    "SST_TMS_distraction": 50,
+    "SST_comments": "Я жестко заспыпала",
+    "Real_timing_ability": 3,
+    "MI_timing_ability": 3,
+    "MI_ability": 20,
+    "MI_vividness": 17,
+    "MI_difficulty": 14,
+    "MI_description": "Пыталась мысленно перенести в палец ощущения сокращения мышц при его физическом движении",
+    "TMS_distraction": 1,
+    "TMS_amplitude": 50,
+    "comment": ".-."
+  }
+}

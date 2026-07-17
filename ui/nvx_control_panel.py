@@ -49,12 +49,12 @@ class NVXControlPanel(QFrame):
     def _setup_ui(self):
         
         # --- Управление NVX16 (запуск, запись и тд) ---
-        self._label_nvx = QLabel("КОНТРОЛЬ NVX", self)
-        self.button_nvx_control = create_button(text='Контроль qml', disabled=False, parent=self)   # запустить qml модуль для контроля над процессами
-        self.button_check_impedance = create_button(text='Импеданс', disabled=True, parent=self)
-        self.button_nvx_launch = create_button(text='Старт', disabled=False, parent=self)           # launch and/or start
-        self.button_nvx_stop = create_button(text='Стоп', disabled=False, parent=self)              # stop
-        self.button_nvx_kill = create_button(text='kill', disabled=False, parent=self)              # !terminate
+        self._label_nvx = QLabel("ЗАПИСЬ", self)
+        self.button_nvx_control = create_button(text='Контроль qml', disabled=False)   # запустить qml модуль для контроля над процессами
+        self.button_check_impedance = create_button(text='Импеданс', disabled=True)
+        self.button_nvx_launch = create_button(text='Старт', disabled=False)           # launch and/or start
+        self.button_nvx_stop = create_button(text='Стоп', disabled=False)              # stop
+        self.button_nvx_kill = create_button(text='kill', disabled=False)              # !terminate
 
         self.lineedit_folder = create_lineedit(parent=self, w=200)
         self.lineedit_folder.setText(self.settings.records_folder)
@@ -112,9 +112,9 @@ class NVXControlPanel(QFrame):
                                                                 # Vertical layout
         layout = QVBoxLayout(self)                              # +-----------------------|
         layout.addWidget(self._label_nvx)                       # | NVX control           |
-        layout.addLayout(layout_qml_control)                    # | Контроль qml   ...    |
-        layout.addWidget(self.button_check_impedance)           # | Проверить импеданс    |
-        layout.addLayout(layout_nvx_control)                    # | start   stop    kill  |
+        # layout.addLayout(layout_qml_control)                    # | Контроль qml   ...    |
+        # layout.addWidget(self.button_check_impedance)           # | Проверить импеданс    |
+        # layout.addLayout(layout_nvx_control)                    # | start   stop    kill  |
         layout.addLayout(layout_folder)
         layout.addLayout(layout_record) 
         layout.addLayout(layout_record_final)                   # | record_name   Запись  |

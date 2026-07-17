@@ -1,0 +1,20 @@
+{
+  "participant_id": "20FG",
+  "survey_id": "day1",
+  "saved_at": "2026-07-01T21:37:06",
+  "answers": {
+    "task_quality_1": 5,
+    "task_quality_2": 4,
+    "task_quality_3": 3,
+    "task_quality_4": 3,
+    "Real_timing_ability": 3,
+    "MI_timing_ability": 7,
+    "MI_ability": 100,
+    "MI_vividness": 100,
+    "MI_difficulty": 78,
+    "MI_description": "Воображение ощущений в суставе, растяжения мышцы, растяжения кожи и кожи между указательным и средним пальцами",
+    "TMS_distraction": 35,
+    "TMS_amplitude": 80,
+    "comment": null
+  }
+}

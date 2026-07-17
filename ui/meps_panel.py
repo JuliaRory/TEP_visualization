@@ -67,8 +67,8 @@ class MEPsPanel(QFrame):
         self._frame_settings = QFrame(self)
 
         self._button_deeper_look = create_button("MEP threshold", parent=self, w=100)
-        self._button_movement_detection = create_button("MEP delays", parent=self, w=100)
-        self._button_condition_analysis = create_button("MEP conditions", parent=self, w=120)
+        self._button_movement_detection = create_button("MEP delays", w=100)
+        self._button_condition_analysis = create_button("MEP conditions",  w=120)
         self._check_remove_trend = QCheckBox("Remove slow trend", self)
         self._check_remove_trend.setChecked(bool(getattr(self.settings, "remove_slow_trend", True)))
 
@@ -79,8 +79,8 @@ class MEPsPanel(QFrame):
         layout_settings.addWidget(self._label_counter)
         layout_settings.addWidget(self._check_remove_trend)
         layout_settings.addWidget(self._button_deeper_look)
-        layout_settings.addWidget(self._button_movement_detection)
-        layout_settings.addWidget(self._button_condition_analysis)
+        # layout_settings.addWidget(self._button_movement_detection)
+        # layout_settings.addWidget(self._button_condition_analysis)
         
 
         self.splitter = QSplitter(Qt.Horizontal, parent=self)        # позволяет изменять размер

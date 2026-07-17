@@ -1,0 +1,20 @@
+{
+  "participant_id": "22SK",
+  "survey_id": "day1",
+  "saved_at": "2026-07-08T19:20:55",
+  "answers": {
+    "task_quality_1": 5,
+    "task_quality_2": 4,
+    "task_quality_3": 5,
+    "task_quality_4": 6,
+    "Real_timing_ability": 6,
+    "MI_timing_ability": 7,
+    "MI_ability": 59,
+    "MI_vividness": 31,
+    "MI_difficulty": 49,
+    "MI_description": "Комплексное представление движения пальца от его основания до начала последней фаланги. Преимущественно предсавление было визуальным с попытками представления ощущений.",
+    "TMS_distraction": 56,
+    "TMS_amplitude": 50,
+    "comment": "Стимуляция порой выступала дополнительной к визуальной командой к движению пальца."
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "participant_id": "19IT",
+  "survey_id": "day1",
+  "saved_at": "2026-06-23T16:55:02",
+  "answers": {
+    "task_quality_1": 3,
+    "task_quality_2": 3,
+    "task_quality_3": 5,
+    "task_quality_4": 3,
+    "Real_timing_ability": 5,
+    "MI_timing_ability": 4,
+    "MI_ability": 74,
+    "MI_vividness": 71,
+    "MI_difficulty": 66,
+    "MI_description": "Представление ощущения напряжения мышц, которые двигают указательный палец. Представление отклика других мышц в ладони при необходимом движении.",
+    "TMS_distraction": 92,
+    "TMS_amplitude": 65,
+    "comment": null
+  }
+}

@@ -1,0 +1,25 @@
+{
+  "participant_id": "16ED",
+  "survey_id": "day2",
+  "saved_at": "2026-06-17T14:40:13",
+  "answers": {
+    "task_quality_1": 3,
+    "task_quality_2": 4,
+    "task_quality_3": 4,
+    "task_quality_4": 4,
+    "Real_SST_ability": 5,
+    "SST_ability": 5,
+    "SST_difficulty": 47,
+    "SST_TMS_distraction": 24,
+    "SST_comments": null,
+    "Real_timing_ability": 5,
+    "MI_timing_ability": 5,
+    "MI_ability": 52,
+    "MI_vividness": 59,
+    "MI_difficulty": 62,
+    "MI_description": "представлял ощщуения движения мышц",
+    "TMS_distraction": 20,
+    "TMS_amplitude": 46,
+    "comment": null
+  }
+}

@@ -1,0 +1,25 @@
+{
+  "participant_id": "21VC",
+  "survey_id": "day2",
+  "saved_at": "2026-07-14T16:36:19",
+  "answers": {
+    "task_quality_1": 3,
+    "task_quality_2": 3,
+    "task_quality_3": 3,
+    "task_quality_4": 2,
+    "Real_SST_ability": 5,
+    "SST_ability": 5,
+    "SST_difficulty": 22,
+    "SST_TMS_distraction": 40,
+    "SST_comments": null,
+    "Real_timing_ability": 5,
+    "MI_timing_ability": 5,
+    "MI_ability": 71,
+    "MI_vividness": 71,
+    "MI_difficulty": 51,
+    "MI_description": "Ощущения от перемещения, легкое напряжение, тянущее ощущение",
+    "TMS_distraction": 100,
+    "TMS_amplitude": 50,
+    "comment": "Амплитуда движений увеличивалась при представлении движения"
+  }
+}

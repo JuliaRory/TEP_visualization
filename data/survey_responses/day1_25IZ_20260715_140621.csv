@@ -1,0 +1,2 @@
+﻿participant_id,survey_id,saved_at,task_quality_1,task_quality_2,task_quality_3,task_quality_4,Real_timing_ability,MI_timing_ability,MI_ability,MI_vividness,MI_difficulty,MI_description,TMS_distraction,TMS_amplitude,comment
+25IZ,day1,2026-07-15T14:06:21,5,3,2,5,4,3,61,13,34,"представлял, как импульс идёт к пальцу, либо же представлял произвольное нажатие клавиши без участия самого пальца",8,60,"с каждой записей сильно падала концентрация, утомлялись глаза"

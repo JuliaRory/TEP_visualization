@@ -1,0 +1,25 @@
+{
+  "participant_id": "22SK",
+  "survey_id": "day2",
+  "saved_at": "2026-07-13T14:43:52",
+  "answers": {
+    "task_quality_1": 5,
+    "task_quality_2": 5,
+    "task_quality_3": 4,
+    "task_quality_4": 4,
+    "Real_SST_ability": 6,
+    "SST_ability": 6,
+    "SST_difficulty": 72,
+    "SST_TMS_distraction": 50,
+    "SST_comments": null,
+    "Real_timing_ability": 6,
+    "MI_timing_ability": 6,
+    "MI_ability": 62,
+    "MI_vividness": 32,
+    "MI_difficulty": 49,
+    "MI_description": "Пытался представлять только ощущение движения без визуализации",
+    "TMS_distraction": 34,
+    "TMS_amplitude": 50,
+    "comment": null
+  }
+}

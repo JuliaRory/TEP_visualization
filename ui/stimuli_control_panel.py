@@ -92,14 +92,14 @@ class StimuliControlPanel(QFrame):
             0.1, 30.0, self.settings.isi_max_s, data_type="float", step=0.1, decimals=1, parent=self
         )
         self.spin_box_phases_delay = create_spin_box(
-            -1000, 1000, getattr(self.settings, "phases_delay_ms", 0), step=10, parent=self, w=70
+            -1000, 1000, getattr(self.settings, "phases_delay_ms", 0), step=10, 
+              w=70
         )
         self.spin_box_tension_timeout = create_spin_box(
             0,
             10000,
             getattr(self.settings, "antiponk_tension_timeout_ms", 1000),
             step=100,
-            parent=self,
             w=70,
         )
         self.spin_box_bci_stimuli_dur = create_spin_box(
@@ -122,8 +122,7 @@ class StimuliControlPanel(QFrame):
         self.check_box_noise = create_check_box(self.settings.use_noise, "Шум", parent=self)
         self.check_box_wait_tension = create_check_box(
             getattr(self.settings, "antiponk_wait_tension", False),
-            "ждать напряжение",
-            parent=self,
+            "ждать напряжение"
         )
         self.button_noise = create_button(text=PLAY_LABEL, disabled=False, parent=self)
 
@@ -162,12 +161,12 @@ class StimuliControlPanel(QFrame):
             [QLabel("ISI, s", self), self.spin_box_isi_min, QLabel("min", self), self.spin_box_isi_max, QLabel("max", self)]
         )
         layout_phases_delay = create_hbox(
-            [QLabel("Delay, ms", self), self.spin_box_phases_delay]
+            [QLabel("Delay, ms"), self.spin_box_phases_delay]
         )
         layout_antiponk = create_hbox(
             [
                 self.check_box_wait_tension,
-                QLabel("timeout, ms", self),
+                QLabel("timeout, ms"),
                 self.spin_box_tension_timeout,
             ]
         )
@@ -213,15 +212,23 @@ class StimuliControlPanel(QFrame):
         layout = QVBoxLayout(self._settings_panel)
         layout.addLayout(layout_stimuli_creation)
         layout.addLayout(layout_stimuli)
-        layout.addLayout(layout_bci_stimuli)
-        layout.addLayout(layout_noise)
         layout.addLayout(layout_rest_video)
+
         layout.addLayout(layout_isi)
-        layout.addLayout(layout_phases_delay)
-        layout.addLayout(layout_antiponk)
+        # layout.addLayout(layout_phases_delay)
+        # layout.addLayout(layout_antiponk)
+
+        layout.addWidget(QLabel(""))
+        layout.addWidget(QLabel("BCI MODE"))
+
+        layout.addLayout(layout_bci_stimuli)
         layout.addLayout(layout_bci_stimuli_dur)
         layout.addLayout(layout_bci_isi)
         layout.addLayout(layout_bci_ponk_isi)
+
+        layout.addWidget(QLabel(""))
+        layout.addLayout(layout_noise)
+
         layout.addLayout(layout_center)
 
         layout = QHBoxLayout(self)

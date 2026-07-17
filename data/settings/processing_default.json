@@ -125,7 +125,7 @@
         "activate_bat": true,
         "service_name": "nvx136",
         "stream_name": "eeg",
-        "records_folder": "D:\\2025 - TEP\\data - raw\\exp\\70 exp 14AL day3",
+        "records_folder": "D:\\2025 - TEP\\data - raw\\exp\\109 exp 21VC day3",
         "bat_nvx136_25Hz": "D:/Resonance/distro-dual/msvc/NVX136.bat",
         "bat_nvx136_impedance": "D:/Resonance/distro-dual/msvc/impedanceChecker_64_2.bat",
         "use_number": true,
@@ -135,12 +135,12 @@
         "use_yaw_angle": true,
         "use_power": true,
         "use_comments": true,
-        "number": "00",
-        "subject": "14AL",
+        "number": "12",
+        "subject": "21VC",
         "spot": "M1",
         "coil": "",
         "yaw_angle": "PA",
-        "power": "41",
+        "power": "48",
         "comments": "SST"
     },
     "stimuli_control": {
@@ -150,8 +150,8 @@
         "stimuli_filename": "resources/saved_stimuli.json",
         "video_folder": "resources/videoSamples",
         "stimuli_volume": 60,
-        "isi_min_s": 0.9999999999999997,
-        "isi_max_s": 1.9999999999999991,
+        "isi_min_s": 1.5000000000000004,
+        "isi_max_s": 3.000000000000001,
         "phases_delay_ms": 0,
         "antiponk_wait_tension": false,
         "antiponk_tension_timeout_ms": 1000,
@@ -220,10 +220,10 @@
             {
                 "name": "-50",
                 "from_ms": -75,
-                "to_ms": 25,
+                "to_ms": -25,
                 "base_name_ms": -50,
                 "base_from_ms": -75,
-                "base_to_ms": 25,
+                "base_to_ms": -25,
                 "auto_delay": true
             },
             {
@@ -236,11 +236,11 @@
                 "auto_delay": true
             }
         ],
-        "bci_mep_threshold": 2.0,
-        "bci_mep_threshold_scale": -9,
+        "bci_mep_threshold": 5.1,
+        "bci_mep_threshold_scale": -10,
         "bci_mep_plot_ymax_mV": 0.3,
         "bci_mep_tkeo_ymax": 1.0,
-        "bci_mep_tkeo_scale": -8,
+        "bci_mep_tkeo_scale": -9,
         "bci_mep_remove_trend": true,
         "bci_mep_trend_window_ms": 100.0
     },

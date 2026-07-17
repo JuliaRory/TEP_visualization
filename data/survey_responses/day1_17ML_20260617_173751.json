@@ -1,0 +1,20 @@
+{
+  "participant_id": "17ML",
+  "survey_id": "day1",
+  "saved_at": "2026-06-17T17:37:51",
+  "answers": {
+    "task_quality_1": 4,
+    "task_quality_2": 4,
+    "task_quality_3": 4,
+    "task_quality_4": 3,
+    "Real_timing_ability": 5,
+    "MI_timing_ability": 5,
+    "MI_ability": 63,
+    "MI_vividness": 66,
+    "MI_difficulty": 57,
+    "MI_description": "Представлял ощущения от сокращения мышц пальца",
+    "TMS_distraction": 43,
+    "TMS_amplitude": 53,
+    "comment": null
+  }
+}

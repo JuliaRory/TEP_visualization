@@ -1,0 +1,20 @@
+{
+  "participant_id": "23MM",
+  "survey_id": "day1",
+  "saved_at": "2026-07-07T19:34:07",
+  "answers": {
+    "task_quality_1": 6,
+    "task_quality_2": 3,
+    "task_quality_3": 4,
+    "task_quality_4": 7,
+    "Real_timing_ability": 4,
+    "MI_timing_ability": 5,
+    "MI_ability": 93,
+    "MI_vividness": 73,
+    "MI_difficulty": 63,
+    "MI_description": "представлял образ движения пальца и пытался имитировать ощущения в пальце",
+    "TMS_distraction": 14,
+    "TMS_amplitude": 45,
+    "comment": null
+  }
+}

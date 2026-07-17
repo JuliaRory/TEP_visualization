@@ -65,12 +65,12 @@ class SettingsPanel(QFrame):
         self.button_remove_epoch = create_button('Delete #', disabled=True, parent=self)
         self.spin_box_remove_epoch =create_spin_box(0, 0, 0, parent=self)
 
-        self.button_load = create_button(text='Load', disabled=False, parent=self)
+        self.button_load = create_button(text='Load', disabled=True, parent=self)
         self.button_save = create_button(text='Save', disabled=True, parent=self)
         self.combo_box_record_file = create_combo_box(items=list_record_files(), parent=self)
         self.button_next_record_epoch = create_button(
             text='Next epoch',
-            disabled=(self.combo_box_record_file.count() == 0),
+            disabled=True, #(self.combo_box_record_file.count() == 0),
             parent=self
         )
         self.button_restart = create_button(text='ОЧИСТИТЬ', disabled=False, parent=self)

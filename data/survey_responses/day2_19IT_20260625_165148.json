@@ -1,0 +1,25 @@
+{
+  "participant_id": "19IT",
+  "survey_id": "day2",
+  "saved_at": "2026-06-25T16:51:48",
+  "answers": {
+    "task_quality_1": 5,
+    "task_quality_2": 5,
+    "task_quality_3": 6,
+    "task_quality_4": 4,
+    "Real_SST_ability": 6,
+    "SST_ability": 6,
+    "SST_difficulty": 90,
+    "SST_TMS_distraction": 49,
+    "SST_comments": null,
+    "Real_timing_ability": 6,
+    "MI_timing_ability": 6,
+    "MI_ability": 78,
+    "MI_vividness": 86,
+    "MI_difficulty": 65,
+    "MI_description": "Представлял ощущение напряжения мышцы, которая вызывает движение пальца, а также положение и ощущения остальных мышц руки в таком случае. При представлении появлялся дополнительный образ \"нити\", идущей через всю руку к пальцу, и из-за этого иногда напрягались локоть и запястье.",
+    "TMS_distraction": 76,
+    "TMS_amplitude": 50,
+    "comment": null
+  }
+}

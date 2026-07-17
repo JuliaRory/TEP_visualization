@@ -1,0 +1,22 @@
+{
+  "participant_id": "18EK",
+  "survey_id": "day3",
+  "saved_at": "2026-06-24T21:55:17",
+  "answers": {
+    "task_quality_1": 5,
+    "task_quality_2": 3,
+    "task_quality_3": 3,
+    "task_quality_4": 6,
+    "task_quality_5": 5,
+    "task_quality_6": 4,
+    "Real_SST_ability": 5,
+    "SST_ability": 5,
+    "SST_difficulty": 71,
+    "SST_comments": "Иногда катушка подлавливала неотменённое намерение и движение (когда не нужно было) происходило из-за неё",
+    "TMS_distraction": 100,
+    "SST_TMS_distraction": 43,
+    "left_TMS_distraction": 99,
+    "foot_TMS_distraction": 100,
+    "comment": "Не люблю я эти наушники)"
+  }
+}
