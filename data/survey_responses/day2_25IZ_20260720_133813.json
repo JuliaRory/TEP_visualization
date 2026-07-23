@@ -1,0 +1,25 @@
+{
+  "participant_id": "25IZ",
+  "survey_id": "day2",
+  "saved_at": "2026-07-20T13:38:13",
+  "answers": {
+    "task_quality_1": 5,
+    "task_quality_2": 2,
+    "task_quality_3": 4,
+    "task_quality_4": 5,
+    "Real_SST_ability": 3,
+    "SST_ability": 4,
+    "SST_difficulty": 50,
+    "SST_TMS_distraction": 50,
+    "SST_comments": null,
+    "Real_timing_ability": 3,
+    "MI_timing_ability": 4,
+    "MI_ability": 36,
+    "MI_vividness": 7,
+    "MI_difficulty": 26,
+    "MI_description": "представлял, как импульс идёт из головы в руку",
+    "TMS_distraction": 5,
+    "TMS_amplitude": 50,
+    "comment": "стало проще концентрироватья на выполнении задач, но всё также сильно устают глаза"
+  }
+}
