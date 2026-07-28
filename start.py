@@ -33,6 +33,7 @@ driver.inputMessageStream("tension_on", tension_on_dispatcher)
 
 output_stream = driver.outputMessageStream("controlSignal")           # создание выходного потока данных типа Message
 output_stream_stimuli = driver.outputMessageStream("stimuli")           # создание выходного потока данных типа Message
+output_stream_feet_stim = driver.outputMessageStream("feetStim")
 output_stream_tension_wait = driver.outputMessageStream("tension_wait")
 resonance = ResonanceAppProxy(output_stream)                             # Создаем прокси резонанса
 
@@ -47,6 +48,7 @@ main = MainWindow(
     resonance,
     output_stream_stimuli,
     filename_params,
+    feet_stim_stream=output_stream_feet_stim,
     tension_wait_stream=output_stream_tension_wait,
     tension_on_stream=tension_on_dispatcher,
 )         # открыть Qt-окно приложения

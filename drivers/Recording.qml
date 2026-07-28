@@ -69,6 +69,7 @@ DSM.StateMachine {
 
                     let service = ResonanceApp.getService("TEP_visual");
                     if (service) {recorder.addStream('discover:///?stream=stimuli&name=TEP_visual', 'stimuli');}
+                    if (service) {recorder.addStream('discover:///?stream=feetStim&name=TEP_visual', 'feetStim');}
 
                     //recorder.addStream('discover:///?stream=eeg&name=nvx136', 'eeg')
 

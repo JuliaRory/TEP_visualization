@@ -1,9 +1,10 @@
 from PyQt5.QtWidgets import QFrame, QVBoxLayout, QHBoxLayout, QLabel, QWidget, QSizePolicy, QShortcut
-from PyQt5.QtCore import QObject, pyqtSignal, Qt
+from PyQt5.QtCore import QObject, pyqtSignal, Qt, QTimer
 from PyQt5.QtGui import QKeySequence
 
 import json
 import os
+import socket
 
 from utils.ui_helpers import create_button, create_spin_box, create_check_box, create_combo_box, create_checkable_combobox, create_shortcut, create_lineedit
 from utils.layout_utils import create_hbox, create_vbox
@@ -25,6 +26,10 @@ class _TensionOnRelay(QObject):
     messageReceived = pyqtSignal(object)
 
 
+UDP_HOST = "127.0.0.1"
+UDP_PORT = 5005
+
+
 class StimuliControlPanel(QFrame):
     """ --- UI для контроля за стимулами --- """
 
@@ -34,6 +39,7 @@ class StimuliControlPanel(QFrame):
         self,
         settings,
         output_stream,
+        feet_stim_stream=None,
         parent=None,
         tension_wait_stream=None,
         tension_on_stream=None,
@@ -44,6 +50,7 @@ class StimuliControlPanel(QFrame):
 
         self.settings = settings
         self.output_stream = output_stream
+        self.feet_stim_stream = feet_stim_stream
         self.tension_wait_stream = tension_wait_stream
         self.tension_on_stream = tension_on_stream
 
@@ -65,6 +72,18 @@ class StimuliControlPanel(QFrame):
 
         audio_file = os.path.join(r"resources\noise", self.settings.noise_filename)
         self._audio_player = AudioPlayer(audio_file, initial_volume=self.settings.noise_volume)
+
+        self._udp_target = (UDP_HOST, UDP_PORT)
+        self._udp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        self._setup_udp_socket()
+        self._udp_sequence_timer = QTimer(self)
+        self._udp_sequence_timer.setSingleShot(True)
+        self._udp_sequence_timer.timeout.connect(self._send_next_udp_sequence_message)
+        self._udp_sequence_messages = []
+        self._udp_sequence_index = 0
+        self._udp_stimulus_commands = []
+        self._udp_stimulus_index = 0
+        self._recording_in_progress = False
 
     def _setup_ui(self):
         self._settings_panel = QFrame(self)
@@ -147,9 +166,17 @@ class StimuliControlPanel(QFrame):
         self.button_bci_stimuli = create_button(text="Запуск offBCI", disabled=False, parent=self)
         self.button_bci_mep_bins = create_button(text="MEP bins", disabled=False, parent=self)
 
-        self.check_box_udp = create_check_box(False, "udp", parent=self)
-        self.line_edit_udp = create_lineedit(parent=self)
-        self.line_edit_udp.setText("1 2 3")
+        self._udp_panel = QFrame(self)
+        self.label_udp_target = QLabel(f"UDP {UDP_HOST}:{UDP_PORT}", self)
+        self.check_box_udp = create_check_box(False, "send saved udp_commands", parent=self)
+        self.line_edit_udp_single = create_lineedit(parent=self)
+        self.line_edit_udp_single.setText("1")
+        self.line_edit_udp = self.line_edit_udp_single
+        self.button_udp_send = create_button(text="send", disabled=False, parent=self, w=60)
+        self.line_edit_udp_sequence = create_lineedit(parent=self)
+        self.line_edit_udp_sequence.setText("1, 2, 3")
+        self.spin_box_udp_interval_ms = create_spin_box(0, 60000, 100, step=10, parent=self, w=70)
+        self.button_udp_send_sequence = create_button(text="send seq", disabled=False, parent=self, w=80)
 
     def _setup_layout(self):
         layout_stimuli_creation = create_vbox([QLabel("СТИМУЛЫ", self), self.button_create_stimuli])
@@ -200,7 +227,25 @@ class StimuliControlPanel(QFrame):
         layout_stimuli_control = create_hbox([self.button_stimuli_pause, self.button_stimuli_restart])
         layout_volume = create_hbox([self.stimuli_volume_slider, self.noise_volume_slider])
 
-        layout_udp = create_hbox([self.check_box_udp, self.line_edit_udp])
+        layout_udp_single = create_hbox(
+            [QLabel("one", self), self.line_edit_udp_single, self.button_udp_send]
+        )
+        layout_udp_sequence = create_hbox(
+            [
+                QLabel("seq", self),
+                self.line_edit_udp_sequence,
+                QLabel("ms", self),
+                self.spin_box_udp_interval_ms,
+                self.button_udp_send_sequence,
+            ]
+        )
+        layout_udp_auto = create_hbox([self.check_box_udp])
+
+        layout_udp = QVBoxLayout(self._udp_panel)
+        layout_udp.addWidget(self.label_udp_target)
+        layout_udp.addLayout(layout_udp_single)
+        layout_udp.addLayout(layout_udp_sequence)
+        layout_udp.addLayout(layout_udp_auto)
 
         layout_params = QVBoxLayout()
         layout_params.addLayout(layout_monitor)
@@ -236,7 +281,7 @@ class StimuliControlPanel(QFrame):
         layout.addLayout(layout_noise)
 
         layout.addLayout(layout_center)
-        layout.addLayout(layout_udp)
+        layout.addWidget(self._udp_panel)
 
         layout = QHBoxLayout(self)
         layout.addWidget(self._settings_panel)
@@ -272,6 +317,8 @@ class StimuliControlPanel(QFrame):
 
         self.button_bci_stimuli.clicked.connect(self._on_bci_stimmuli_button_click)
         self.button_bci_mep_bins.clicked.connect(self._on_bci_mep_bins_button_click)
+        self.button_udp_send.clicked.connect(self._on_send_udp_message_button_click)
+        self.button_udp_send_sequence.clicked.connect(self._on_send_udp_sequence_button_click)
 
     def _update_connections(self):
         self._player_window.stimuliStarted.connect(self._on_start_stimuli)
@@ -314,6 +361,7 @@ class StimuliControlPanel(QFrame):
             self._update_connections()
 
             self._player_window.set_rest_stimulus_variants(self.settings.rest_video_selected)
+            self._set_udp_stimulus_commands(None)
             self._player_window.set_sequence(sequence, seq_name)
 
             self._player_window.restart_sequence()
@@ -374,6 +422,7 @@ class StimuliControlPanel(QFrame):
             else:
                 self._player_window.set_isi_range(self.settings.isi_min_s, self.settings.isi_max_s)
                 self._player_window.set_rest_stimulus_variants(self.settings.rest_video_selected)
+            self._set_udp_stimulus_commands(sequence)
             self._player_window.set_sequence(sequence, seq_name)
             self._player_window.restart_sequence()
 
@@ -478,6 +527,8 @@ class StimuliControlPanel(QFrame):
             self._on_noise_button_click()
 
     def _on_start_stimuli(self):
+        self._udp_stimulus_index = 0
+
         if self.check_box_stimuli_record.isChecked():
             self.stimuliPresentation.emit(True)
 
@@ -494,6 +545,119 @@ class StimuliControlPanel(QFrame):
         message = {"stimulus": filename}
         print(message)
         self.output_stream(json.dumps(message))
+        self._send_udp_for_current_stimulus()
+
+    def _on_send_udp_message_button_click(self):
+        self._send_udp_message(self.line_edit_udp_single.text().strip())
+
+    def _on_send_udp_sequence_button_click(self):
+        messages = self._parse_udp_messages(self.line_edit_udp_sequence.text())
+        if not messages:
+            print("[UDP]: sequence is empty.")
+            return
+
+        self._udp_sequence_timer.stop()
+        self._udp_sequence_messages = messages
+        self._udp_sequence_index = 0
+        self._send_next_udp_sequence_message()
+
+    def _send_next_udp_sequence_message(self):
+        if self._udp_sequence_index >= len(self._udp_sequence_messages):
+            return
+
+        message = self._udp_sequence_messages[self._udp_sequence_index]
+        self._send_udp_message(message)
+        self._udp_sequence_index += 1
+
+        if self._udp_sequence_index < len(self._udp_sequence_messages):
+            self._udp_sequence_timer.start(int(self.spin_box_udp_interval_ms.value()))
+
+    def _send_udp_for_current_stimulus(self):
+        if not self.check_box_udp.isChecked():
+            return
+
+        pw = getattr(self, "_player_window", None)
+        if not getattr(pw, "_sequence_started", False):
+            return
+
+        if not self._udp_stimulus_commands:
+            return
+
+        message = self._udp_stimulus_commands[
+            self._udp_stimulus_index % len(self._udp_stimulus_commands)
+        ]
+        self._send_udp_message(message)
+        self._udp_stimulus_index += 1
+
+    def _set_udp_stimulus_commands(self, sequence):
+        self._udp_stimulus_index = 0
+        self._udp_stimulus_commands = []
+
+        if not isinstance(sequence, dict):
+            return
+
+        commands = sequence.get("udp_commands")
+        if not isinstance(commands, list):
+            return
+
+        self._udp_stimulus_commands = [str(command) for command in commands]
+
+    def _send_udp_message(self, message):
+        message = str(message).strip()
+        if not message:
+            return
+
+        try:
+            self._udp_socket.sendto(message.encode("utf-8"), self._udp_target)
+            print(f"[UDP]: sent '{message}' to {UDP_HOST}:{UDP_PORT}")
+            data, address = self._udp_socket.recvfrom(2048)
+            response = data.decode("utf-8", errors="replace").strip()
+            self._handle_udp_response(response, address)
+        except OSError as exc:
+            print(f"[UDP]: send/receive failed: {exc}")
+
+    @staticmethod
+    def _parse_udp_messages(text):
+        return [message.strip() for message in str(text).split(",") if message.strip()]
+
+    def _setup_udp_socket(self):
+        self._udp_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+
+        try:
+            self._udp_socket.bind(self._udp_target)
+        except OSError as exc:
+            print(f"[UDP]: bind failed on {UDP_HOST}:{UDP_PORT}: {exc}")
+            return
+
+        print(f"[UDP]: socket bound to {UDP_HOST}:{UDP_PORT}")
+
+    def _close_udp_socket(self):
+        try:
+            self._udp_socket.close()
+        except OSError:
+            pass
+
+    def _handle_udp_response(self, message, address):
+        print(f"[UDP response] {address[0]}:{address[1]} -> {message}")
+
+        if not self._recording_in_progress or self.feet_stim_stream is None:
+            return
+
+        output_message = {
+            "feetStim": message,
+            "source": f"{address[0]}:{address[1]}",
+        }
+        try:
+            self.feet_stim_stream(json.dumps(output_message))
+        except Exception as exc:
+            print(f"[UDP]: feetStim stream write failed: {exc}")
+
+    def set_recording_active(self, recording):
+        self._recording_in_progress = bool(recording)
+
+    def closeEvent(self, event):
+        self._close_udp_socket()
+        super().closeEvent(event)
 
     def _on_player_volume_changed(self, value):
         self.stimuli_volume_slider.slider.setValue(value)

@@ -77,6 +77,7 @@ class MainWindow(QWidget):
         resonance,
         output_stream,
         filename_params,
+        feet_stim_stream=None,
         tension_wait_stream=None,
         tension_on_stream=None,
     ):
@@ -88,6 +89,7 @@ class MainWindow(QWidget):
 
         self._resonance = resonance                       # прокси для управления резонансными модулями
         self._output_stream = output_stream
+        self._feet_stim_stream = feet_stim_stream
         self._tension_wait_stream = tension_wait_stream
         self._tension_on_stream = tension_on_stream
 
@@ -167,6 +169,7 @@ class MainWindow(QWidget):
         self._stimuli_control_panel = StimuliControlPanel(parent=self,
                                                 settings=self.settings.stimuli_control,
                                                 output_stream=self._output_stream,
+                                                feet_stim_stream=self._feet_stim_stream,
                                                 tension_wait_stream=self._tension_wait_stream,
                                                 tension_on_stream=self._tension_on_stream)
 
@@ -294,6 +297,7 @@ class MainWindow(QWidget):
 
         # сигнал для обновления состояния надписи REC в центральных графиках
         self._nvx_control_panel.recording.connect(self._on_recording_status_changed_signal)
+        self._nvx_control_panel.recording.connect(self._stimuli_control_panel.set_recording_active)
         self._nvx_control_panel.recordingFileChanged.connect(self._on_nvx_recording_file_changed)
 
         # сигнал для управления записью nvx одновременно с показом стимулов
