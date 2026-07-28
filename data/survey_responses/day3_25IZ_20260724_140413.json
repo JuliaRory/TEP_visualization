@@ -1,0 +1,22 @@
+{
+  "participant_id": "25IZ",
+  "survey_id": "day3",
+  "saved_at": "2026-07-24T14:04:13",
+  "answers": {
+    "task_quality_1": 5,
+    "task_quality_2": 5,
+    "task_quality_3": 4,
+    "task_quality_4": 4,
+    "task_quality_5": 3,
+    "task_quality_6": 2,
+    "Real_SST_ability": 4,
+    "SST_ability": 5,
+    "SST_difficulty": 64,
+    "SST_comments": null,
+    "TMS_distraction": 6,
+    "SST_TMS_distraction": 54,
+    "left_TMS_distraction": 50,
+    "foot_TMS_distraction": 50,
+    "comment": "Стало проще выполнять движения\\, дольше сохраняю концентрацию"
+  }
+}

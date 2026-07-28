@@ -4,7 +4,7 @@
     "activate_bat": true,
     "service_name": "nvx136",
     "stream_name": "eeg",
-    "records_folder": "D:\\2025 - TEP\\data - raw\\exp\\113 exp 24VB day3",
+    "records_folder": "D:\\2025 - TEP\\data - raw\\exp\\119 exp 21VC day4",
     "bat_nvx136_25Hz": "D:/Resonance/distro-dual/msvc/NVX136.bat",
     "bat_nvx136_impedance": "D:/Resonance/distro-dual/msvc/impedanceChecker_64_2.bat",
     "use_number": true,
@@ -14,11 +14,11 @@
     "use_yaw_angle": true,
     "use_power": true,
     "use_comments": true,
-    "number": "12",
-    "subject": "24VB",
+    "number": "15",
+    "subject": "21VC",
     "spot": "M1",
     "coil": "",
-    "yaw_angle": "PA",
-    "power": "34",
-    "comments": "SST"
+    "yaw_angle": "AP",
+    "power": "58",
+    "comments": "offBCI"
 }

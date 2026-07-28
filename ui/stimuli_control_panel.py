@@ -5,7 +5,7 @@ from PyQt5.QtGui import QKeySequence
 import json
 import os
 
-from utils.ui_helpers import create_button, create_spin_box, create_check_box, create_combo_box, create_checkable_combobox, create_shortcut
+from utils.ui_helpers import create_button, create_spin_box, create_check_box, create_combo_box, create_checkable_combobox, create_shortcut, create_lineedit
 from utils.layout_utils import create_hbox, create_vbox
 
 from .video_player import StimuliPresentation_one_by_one
@@ -147,6 +147,10 @@ class StimuliControlPanel(QFrame):
         self.button_bci_stimuli = create_button(text="Запуск offBCI", disabled=False, parent=self)
         self.button_bci_mep_bins = create_button(text="MEP bins", disabled=False, parent=self)
 
+        self.check_box_udp = create_check_box(False, "udp", parent=self)
+        self.line_edit_udp = create_lineedit(parent=self)
+        self.line_edit_udp.setText("1 2 3")
+
     def _setup_layout(self):
         layout_stimuli_creation = create_vbox([QLabel("СТИМУЛЫ", self), self.button_create_stimuli])
         layout_stimuli = create_hbox([self.combo_box_stimuli, self._button_update_stimuli])
@@ -196,6 +200,8 @@ class StimuliControlPanel(QFrame):
         layout_stimuli_control = create_hbox([self.button_stimuli_pause, self.button_stimuli_restart])
         layout_volume = create_hbox([self.stimuli_volume_slider, self.noise_volume_slider])
 
+        layout_udp = create_hbox([self.check_box_udp, self.line_edit_udp])
+
         layout_params = QVBoxLayout()
         layout_params.addLayout(layout_monitor)
         layout_params.addLayout(layout_nvx)
@@ -230,6 +236,7 @@ class StimuliControlPanel(QFrame):
         layout.addLayout(layout_noise)
 
         layout.addLayout(layout_center)
+        layout.addLayout(layout_udp)
 
         layout = QHBoxLayout(self)
         layout.addWidget(self._settings_panel)
