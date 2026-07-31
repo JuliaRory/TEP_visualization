@@ -29,7 +29,6 @@ class _TensionOnRelay(QObject):
 UDP_HOST = "127.0.0.1"
 UDP_PORT = 5005
 
-
 class StimuliControlPanel(QFrame):
     """ --- UI для контроля за стимулами --- """
 
@@ -82,6 +81,7 @@ class StimuliControlPanel(QFrame):
         self._udp_sequence_messages = []
         self._udp_sequence_index = 0
         self._udp_stimulus_commands = []
+
         self._udp_stimulus_index = 0
         self._recording_in_progress = False
 
@@ -610,9 +610,15 @@ class StimuliControlPanel(QFrame):
         try:
             self._udp_socket.sendto(message.encode("utf-8"), self._udp_target)
             print(f"[UDP]: sent '{message}' to {UDP_HOST}:{UDP_PORT}")
-            data, address = self._udp_socket.recvfrom(2048)
-            response = data.decode("utf-8", errors="replace").strip()
-            self._handle_udp_response(response, address)
+            try:
+                data, address = self._udp_socket.recvfrom(2048)
+                response = data.decode("utf-8", errors="replace").strip()
+                self._handle_udp_response(response, address)
+            except ConnectionResetError as error:
+                if getattr(error, "winerror", None) == 10054:
+                    print("no port opened")
+                raise
+
         except OSError as exc:
             print(f"[UDP]: send/receive failed: {exc}")
 
