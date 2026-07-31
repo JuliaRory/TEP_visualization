@@ -135,7 +135,7 @@
         "use_yaw_angle": true,
         "use_power": true,
         "use_comments": true,
-        "number": "15",
+        "number": "00",
         "subject": "21VC",
         "spot": "M1",
         "coil": "",
@@ -181,6 +181,7 @@
             "rest1500_tms_0ms_bar"
         ],
         "stimuli_bci_filename": "resources/bci_stimuli.json",
+        "stimuli_feet_stim_filename": "resources/feetStim_stimuli.json",
         "hand_pic": "resources/bci/FDI_r_style1_base.png",
         "rest_pic": "resources/bci/rest.png",
         "background_pic": "resources/bci/background.png",

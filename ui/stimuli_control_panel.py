@@ -13,6 +13,7 @@ from .video_player import StimuliPresentation_one_by_one
 # from .video_player_antiponk import StimuliPresentationAntiponk
 from .video_player_phases import StimuliPresentationPhases
 from .video_player_bci import StimuliPresentation_BCI
+from .video_player_feet_stim import StimuliPresentationFeetStim
 from .stimuli_window import StimuliCreation
 from .widgets.bci_mep_bins_window import BCIMEPDelayWindow
 from ui.widgets.slider_with_labels import VerticalSliderWithLabel, HorizontalSliderWithLabel
@@ -91,7 +92,10 @@ class StimuliControlPanel(QFrame):
 
         self.combo_box_stimuli = create_combo_box([], parent=self, tooltips=True)
         self.combo_box_bci_stimuli = create_combo_box([], parent=self, tooltips=True)
+        self.combo_box_feet_stimuli = create_combo_box([], parent=self, tooltips=True)
         self._button_update_stimuli = create_button(text="⟳", disabled=False, parent=self, w=30)
+
+        self._button_update_feet_stimuli = create_button(text="обновить", disabled=False, parent=self, w=80)
 
         self.combo_box_noise_type = create_combo_box(self.settings.noise_type, parent=self, tooltips=True)
         self.combo_box_white_noise = create_combo_box(self.settings.white_noise, parent=self, tooltips=True)
@@ -164,6 +168,7 @@ class StimuliControlPanel(QFrame):
         create_shortcut("S+Down", self._down_stimuli_volume, parent=self.parent)
 
         self.button_bci_stimuli = create_button(text="Запуск offBCI", disabled=False, parent=self)
+        self.button_feet_stimuli = create_button(text="Запуск feetStim", disabled=False, parent=self)
         self.button_bci_mep_bins = create_button(text="MEP bins", disabled=False, parent=self)
 
         self._udp_panel = QFrame(self)
@@ -182,6 +187,9 @@ class StimuliControlPanel(QFrame):
         layout_stimuli_creation = create_vbox([QLabel("СТИМУЛЫ", self), self.button_create_stimuli])
         layout_stimuli = create_hbox([self.combo_box_stimuli, self._button_update_stimuli])
         layout_bci_stimuli = create_hbox([QLabel("offBCI seq", self), self.combo_box_bci_stimuli])
+        layout_feet_stimuli = create_hbox(
+            [QLabel("feetStim seq", self), self.combo_box_feet_stimuli, self._button_update_feet_stimuli]
+        )
         layout_monitor = create_hbox([QLabel("монитор", self), self.spin_box_monitor])
         layout_nvx = create_hbox([self.check_box_stimuli_record])
         layout_noise = create_hbox(
@@ -253,6 +261,7 @@ class StimuliControlPanel(QFrame):
         layout_params.addLayout(layout_stimuli_launch)
         layout_params.addLayout(layout_stimuli_control)
         layout_params.addWidget(self.button_bci_stimuli)
+        layout_params.addWidget(self.button_feet_stimuli)
         layout_params.addWidget(self.button_bci_mep_bins)
         layout_params.addWidget(self.label_stimuli_idx)
 
@@ -276,6 +285,10 @@ class StimuliControlPanel(QFrame):
         layout.addLayout(layout_bci_stimuli_dur)
         layout.addLayout(layout_bci_isi)
         layout.addLayout(layout_bci_ponk_isi)
+
+        layout.addWidget(QLabel(""))
+        layout.addWidget(QLabel("FEET STIM MODE"))
+        layout.addLayout(layout_feet_stimuli)
 
         layout.addWidget(QLabel(""))
         layout.addLayout(layout_noise)
@@ -311,11 +324,14 @@ class StimuliControlPanel(QFrame):
 
         self._button_update_stimuli.clicked.connect(self._update_combo_box_stimuli)
         self._button_update_stimuli.clicked.connect(self._update_combo_box_bci_stimuli)
+        self._button_update_stimuli.clicked.connect(self._update_combo_box_feet_stimuli)
+        self._button_update_feet_stimuli.clicked.connect(self._update_combo_box_feet_stimuli)
         self.combo_box_noise_type.currentTextChanged[str].connect(self._change_audio_filename)
         self.combo_box_white_noise.currentTextChanged[str].connect(self._change_audio_filename)
         self.combo_box_rest_video.textChanged.connect(self._on_change_rest_video_variants)
 
         self.button_bci_stimuli.clicked.connect(self._on_bci_stimmuli_button_click)
+        self.button_feet_stimuli.clicked.connect(self._on_feet_stimuli_button_click)
         self.button_bci_mep_bins.clicked.connect(self._on_bci_mep_bins_button_click)
         self.button_udp_send.clicked.connect(self._on_send_udp_message_button_click)
         self.button_udp_send_sequence.clicked.connect(self._on_send_udp_sequence_button_click)
@@ -368,6 +384,38 @@ class StimuliControlPanel(QFrame):
 
             self.button_stimuli_pause.setEnabled(True)
             self.button_stimuli_pause.setText(PLAY_LABEL)
+
+    def _on_feet_stimuli_button_click(self):
+        pw = getattr(self, "_player_window", None)
+        if isinstance(pw, QWidget) and not pw.isHidden() and not self._restart_stimuli:
+            self.button_feet_stimuli.setText("Запуск feetStim")
+            self.button_stimuli_restart.setEnabled(True)
+            self._player_window.finish()
+            return
+
+        seq_name = self.combo_box_feet_stimuli.currentText()
+        sequence = self._get_sequence_feet_stim(seq_name)
+        if not sequence:
+            print(f"[StimuliControlPanel]: feetStim sequence '{seq_name}' is empty or not found.")
+            return
+
+        self._player_window = StimuliPresentationFeetStim(
+            monitor=self.spin_box_monitor.value(),
+            volume=self.stimuli_volume_slider.slider.value(),
+        )
+        self._player_window.set_isi_range(self.settings.isi_min_s, self.settings.isi_max_s)
+        self._player_window.show()
+        self._player_window.raise_()
+
+        self._update_connections()
+        self._set_udp_stimulus_commands(None)
+        self._player_window.set_sequence(sequence, seq_name)
+        self._player_window.restart_sequence()
+
+        self.button_stimuli_pause.setEnabled(True)
+        self.button_stimuli_pause.setText(PLAY_LABEL)
+        self.button_feet_stimuli.setText("Закрыть feetStim")
+        self._restart_stimuli = False
 
     def _on_bci_mep_bins_button_click(self):
         if (
@@ -512,6 +560,13 @@ class StimuliControlPanel(QFrame):
             self._change_button_pause_stimuli_text()
 
     def _on_restart_stimuli_presentation(self):
+        pw = getattr(self, "_player_window", None)
+        if isinstance(pw, StimuliPresentationFeetStim) and not pw.isHidden():
+            pw.restart_sequence()
+            self.button_stimuli_pause.setText(PLAY_LABEL)
+            self.button_stimuli_restart.setEnabled(True)
+            return
+
         self._restart_stimuli = True
         self._on_stimuli_button_click()
 
@@ -522,6 +577,7 @@ class StimuliControlPanel(QFrame):
         self.label_stimuli_idx.setText("")
         self.button_stimuli_pause.setText(PLAY_LABEL)
         self.button_stimuli_restart.setEnabled(True)
+        self.button_feet_stimuli.setText("Запуск feetStim")
 
         if self.check_box_noise.isChecked() and self._audio_player.is_active:
             self._on_noise_button_click()
@@ -545,6 +601,9 @@ class StimuliControlPanel(QFrame):
         message = {"stimulus": filename}
         print(message)
         self.output_stream(json.dumps(message))
+        if isinstance(getattr(self, "_player_window", None), StimuliPresentationFeetStim):
+            self._send_udp_message(filename)
+            return
         self._send_udp_for_current_stimulus()
 
     def _on_send_udp_message_button_click(self):
@@ -835,6 +894,18 @@ class StimuliControlPanel(QFrame):
 
         return data.get(seq_name)
 
+    def _get_sequence_feet_stim(self, seq_name):
+        if not seq_name:
+            return None
+        filename = getattr(self.settings, "stimuli_feet_stim_filename", "resources/feetStim_stimuli.json")
+        try:
+            with open(filename, "r", encoding="utf-8") as f:
+                data = json.load(f)
+        except (FileNotFoundError, json.JSONDecodeError):
+            data = {}
+
+        return data.get(seq_name)
+
     def _update_combo_box_stimuli(self):
         self.combo_box_stimuli.clear()
         try:
@@ -863,15 +934,36 @@ class StimuliControlPanel(QFrame):
             if index >= 0:
                 self.combo_box_bci_stimuli.setCurrentIndex(index)
 
+    def _update_combo_box_feet_stimuli(self):
+        current = self.combo_box_feet_stimuli.currentText()
+        self.combo_box_feet_stimuli.clear()
+        filename = getattr(self.settings, "stimuli_feet_stim_filename", "resources/feetStim_stimuli.json")
+        try:
+            with open(filename, "r", encoding="utf-8") as f:
+                data = json.load(f)
+        except (FileNotFoundError, json.JSONDecodeError):
+            data = {}
+
+        if not isinstance(data, dict):
+            return
+
+        self.combo_box_feet_stimuli.addItems(data.keys())
+        if current:
+            index = self.combo_box_feet_stimuli.findText(current)
+            if index >= 0:
+                self.combo_box_feet_stimuli.setCurrentIndex(index)
+
     def _update_combo_box_noise(self):
         return
 
     def _finilize(self):
         self._update_combo_box_stimuli()
         self._update_combo_box_bci_stimuli()
+        self._update_combo_box_feet_stimuli()
 
     def sync_ui_from_settings(self):
         self._update_combo_box_bci_stimuli()
+        self._update_combo_box_feet_stimuli()
         available = set(self.settings.rest_video_variants)
         selected = [item for item in self.settings.rest_video_selected if item in available]
         if not selected:

@@ -93,6 +93,7 @@ class StimuliSettings:
     rest_video_selected: List[str] = field(default_factory=lambda: ["rest1500_tms_0ms_bar"])
     
     stimuli_bci_filename: str = "resources/bci_stimuli.json"
+    stimuli_feet_stim_filename: str = "resources/feetStim_stimuli.json"
     hand_pic: str = r"resources/bci/FDI_r_style1_base.png"
     rest_pic: str = r"resources/bci/rest.png"
     background_pic: str = r"resources/bci/background.png"
