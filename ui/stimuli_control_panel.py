@@ -140,6 +140,24 @@ class StimuliControlPanel(QFrame):
         self.spin_box_bci_ponk_isi_max = create_spin_box(
             0, 10000, self.settings.bci_ponk_isi_max_ms, step=50, parent=self, w=70
         )
+        self.spin_box_feet_photomark_delay = create_spin_box(
+            0,
+            60000,
+            getattr(self.settings, "feet_stim_photomark_delay_ms", 0),
+            step=10,
+            parent=self,
+            w=70,
+        )
+        self.combo_box_feet_photomark_signal = create_combo_box(
+            ["white", "black"],
+            curr_item=getattr(self.settings, "feet_stim_photomark_signal_color", "white"),
+            parent=self,
+        )
+        self.check_box_feet_photomark_no_blink = create_check_box(
+            getattr(self.settings, "feet_stim_photomark_no_blink", False),
+            "no blink",
+            parent=self,
+        )
 
         self.check_box_stimuli_record = create_check_box(self.settings.stimuli_with_record, "Запись NVX", parent=self)
         self.check_box_noise = create_check_box(self.settings.use_noise, "Шум", parent=self)
@@ -189,6 +207,15 @@ class StimuliControlPanel(QFrame):
         layout_bci_stimuli = create_hbox([QLabel("offBCI seq", self), self.combo_box_bci_stimuli])
         layout_feet_stimuli = create_hbox(
             [QLabel("feetStim seq", self), self.combo_box_feet_stimuli, self._button_update_feet_stimuli]
+        )
+        layout_feet_photomark = create_hbox(
+            [
+                QLabel("photomark, ms", self),
+                self.spin_box_feet_photomark_delay,
+                QLabel("signal", self),
+                self.combo_box_feet_photomark_signal,
+                self.check_box_feet_photomark_no_blink,
+            ]
         )
         layout_monitor = create_hbox([QLabel("монитор", self), self.spin_box_monitor])
         layout_nvx = create_hbox([self.check_box_stimuli_record])
@@ -289,6 +316,7 @@ class StimuliControlPanel(QFrame):
         layout.addWidget(QLabel(""))
         layout.addWidget(QLabel("FEET STIM MODE"))
         layout.addLayout(layout_feet_stimuli)
+        layout.addLayout(layout_feet_photomark)
 
         layout.addWidget(QLabel(""))
         layout.addLayout(layout_noise)
@@ -321,6 +349,9 @@ class StimuliControlPanel(QFrame):
         self.spin_box_bci_isi_max.valueChanged.connect(self._on_change_bci_timing)
         self.spin_box_bci_ponk_isi_min.valueChanged.connect(self._on_change_bci_timing)
         self.spin_box_bci_ponk_isi_max.valueChanged.connect(self._on_change_bci_timing)
+        self.spin_box_feet_photomark_delay.valueChanged.connect(self._on_change_feet_photomark_settings)
+        self.combo_box_feet_photomark_signal.currentTextChanged[str].connect(self._on_change_feet_photomark_settings)
+        self.check_box_feet_photomark_no_blink.stateChanged.connect(self._on_change_feet_photomark_settings)
 
         self._button_update_stimuli.clicked.connect(self._update_combo_box_stimuli)
         self._button_update_stimuli.clicked.connect(self._update_combo_box_bci_stimuli)
@@ -404,6 +435,11 @@ class StimuliControlPanel(QFrame):
             volume=self.stimuli_volume_slider.slider.value(),
         )
         self._player_window.set_isi_range(self.settings.isi_min_s, self.settings.isi_max_s)
+        self._player_window.set_photomark_settings(
+            delay_ms=getattr(self.settings, "feet_stim_photomark_delay_ms", 0),
+            signal_color=getattr(self.settings, "feet_stim_photomark_signal_color", "white"),
+            no_blink=getattr(self.settings, "feet_stim_photomark_no_blink", False),
+        )
         self._player_window.show()
         self._player_window.raise_()
 
@@ -601,8 +637,9 @@ class StimuliControlPanel(QFrame):
         message = {"stimulus": filename}
         print(message)
         self.output_stream(json.dumps(message))
-        if isinstance(getattr(self, "_player_window", None), StimuliPresentationFeetStim):
-            self._send_udp_message(filename)
+        pw = getattr(self, "_player_window", None)
+        if isinstance(pw, StimuliPresentationFeetStim):
+            self._send_udp_message(filename, after_send=pw.trigger_photomark_flash)
             return
         self._send_udp_for_current_stimulus()
 
@@ -661,13 +698,15 @@ class StimuliControlPanel(QFrame):
 
         self._udp_stimulus_commands = [str(command) for command in commands]
 
-    def _send_udp_message(self, message):
+    def _send_udp_message(self, message, after_send=None):
         message = str(message).strip()
         if not message:
-            return
+            return False
 
         try:
             self._udp_socket.sendto(message.encode("utf-8"), self._udp_target)
+            if after_send is not None:
+                after_send()
             print(f"[UDP]: sent '{message}' to {UDP_HOST}:{UDP_PORT}")
             try:
                 data, address = self._udp_socket.recvfrom(2048)
@@ -680,6 +719,9 @@ class StimuliControlPanel(QFrame):
 
         except OSError as exc:
             print(f"[UDP]: send/receive failed: {exc}")
+            return False
+
+        return True
 
     @staticmethod
     def _parse_udp_messages(text):
@@ -798,6 +840,19 @@ class StimuliControlPanel(QFrame):
                 isi_max_ms=isi_max_ms,
                 ponk_isi_min_ms=ponk_isi_min_ms,
                 ponk_isi_max_ms=ponk_isi_max_ms,
+            )
+
+    def _on_change_feet_photomark_settings(self, _value=None):
+        self.settings.feet_stim_photomark_delay_ms = int(self.spin_box_feet_photomark_delay.value())
+        self.settings.feet_stim_photomark_signal_color = self.combo_box_feet_photomark_signal.currentText()
+        self.settings.feet_stim_photomark_no_blink = self.check_box_feet_photomark_no_blink.isChecked()
+
+        pw = getattr(self, "_player_window", None)
+        if isinstance(pw, StimuliPresentationFeetStim) and not pw.isHidden():
+            pw.set_photomark_settings(
+                delay_ms=self.settings.feet_stim_photomark_delay_ms,
+                signal_color=self.settings.feet_stim_photomark_signal_color,
+                no_blink=self.settings.feet_stim_photomark_no_blink,
             )
 
     def _on_change_phases_delay(self, value):
@@ -984,8 +1039,21 @@ class StimuliControlPanel(QFrame):
             (self.spin_box_bci_isi_max, self.settings.bci_isi_max_ms),
             (self.spin_box_bci_ponk_isi_min, self.settings.bci_ponk_isi_min_ms),
             (self.spin_box_bci_ponk_isi_max, self.settings.bci_ponk_isi_max_ms),
+            (self.spin_box_feet_photomark_delay, getattr(self.settings, "feet_stim_photomark_delay_ms", 0)),
         ]
         for spinbox, value in spinbox_values:
             spinbox.blockSignals(True)
             spinbox.setValue(value)
             spinbox.blockSignals(False)
+
+        self.combo_box_feet_photomark_signal.blockSignals(True)
+        self.combo_box_feet_photomark_signal.setCurrentText(
+            getattr(self.settings, "feet_stim_photomark_signal_color", "white")
+        )
+        self.combo_box_feet_photomark_signal.blockSignals(False)
+
+        self.check_box_feet_photomark_no_blink.blockSignals(True)
+        self.check_box_feet_photomark_no_blink.setChecked(
+            getattr(self.settings, "feet_stim_photomark_no_blink", False)
+        )
+        self.check_box_feet_photomark_no_blink.blockSignals(False)

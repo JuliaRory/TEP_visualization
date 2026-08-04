@@ -12,6 +12,11 @@ COUNTDOWN_VIDEO = r"resources/videoSamples/audio_countdown_3.mkv"
 CROSS_IMAGE = r"resources/crossFigures/cross_image_black_photomark.png"
 FINAL_FIG_FOLDER = r"resources/final_fig"
 FINAL_IMAGE_DELAY_MS = 2000
+PHOTOMARK_SIZE_PX = 75
+PHOTOMARK_PULSE_MS = 50
+PHOTOMARK_BLACK_SIGNAL = "black"
+PHOTOMARK_WHITE_SIGNAL = "white"
+PHOTOMARK_SIGNAL_COLORS = {PHOTOMARK_BLACK_SIGNAL, PHOTOMARK_WHITE_SIGNAL}
 
 
 class StimuliPresentationFeetStim(QWidget):
@@ -51,6 +56,11 @@ class StimuliPresentationFeetStim(QWidget):
         self._command_remaining_ms = 0
         self._isi_min_s = 1.5
         self._isi_max_s = 3.0
+        self._photomark_delay_ms = 0
+        self._photomark_signal_color = PHOTOMARK_WHITE_SIGNAL
+        self._photomark_no_blink = False
+        self._photomark_sequence_active = False
+        self._last_photomark_duration_ms = 0
         self._commands = []
         self._current_index = 0
         self._current_placeholder_path = CROSS_IMAGE
@@ -81,6 +91,20 @@ class StimuliPresentationFeetStim(QWidget):
         self._command_timer.setSingleShot(True)
         self._command_timer.timeout.connect(self._send_next_command)
 
+        self._final_picture_timer = QTimer(self)
+        self._final_picture_timer.setSingleShot(True)
+        self._final_picture_timer.timeout.connect(self._show_final_picture)
+
+        self._photomark_delay_timer = QTimer(self)
+        self._photomark_delay_timer.setSingleShot(True)
+        self._photomark_delay_timer.setTimerType(Qt.PreciseTimer)
+        self._photomark_delay_timer.timeout.connect(self._show_photomark_signal)
+
+        self._photomark_pulse_timer = QTimer(self)
+        self._photomark_pulse_timer.setSingleShot(True)
+        self._photomark_pulse_timer.setTimerType(Qt.PreciseTimer)
+        self._photomark_pulse_timer.timeout.connect(self._restore_photomark_base)
+
         self._video_widget = QWidget(self)
         self._video_widget.setStyleSheet("background-color: black;")
         layout = QVBoxLayout(self)
@@ -96,6 +120,13 @@ class StimuliPresentationFeetStim(QWidget):
         self._placeholder_widget.setStyleSheet("background-color: black;")
         self._set_placeholder_pixmap(CROSS_IMAGE)
         self._placeholder_widget.show()
+
+        self._photomark_widget = QWidget(self)
+        self._photomark_widget.setFixedSize(PHOTOMARK_SIZE_PX, PHOTOMARK_SIZE_PX)
+        self._position_photomark()
+        self._restore_photomark_base()
+        self._photomark_widget.show()
+        self._photomark_widget.raise_()
 
     def set_sequence(self, stimuli_sequence, seq_name=None):
         if seq_name is None:
@@ -134,6 +165,27 @@ class StimuliPresentationFeetStim(QWidget):
 
         self._isi_min_s = min_s
         self._isi_max_s = max_s
+
+    def set_photomark_settings(self, delay_ms=None, signal_color=None, no_blink=None):
+        if delay_ms is not None:
+            self._photomark_delay_ms = max(0, int(delay_ms))
+
+        if signal_color is not None:
+            signal_color = str(signal_color).strip().lower()
+            if signal_color in PHOTOMARK_SIGNAL_COLORS:
+                self._photomark_signal_color = signal_color
+
+        if no_blink is not None:
+            self._photomark_no_blink = bool(no_blink)
+            if self._photomark_no_blink:
+                self._photomark_delay_timer.stop()
+                self._photomark_pulse_timer.stop()
+
+        self._restore_photomark_base()
+
+    def trigger_photomark_flash(self):
+        self._last_photomark_duration_ms = self._schedule_photomark_flash()
+        return self._last_photomark_duration_ms
 
     def _get_random_isi_ms(self):
         return int(random.uniform(self._isi_min_s, self._isi_max_s) * 1000)
@@ -174,6 +226,7 @@ class StimuliPresentationFeetStim(QWidget):
             self._countdown_running = False
             self._set_placeholder_pixmap(CROSS_IMAGE)
             self._placeholder_widget.show()
+            self._start_photomark_sequence()
             self._start_command_interval(self._get_random_isi_ms())
 
     def _send_next_command(self):
@@ -191,21 +244,35 @@ class StimuliPresentationFeetStim(QWidget):
             return
 
         command = self._commands[self._current_index]
+        self._last_photomark_duration_ms = 0
         self.stimulus.emit(command)
+        photomark_duration_ms = self._last_photomark_duration_ms
         self._current_index += 1
         self.currIdxChanged.emit(self._current_index)
 
         if self._current_index >= len(self._commands):
-            self._show_final_picture()
+            self._start_final_picture_after(photomark_duration_ms)
         else:
             self._start_command_interval(self._get_random_isi_ms())
 
     def _show_final_picture(self):
+        if self._stopped:
+            return
+
+        self._final_picture_timer.stop()
         print("[VLC player feetStim]: stimuli sequence has ended.")
         self._finished = True
+        self._stop_photomark_sequence()
         self._set_placeholder_pixmap(self.final_pic_path)
         self._placeholder_widget.show()
         QTimer.singleShot(FINAL_IMAGE_DELAY_MS, self.stimuliFinished.emit)
+
+    def _start_final_picture_after(self, delay_ms):
+        delay_ms = max(0, int(delay_ms))
+        if delay_ms == 0:
+            self._show_final_picture()
+        else:
+            self._final_picture_timer.start(delay_ms)
 
     def _start_command_interval(self, duration_ms):
         self._command_remaining_ms = max(0, int(duration_ms))
@@ -237,6 +304,57 @@ class StimuliPresentationFeetStim(QWidget):
         )
         self._placeholder_widget.setPixmap(pixmap)
 
+    def _position_photomark(self):
+        if not hasattr(self, "_photomark_widget"):
+            return
+
+        x = max(0, self.width() - PHOTOMARK_SIZE_PX)
+        self._photomark_widget.setGeometry(x, 0, PHOTOMARK_SIZE_PX, PHOTOMARK_SIZE_PX)
+
+    def _start_photomark_sequence(self):
+        self._photomark_sequence_active = True
+        self._restore_photomark_base()
+
+    def _stop_photomark_sequence(self):
+        self._photomark_delay_timer.stop()
+        self._photomark_pulse_timer.stop()
+        self._photomark_sequence_active = False
+        self._last_photomark_duration_ms = 0
+        self._restore_photomark_base()
+
+    def _schedule_photomark_flash(self):
+        if not self._photomark_sequence_active or self._photomark_no_blink:
+            return 0
+
+        self._photomark_delay_timer.stop()
+        self._photomark_pulse_timer.stop()
+        self._restore_photomark_base()
+        self._photomark_delay_timer.start(self._photomark_delay_ms)
+        return self._photomark_delay_ms + PHOTOMARK_PULSE_MS
+
+    def _show_photomark_signal(self):
+        if self._stopped or not self._photomark_sequence_active:
+            return
+
+        self._set_photomark_color(self._photomark_signal_color)
+        self._photomark_pulse_timer.start(PHOTOMARK_PULSE_MS)
+
+    def _restore_photomark_base(self):
+        if self._photomark_signal_color == PHOTOMARK_BLACK_SIGNAL:
+            color = PHOTOMARK_WHITE_SIGNAL
+        else:
+            color = PHOTOMARK_BLACK_SIGNAL
+
+        self._set_photomark_color(color)
+
+    def _set_photomark_color(self, color):
+        if not hasattr(self, "_photomark_widget"):
+            return
+
+        self._photomark_widget.setStyleSheet(f"background-color: {color};")
+        self._photomark_widget.show()
+        self._photomark_widget.raise_()
+
     def keyPressEvent(self, event):
         if event.key() == Qt.Key_Space:
             self._on_space_pressed()
@@ -262,6 +380,8 @@ class StimuliPresentationFeetStim(QWidget):
             return
         self._placeholder_widget.setGeometry(self.rect())
         self._set_placeholder_pixmap(self._current_placeholder_path)
+        self._position_photomark()
+        self._photomark_widget.raise_()
 
     def _on_space_pressed(self):
         if not self._sequence_started:
@@ -308,6 +428,8 @@ class StimuliPresentationFeetStim(QWidget):
         self._waiting_for_first_frame = False
         self._countdown_running = False
         self._command_timer.stop()
+        self._final_picture_timer.stop()
+        self._stop_photomark_sequence()
         self._command_started_at = None
         self._command_remaining_ms = 0
 
@@ -323,6 +445,8 @@ class StimuliPresentationFeetStim(QWidget):
         self._waiting_for_first_frame = False
         self._countdown_running = False
         self._command_timer.stop()
+        self._final_picture_timer.stop()
+        self._stop_photomark_sequence()
         self._command_started_at = None
         self._command_remaining_ms = 0
         self._player.stop()

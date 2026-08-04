@@ -94,6 +94,9 @@ class StimuliSettings:
     
     stimuli_bci_filename: str = "resources/bci_stimuli.json"
     stimuli_feet_stim_filename: str = "resources/feetStim_stimuli.json"
+    feet_stim_photomark_delay_ms: int = 0
+    feet_stim_photomark_signal_color: str = "white"
+    feet_stim_photomark_no_blink: bool = False
     hand_pic: str = r"resources/bci/FDI_r_style1_base.png"
     rest_pic: str = r"resources/bci/rest.png"
     background_pic: str = r"resources/bci/background.png"
