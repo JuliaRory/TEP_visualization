@@ -125,11 +125,11 @@
         "activate_bat": true,
         "service_name": "nvx136",
         "stream_name": "eeg",
-        "records_folder": "D:\\2026 - feetStim\\test\\02TP_eeg",
+        "records_folder": "D:\\2026 - feetStim\\test\\04TP_emg",
         "bat_nvx136_25Hz": "D:/Resonance/distro-dual/msvc/NVX136.bat",
         "bat_nvx136_impedance": "D:/Resonance/distro-dual/msvc/impedanceChecker_64_2.bat",
-        "use_number": true,
-        "use_subject": true,
+        "use_number": false,
+        "use_subject": false,
         "use_spot": false,
         "use_coil": false,
         "use_yaw_angle": false,
@@ -141,7 +141,7 @@
         "coil": "",
         "yaw_angle": "AP",
         "power": "58",
-        "comments": "site2"
+        "comments": "force-TMS_tension"
     },
     "stimuli_control": {
         "monitor": 3,
