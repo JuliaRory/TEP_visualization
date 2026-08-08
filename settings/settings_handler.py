@@ -33,6 +33,7 @@ class SettingsHandler:
     # -- Configure data processor --
     def configure_data_processor(self):
         # configure data processor according to current settings
+        self.update_use_eeg(apply=False)
         self.update_averaging(apply=False)
         self.update_baseline(apply=False)
         self.update_lowpass(apply=False)
@@ -46,6 +47,18 @@ class SettingsHandler:
 
     # --- Averaging ---
 
+    def update_use_eeg(self, apply=True):
+        s = self.settings.processing_settings
+        s.use_eeg = self.ui.check_box_use_eeg.isChecked()
+        self.data_processor.configure_use_eeg(s.use_eeg)
+        if apply:
+            if s.use_eeg:
+                self._apply(topoteps_draw=True, avg_teps_draw=True)
+            else:
+                if self.plot_updater is not None and hasattr(self.plot_updater, "clear_eeg_plots"):
+                    self.plot_updater.clear_eeg_plots()
+                self._apply()
+
     def update_averaging(self, apply=True):
         s = self.settings.processing_settings
         s.do_averaging = self.ui.check_box_average.isChecked()
@@ -53,7 +66,7 @@ class SettingsHandler:
 
         self.data_processor.average_data = s.do_averaging
         self.data_processor.aver_method = s.curr_aver_method
-        if self.data_processor.average_data:
+        if self.data_processor.use_eeg and self.data_processor.average_data:
             self.data_processor.create_average_functions()
 
         if apply:
@@ -129,7 +142,7 @@ class SettingsHandler:
     def update_mode(self, idx=1, apply=True):
         # ["Усреднение", "Одиночные пробы"]
         self.data_processor.average_data = (idx == 0)
-        if self.data_processor.average_data:
+        if self.data_processor.use_eeg and self.data_processor.average_data:
             self.data_processor.create_average_functions()
         if apply:
             self._apply(topoteps_draw=True)
@@ -139,7 +152,7 @@ class SettingsHandler:
         self.data_processor.process_new_data = (idx == 0)
         self.data_processor.reset_sessions()
 
-        if self.data_processor.average_data:
+        if self.data_processor.use_eeg and self.data_processor.average_data:
             self.data_processor.create_average_functions()
 
         if apply:
@@ -149,16 +162,17 @@ class SettingsHandler:
 
     def _apply(self, topoteps_draw=False, single_meps_draw=False, avg_teps_draw=False, avg_meps_draw=False):
         self.data_processor.create_full_transform()
-        if self.data_processor.average_data:
+        use_eeg = getattr(self.data_processor, "use_eeg", True)
+        if use_eeg and self.data_processor.average_data:
             self.data_processor.create_average_functions()
-        if self.data_processor.average_tep_data:
+        if use_eeg and self.data_processor.average_tep_data:
             self.data_processor.create_average_functions()
         if len(self.data_processor._epochs) != 0:
-            if topoteps_draw:
+            if use_eeg and topoteps_draw:
                 self.plot_updater.update_topoteps(self.data_processor)
             if single_meps_draw:
                 self.plot_updater.update_meps(self.data_processor)
-            if avg_teps_draw:
+            if use_eeg and avg_teps_draw:
                 self.plot_updater.update_avg_teps(self.data_processor)
             if avg_meps_draw:
                 self.plot_updater.update_avg_meps(self.data_processor)
@@ -182,6 +196,7 @@ class SettingsHandler:
             self.data_processor.configure_speed()
         self.sync_ui_from_settings()
 
+        self.update_use_eeg(apply=False)
         self.update_averaging(apply=False)
         self.update_baseline(apply=False)
         self.update_lowpass(apply=False)
@@ -226,6 +241,7 @@ class SettingsHandler:
         s = self.settings.processing_settings
 
         self.ui.check_box_average.setChecked(s.do_averaging)
+        self.ui.check_box_use_eeg.setChecked(getattr(s, "use_eeg", True))
         self.ui.combo_box_aver.setCurrentText(s.curr_aver_method)
         self.ui.check_box_lowpass.setChecked(s.do_lowpass_filtering)
         self.ui.spin_box_lowpass.setValue(s.lowpass_freq_Hz)

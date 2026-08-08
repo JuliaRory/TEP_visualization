@@ -19,9 +19,10 @@ class PlotUpdater:
     def update_plots(self, processor):
         self._latest_processor = processor
         self._sync_plot_timebase(processor)
-        self.update_topoteps(processor)
+        if getattr(processor, "use_eeg", True):
+            self.update_topoteps(processor)
+            self.update_avg_teps(processor) # ????
 
-        self.update_avg_teps(processor) # ????
         self.update_avg_meps(processor)
 
         self.update_meps(processor)
@@ -31,6 +32,8 @@ class PlotUpdater:
     
     def update_topoteps(self, processor):
         self._sync_plot_timebase(processor)
+        if not getattr(processor, "use_eeg", True):
+            return
         if len(processor._epochs) == 0:
             return
 
@@ -46,6 +49,8 @@ class PlotUpdater:
 
     def update_avg_teps(self, processor):
         self._sync_plot_timebase(processor)
+        if not getattr(processor, "use_eeg", True):
+            return
         if len(processor._epochs) == 0:
             return
 
@@ -73,7 +78,10 @@ class PlotUpdater:
             return
 
         if not self._show_specific_epoch:
-            emg = self._mep_from_epoch(processor, processor._epochs[-1], self.settings.single_meps)
+            epoch = processor._epochs[-1]
+            if hasattr(self.meps_panel, "set_channel_count"):
+                self.meps_panel.set_channel_count(np.asarray(epoch).shape[0])
+            emg = self._mep_from_epoch(processor, epoch, self.settings.single_meps)
             emg2plot = processor.cut_mep_epoch(emg, self.settings.single_meps.xmin_ms, self.settings.single_meps.xmax_ms)
 
             self.meps_panel.figure.update_emg(emg2plot)
@@ -115,11 +123,11 @@ class PlotUpdater:
             return
 
         settings = self.mep_deeper_look_window.settings
-        emg = self._mep_from_epoch(processor, processor._epochs[-1], settings)
-        emg2plot = processor.cut_mep_epoch(emg, settings.xmin_ms, settings.xmax_ms)
+        epoch = processor._epochs[-1]
+        self.mep_deeper_look_window.set_channel_count(np.asarray(epoch).shape[0])
+        emg2plot = self._mep_deeper_look_epoch(processor, epoch, settings)
 
-        # self.mep_deeper_look_window.update_emg(emg2plot)
-        self.mep_deeper_look_window.figure.update_emg(emg2plot)
+        self.mep_deeper_look_window.update_emg(emg2plot)
 
     def _refresh_mep_deeper_look(self):
         if self._latest_processor is not None:
@@ -135,18 +143,65 @@ class PlotUpdater:
 
         ui = self.mep_deeper_look_window
         settings = ui.settings
-        ui.figure.rebuild_from_settings(reset_history=True)
+        ui.rebuild_from_settings(reset_history=True)
 
         n_plots = max(1, int(getattr(settings, "n_plots", 1)))
         for epoch in processor._epochs[-n_plots:]:
-            emg = self._mep_from_epoch(processor, epoch, settings)
-            emg2plot = processor.cut_mep_epoch(emg, settings.xmin_ms, settings.xmax_ms)
-            ui.figure.update_emg(emg2plot)
+            ui.set_channel_count(np.asarray(epoch).shape[0])
+            emg2plot = self._mep_deeper_look_epoch(processor, epoch, settings)
+            ui.update_emg(emg2plot)
 
     def _mep_from_epoch(self, processor, epoch, settings=None):
-        emg = processor._baseline(epoch[-2:, :] * 1E3)  # вычесть бейзлайн и перевести в мВ
-        emg = np.diff(emg, axis=0).flatten()           # посчитать разницу каналов
+        pair = getattr(settings, "channel_pair", None)
+        if pair and len(pair) >= 2:
+            return self._mep_from_epoch_channels(processor, epoch, int(pair[0]) - 1, int(pair[1]) - 1, settings)
+        return self._mep_from_epoch_channels(processor, epoch, -2, -1, settings)
+
+    def _mep_deeper_look_epoch(self, processor, epoch, settings):
+        if not getattr(settings, "feet_mode", False):
+            emg = self._mep_from_epoch(processor, epoch, settings)
+            return processor.cut_mep_epoch(emg, settings.xmin_ms, settings.xmax_ms)
+
+        rows = []
+        for ch_a, ch_b in self.mep_deeper_look_window.get_feet_channel_pairs():
+            emg = self._mep_from_epoch_channels(processor, epoch, ch_a - 1, ch_b - 1, settings)
+            rows.append(processor.cut_mep_epoch(emg, settings.xmin_ms, settings.xmax_ms))
+        return rows
+
+    def _mep_from_epoch_channels(self, processor, epoch, ch_a, ch_b, settings=None):
+        epoch = np.asarray(epoch)
+        if epoch.ndim < 2:
+            return self._empty_mep_signal(processor, epoch)
+
+        n_channels = int(epoch.shape[0])
+        if n_channels < 2:
+            return self._empty_mep_signal(processor, epoch)
+
+        ch_a = self._resolve_channel_index(ch_a, n_channels)
+        ch_b = self._resolve_channel_index(ch_b, n_channels)
+        if ch_a is None or ch_b is None:
+            return self._empty_mep_signal(processor, epoch)
+
+        emg = processor._baseline(epoch[[ch_a, ch_b], :] * 1E3)  # вычесть бейзлайн и перевести в мВ
+        emg = np.diff(emg, axis=0).flatten()                     # посчитать разницу каналов
         return self._remove_mep_slow_trend(processor, emg, settings)
+
+    @staticmethod
+    def _resolve_channel_index(index, n_channels):
+        index = int(index)
+        if index < 0:
+            index = n_channels + index
+        if index < 0 or index >= n_channels:
+            return None
+        return index
+
+    @staticmethod
+    def _empty_mep_signal(processor, epoch):
+        epoch = np.asarray(epoch)
+        n_samples = int(epoch.shape[-1]) if epoch.ndim > 0 else 0
+        if n_samples <= 0:
+            n_samples = int(getattr(processor, "_n_samples", 0) or 0)
+        return np.full(max(0, n_samples), np.nan, dtype=float)
 
     def _sync_plot_timebase(self, processor):
         n_samples = int(getattr(processor, "_n_samples", 0) or 0)
@@ -222,14 +277,19 @@ class PlotUpdater:
         self.overview_panel.figure_TEP.refresh_plot(which='TEPs')
         self.overview_panel.figure_MEP.refresh_plot(which='MEPs')
         self.meps_panel.figure.refresh_plot()
+
+    def clear_eeg_plots(self):
+        self.topo_panel.figure.refresh_plot()
+        self.overview_panel.figure_TEP.refresh_plot(which='TEPs')
     
     def plot_epoch(self, n_epoch, processor):
         if n_epoch < 1 or n_epoch > len(processor._epochs):
             return
 
-        TEPs2plot = processor.apply_transform(processor._epochs[n_epoch-1][:-2, :] * 1e6)
-        self.topo_panel.figure.update_data(TEPs2plot)
-        self.overview_panel.figure_TEP.update_TEPs(TEPs2plot)
+        if getattr(processor, "use_eeg", True):
+            TEPs2plot = processor.apply_transform(processor._epochs[n_epoch-1][:-2, :] * 1e6)
+            self.topo_panel.figure.update_data(TEPs2plot)
+            self.overview_panel.figure_TEP.update_TEPs(TEPs2plot)
 
         emg = processor._baseline(processor._epochs[n_epoch-1][-2:, :] * 1E3)  # вычесть бейзлайн и перевести в мВ
         emg = np.diff(emg, axis=0).flatten()                            # посчитать разницу каналов

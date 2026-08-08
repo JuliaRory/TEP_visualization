@@ -6,6 +6,7 @@ from typing import List
 
 @dataclass
 class ProcessingSettings:
+    use_eeg: bool = True
     do_averaging: bool = True
     do_lowpass_filtering: bool = True
     do_rereferencing: bool = False

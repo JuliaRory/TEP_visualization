@@ -43,6 +43,7 @@ class DataProcessor(QObject):
         # флаги режимов
         self.average_data = False
         self.process_new_data = True
+        self.use_eeg = bool(getattr(settings.processing_settings, "use_eeg", True))
 
         # функции-трансформации
         self._baseline = lambda x: x
@@ -94,7 +95,7 @@ class DataProcessor(QObject):
             self._n_epoch += 1
             self.updateCounter.emit(self._n_epoch)
 
-            if self.average_data or self.average_tep_data:
+            if self.use_eeg and (self.average_data or self.average_tep_data):
                 recreated = self._ensure_average_functions(which="TEPs")
                 TEPs2plot = self._transform(epoch[:-2, :] * 1e6)     # without emg channels
                 if not recreated:
@@ -122,7 +123,7 @@ class DataProcessor(QObject):
         del self._epochs[n_delete-1]                     # минус один для учёта нумерации с нуля
         del self._timestamps[n_delete-1]
 
-        if self.average_data or self.average_tep_data:
+        if self.use_eeg and (self.average_data or self.average_tep_data):
             self.create_average_functions(which="TEPs")
         if self.average_mep_data:
             self.create_average_functions(which="MEPs")
@@ -226,6 +227,8 @@ class DataProcessor(QObject):
     
     # --- Усреднение ---
     def get_eeg_epochs(self):
+        if not self.use_eeg:
+            return np.empty((0, len(self.settings.channels), self._n_samples))
         epochs = self._current_length_epochs()
         if len(epochs) == 0:
             return np.empty((0, len(self.settings.channels), self._n_samples))
@@ -253,6 +256,10 @@ class DataProcessor(QObject):
         """Создать функции для усреднения TEPs"""
         function = self.aver_empty_func[self.aver_method]   # пустой трафарет
         
+        if which == 'TEPs' and not self.use_eeg:
+            self.average_functions = None
+            return
+
         if len(self._epochs) != 0:
             if which == 'TEPs':
                 data = self.get_eeg_epochs()
@@ -286,6 +293,9 @@ class DataProcessor(QObject):
 
     def _ensure_average_functions(self, which="TEPs"):
         if which == "TEPs":
+            if not self.use_eeg:
+                self.average_functions = None
+                return False
             needs_create = (
                 not self.average_functions
                 or len(self.average_functions) != len(self.settings.channels)
@@ -327,6 +337,12 @@ class DataProcessor(QObject):
         self.average_functions = None
         self.average_functions_mep = None
 
+    def configure_use_eeg(self, enabled=True):
+        self.use_eeg = bool(enabled)
+        if not self.use_eeg:
+            self.average_functions = None
+            self.average_tep_data = False
+
     def _current_length_epochs(self):
         return [epoch for epoch, _ in self._current_length_epoch_records()]
 
@@ -342,7 +358,7 @@ class DataProcessor(QObject):
         self.create_average_functions(which="MEPs")
     
     def update_avg_tep(self, do_average):
-        self.average_tep_data = do_average
+        self.average_tep_data = bool(do_average) and self.use_eeg
         if not self.average_data:
             self.create_average_functions(which="TEPs")
     
@@ -369,7 +385,7 @@ class DataProcessor(QObject):
         self.average_functions = None
         self.average_functions_mep = None
 
-        if self.average_data or self.average_tep_data:
+        if self.use_eeg and (self.average_data or self.average_tep_data):
             self.create_average_functions(which="TEPs")
         if self.average_mep_data:
             self.create_average_functions(which="MEPs")

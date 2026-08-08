@@ -31,6 +31,7 @@ class SingleMEPsPlot:
     n_plots_thr: int = 5
     remove_slow_trend: bool = True
     trend_window_ms: float = 100.0
+    channel_pair: List[int] = field(default_factory=lambda: [65, 66])
 
 @dataclass
 class SingleMEPsPlotDeeperLook:
@@ -45,6 +46,11 @@ class SingleMEPsPlotDeeperLook:
     n_plots_thr: int = 10
     remove_slow_trend: bool = True
     trend_window_ms: float = 100.0
+    feet_mode: bool = False
+    feet_row_names: List[str] = field(default_factory=lambda: ["AH", "MG", "TA"])
+    feet_channel_pairs: List[List[int]] = field(default_factory=lambda: [[61, 62], [63, 64], [65, 66]])
+    feet_max_amp_mV: List[float] = field(default_factory=lambda: [0.1, 0.1, 0.1])
+    feet_thr: List[float] = field(default_factory=lambda: [0.05, 0.05, 0.05])
 
 @dataclass
 class MEPBlock:
