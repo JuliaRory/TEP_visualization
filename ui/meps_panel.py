@@ -1,7 +1,8 @@
 from PyQt5.QtWidgets import QCheckBox, QFrame,  QHBoxLayout, QLabel,  QSplitter, QVBoxLayout, QSizePolicy
 from PyQt5.QtCore import Qt, pyqtSignal
 
-from utils.ui_helpers import  create_button
+from utils.ui_helpers import  create_button, create_spin_box
+from utils.layout_utils import create_hbox
 
 from ui.widgets.mep_plot import MEPPlot
 from ui.widgets.mep_deeper_look import MEPsDeeperLook
@@ -49,6 +50,7 @@ class MEPsPanel(QFrame):
         self.left_right_ratio = getattr(self.settings, "set_plot_ratio", 0.15)
         self.n5_5, self.n5_10 = 0, 0
         self.n10_5, self.n10_10 = 0, 0
+        self._channel_count = 66
         
     # --- Widgets ---
     def _setup_ui(self):
@@ -71,12 +73,17 @@ class MEPsPanel(QFrame):
         self._button_condition_analysis = create_button("MEP conditions",  w=120)
         self._check_remove_trend = QCheckBox("Remove slow trend", self)
         self._check_remove_trend.setChecked(bool(getattr(self.settings, "remove_slow_trend", True)))
+        pair = self._channel_pair()
+        self._spinbox_channel_a = create_spin_box(1, self._channel_count, pair[0], parent=self, w=55)
+        self._spinbox_channel_b = create_spin_box(1, self._channel_count, pair[1], parent=self, w=55)
 
     # --- Layout ---
     def _setup_layout(self):
         layout_settings = QVBoxLayout(self._frame_settings)
         layout_settings.addWidget(self._label)
         layout_settings.addWidget(self._label_counter)
+        layout_settings.addLayout(create_hbox([QLabel("EMG A:", self), self._spinbox_channel_a]))
+        layout_settings.addLayout(create_hbox([QLabel("EMG B:", self), self._spinbox_channel_b]))
         layout_settings.addWidget(self._check_remove_trend)
         layout_settings.addWidget(self._button_deeper_look)
         # layout_settings.addWidget(self._button_movement_detection)
@@ -112,6 +119,8 @@ class MEPsPanel(QFrame):
         self._button_movement_detection.clicked.connect(self.movementDetectionActivate.emit)
         self._button_condition_analysis.clicked.connect(self.conditionAnalysisActivate.emit)
         self._check_remove_trend.stateChanged.connect(self._on_remove_trend_changed)
+        self._spinbox_channel_a.valueChanged.connect(self._on_channel_pair_changed)
+        self._spinbox_channel_b.valueChanged.connect(self._on_channel_pair_changed)
     
     def _on_change_amp_counter(self, value):
         self._label_counter.setText(self._counter_text(value))
@@ -122,6 +131,33 @@ class MEPsPanel(QFrame):
     def _on_remove_trend_changed(self, _state):
         self.settings.remove_slow_trend = self._check_remove_trend.isChecked()
         self.processingChanged.emit()
+
+    def _on_channel_pair_changed(self, _value=None):
+        self.settings.channel_pair = [
+            int(self._spinbox_channel_a.value()),
+            int(self._spinbox_channel_b.value()),
+        ]
+        self.processingChanged.emit()
+
+    def set_channel_count(self, channel_count):
+        channel_count = max(2, int(channel_count))
+        if channel_count == self._channel_count:
+            return
+        self._channel_count = channel_count
+        for spin in (self._spinbox_channel_a, self._spinbox_channel_b):
+            blocked = spin.blockSignals(True)
+            spin.setMaximum(channel_count)
+            spin.setValue(max(1, min(int(spin.value()), channel_count)))
+            spin.blockSignals(blocked)
+        self._on_channel_pair_changed()
+
+    def _channel_pair(self):
+        pair = list(getattr(self.settings, "channel_pair", [65, 66]) or [65, 66])
+        pair = (pair + [66])[:2]
+        return [
+            max(1, min(int(pair[0]), self._channel_count)),
+            max(1, min(int(pair[1]), self._channel_count)),
+        ]
 
     def _on_deeper_look_button_clicked(self):
         if hasattr(self, "_deeper_look_window") and self._deeper_look_window.isVisible():

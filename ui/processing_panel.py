@@ -34,6 +34,7 @@ class ProcessingPanel(QFrame):
         для оперативного определения изменившихся параметров"""
 
         self._last_do_averaging = self.settings.do_averaging
+        self._last_use_eeg = getattr(self.settings, "use_eeg", True)
         self._last_do_lowpass_filtering = self.settings.do_lowpass_filtering
         self._last_do_rereferencing = self.settings.do_rereferencing
         self._last_do_CAR_filtering = self.settings.do_CAR_filtering
@@ -49,6 +50,7 @@ class ProcessingPanel(QFrame):
 
     def sync_last_state_from_ui(self):
         self._last_do_averaging = self.check_box_average.isChecked()
+        self._last_use_eeg = self.check_box_use_eeg.isChecked()
         self._last_do_lowpass_filtering = self.check_box_lowpass.isChecked()
         self._last_do_rereferencing = self.check_box_rereference.isChecked()
         self._last_do_CAR_filtering = self.check_box_car.isChecked()
@@ -69,6 +71,8 @@ class ProcessingPanel(QFrame):
     def _setup_ui(self):
         
         self.button_processing = create_button('Применить', disabled=False, parent=self)
+
+        self.check_box_use_eeg = create_check_box(getattr(self.settings, "use_eeg", True), 'Использовать EEG', parent=self)
 
         self.check_box_average = create_check_box(self.settings.do_averaging, 'Усреднение', parent=self)
         self.combo_box_aver = create_combo_box(self.settings.aver_methods, curr_item=self.settings.curr_aver_method, parent=self)
@@ -99,6 +103,7 @@ class ProcessingPanel(QFrame):
     def _setup_layout(self):        
 
         layout_processing = create_hbox([QLabel("ОБРАБОТКА", self), self.button_processing])
+        layout_use_eeg = create_hbox([self.check_box_use_eeg])
         layout_aver_mode = create_hbox([self.check_box_average, self.combo_box_aver])
         layout_lowpass = create_hbox([self.check_box_lowpass, self.spin_box_lowpass, QLabel("Гц", self)])
         layout_rereference = create_hbox([self.check_box_rereference, self.combo_box_rereference])
@@ -116,6 +121,7 @@ class ProcessingPanel(QFrame):
                                                                # Vertical layout
         layout = QVBoxLayout(self)                             # +------------------------------|
         layout.addLayout(layout_processing)                    # | ОБРАБОТКА ДАННЫХ  применить  |
+        layout.addLayout(layout_use_eeg)                       # | _Использовать EEG             |
         layout.addLayout(layout_aver_mode)                     # | _Усреднение: __mean__        |
         layout.addLayout(layout_lowpass)                       # | _ФНЧ:  _____ Гц              |
         layout.addLayout(layout_rereference)                   # | _Референт:  _____            |
@@ -149,6 +155,11 @@ class ProcessingPanel(QFrame):
 
 
     def _on_processing_button_click(self):
+        is_use_eeg_changed = not are_equal(self.check_box_use_eeg.isChecked(), self._last_use_eeg)
+        if is_use_eeg_changed:
+            self._last_use_eeg = self.check_box_use_eeg.isChecked()
+            self.settings_handler.update_use_eeg()
+
         is_averaging_changed = not are_equal(self.check_box_average.isChecked(), self._last_do_averaging)
         is_aver_method_changed = not are_equal(self.combo_box_aver.currentText(), self._last_aver_method)
         if is_averaging_changed:

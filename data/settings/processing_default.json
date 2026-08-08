@@ -32,6 +32,7 @@
         "Fz"
     ],
     "processing_settings": {
+        "use_eeg": true,
         "do_averaging": true,
         "do_lowpass_filtering": true,
         "do_rereferencing": false,

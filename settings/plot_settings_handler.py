@@ -47,10 +47,12 @@ class PlotSettingsHandler:
     def _update_averaging_teps(self):
         s = self.settings.overview_panel.butts_plot.TEP
         s.do_averaging = self.ui_overview_panel.checkbox_average_teps.isChecked()
+        if not getattr(self.data_processor, "use_eeg", True):
+            s.do_averaging = False
 
         self.data_processor.update_avg_tep(s.do_averaging)
 
-        if len(self.data_processor._epochs) != 0:
+        if getattr(self.data_processor, "use_eeg", True) and len(self.data_processor._epochs) != 0:
             self.plot_updater.update_avg_teps(self.data_processor)
     
     def _update_averaging_meps(self):
