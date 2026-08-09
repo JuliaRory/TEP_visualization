@@ -38,7 +38,7 @@ output_stream_tension_wait = driver.outputMessageStream("tension_wait")
 resonance = ResonanceAppProxy(output_stream)                             # Создаем прокси резонанса
 
 # driver.loadConfig(r'resonance_settings.json')          # вгрузить настройки с потоком в резонансе
-driver.loadConfig(r'resonance_settings_main.json')       # вгрузить настройки с потоком в резонансе
+# driver.loadConfig(r'resonance_settings_main.json')       # вгрузить настройки с потоком в резонансе
 # driver.loadConfig(r'stream_Generator@message__to__TEP_visual@epochs.json')   # вгрузить настройки с потоком в резонансе
 
 # == Запуск приложения ==
