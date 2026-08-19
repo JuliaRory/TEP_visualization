@@ -213,6 +213,7 @@ class MEPPlot(FigureCanvas):
             self.lines.append(line)
       
     def update_emg(self, emg, normalize=True):
+        self._clear_labelled_legend()
         emg = np.asarray(emg, dtype=float).flatten()
         if len(emg) != len(self._x):
             n = min(len(emg), len(self._x))
@@ -237,6 +238,73 @@ class MEPPlot(FigureCanvas):
         self.ax.draw_artist(self.lines[0])
         
         self.fig.canvas.blit(self.ax.bbox)
+
+    def update_emg_history(self, entries, colors):
+        self._clear_labelled_legend()
+        self.fig.canvas.restore_region(self.background)
+
+        entries = list(entries)[-self.n_plots:]
+        entries = list(reversed(entries))
+        self.amps = [None for _ in range(self.n_plots)]
+        self.lats = [None for _ in range(self.n_plots)]
+
+        for i, line in enumerate(self.lines):
+            if i < len(entries):
+                label, emg = entries[i]
+                emg = np.asarray(emg, dtype=float).flatten()
+                if len(emg) != len(self._x):
+                    n = min(len(emg), len(self._x))
+                    padded = np.full(len(self._x), np.nan)
+                    if n > 0:
+                        padded[:n] = emg[:n]
+                    emg = padded
+                if sum(np.isfinite(emg)) != 0:
+                    self._calculate_mep_at_index(i, emg)
+                line.set_ydata(self._normalize(emg, axis='y'))
+                line.set_color(colors.get(label, "tab:blue"))
+                if self.amps[i] is None:
+                    self.titles[i].set_text(label)
+                else:
+                    self.titles[i].set_text(f"{label}: {self.amps[i]} mV, {self.lats[i]} ms")
+            else:
+                line.set_ydata(np.full(len(self._x), np.nan))
+                line.set_color("gray")
+                self.titles[i].set_text(self._title_for_index(i))
+            self.ax.draw_artist(line)
+            self.ax.draw_artist(self.titles[i])
+
+        labels = []
+        handles = []
+        for label, _emg in entries:
+            if label in labels:
+                continue
+            labels.append(label)
+            handles.append(Line2D([0], [0], color=colors.get(label, "tab:blue"), lw=2, label=label))
+        self._labelled_legend = self.ax.legend(handles=handles, loc="upper left", fontsize=8, framealpha=0.85) if handles else None
+        self.emit_threshold_count()
+        self.fig.canvas.draw_idle()
+
+    def _calculate_mep_at_index(self, index, data):
+        x = data[self._start_amp:self._end_amp]
+        x = x[np.isfinite(x)]
+        if len(x) == 0:
+            return
+        min_ind = int(np.argmin(x))
+        max_ind = int(np.argmax(x))
+        self.amps[index] = round(float(x[max_ind] - x[min_ind]), 2)
+        peak_sample = self._start_amp + max_ind
+        self.lats[index] = round(self.settings.xmin_ms + peak_sample * 1000 / self.Fs)
+        title_n = self._title_for_index(index)
+        self.titles[index].set_text(f"{title_n} : {self.amps[index]} mV, {self.lats[index]} ms")
+
+    def _clear_labelled_legend(self):
+        legend = getattr(self, "_labelled_legend", None)
+        if legend is not None:
+            try:
+                legend.remove()
+            except ValueError:
+                pass
+        self._labelled_legend = None
 
     def _normalize(self, x, axis='x'):
         xmin, xmax = (self._xmin, self._xmax) if axis == 'x' else (-self._ymax, self._ymax)
@@ -298,5 +366,6 @@ class MEPPlot(FigureCanvas):
 
         
     def refresh_plot(self):
+        self._clear_labelled_legend()
         self.fig.canvas.restore_region(self.background) # восстанавливаем чистый фон
         self.fig.canvas.blit(self.ax.bbox)

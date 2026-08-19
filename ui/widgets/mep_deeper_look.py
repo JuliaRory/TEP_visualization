@@ -377,6 +377,11 @@ class MEPsDeeperLook(QWidget):
                 spin.setMaximum(channel_count)
         self._sync_feet_settings_from_controls()
 
+    def set_sampling_rate(self, Fs):
+        self.Fs = Fs
+        for figure in self._all_figures:
+            figure.set_sampling_rate(Fs)
+
     def get_feet_channel_pairs(self):
         self._sync_feet_settings_from_controls()
         return [

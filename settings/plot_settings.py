@@ -8,15 +8,15 @@ from typing import List
 class Scale:
     xmin: int = -10
     xmax: int = 100
-    ymin: int = -30
-    ymax: int = 30
+    ymin: int = -10
+    ymax: int = 10
 
 @dataclass
 class TopoTEPsPlot:
     xmin: int = -10
     xmax: int = 100
-    ymin: int = -30
-    ymax: int = 30
+    ymin: int = -10
+    ymax: int = 10
 
 @dataclass
 class SingleMEPsPlot:
@@ -62,7 +62,7 @@ class MEPBlock:
 
 @dataclass
 class TEPBlock:
-    amp: float = 30
+    amp: float = 10
     units: str = "uV"
     title: str = "Averaged TEP"
     round: int = 0

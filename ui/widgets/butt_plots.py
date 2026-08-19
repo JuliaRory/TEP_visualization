@@ -120,6 +120,7 @@ class buttPlot(FigureCanvas):
     def update_axes(self, xmax_ms=100, xmin_ms=-20, amp=100, which='TEPs'):
         # self.fig.canvas.restore_region(self._background)  # восстанавливаем чистый фон
         """Обновить масштаб"""
+        amp = max(abs(float(amp)), 1e-12)
         xmin, xmax = self._ms_to_sample(xmin_ms), self._ms_to_sample(xmax_ms)
 
         x_changed = not hasattr(self, "_last_xlim") or (self._last_xlim != (xmin, xmax))
@@ -183,6 +184,7 @@ class buttPlot(FigureCanvas):
         self._background = self.fig.canvas.copy_from_bbox(self._ax.bbox)
 
     def update_TEPs(self, teps):
+        self._clear_labelled_artists()
         """Нарисовать новые TEPs"""
         self.fig.canvas.restore_region(self._background)  # восстанавливаем чистый фон
         teps = np.asarray([self._fit_to_x(row) for row in np.asarray(teps)])
@@ -197,6 +199,7 @@ class buttPlot(FigureCanvas):
         self.fig.canvas.blit(self._ax.bbox)
     
     def update_MEPs(self, meps, spread=None):
+        self._clear_labelled_artists()
         """Нарисовать новые MEPs"""
         self.fig.canvas.restore_region(self._background)  # восстанавливаем чистый фон
 
@@ -223,6 +226,55 @@ class buttPlot(FigureCanvas):
 
         self.fig.canvas.blit(self._ax.bbox)
     
+    def update_labelled_TEPs(self, data_by_label, colors):
+        self._clear_labelled_artists()
+        if not data_by_label:
+            self.refresh_plot(which="TEPs")
+            return
+        self.fig.canvas.restore_region(self._background)
+        if hasattr(self, "_lines"):
+            for line in self._lines:
+                line.set_ydata(np.full(len(self._x), np.nan))
+
+        self._labelled_artists = []
+        for label, teps in data_by_label:
+            teps = np.asarray([self._fit_to_x(row) for row in np.asarray(teps)])
+            line, = self._ax.plot(self._x, self._mean(teps), lw=1.8, color=colors.get(label, "tab:blue"), label=label)
+            self._labelled_artists.append(line)
+        self._labelled_legend = self._ax.legend(loc="upper right", fontsize=8, framealpha=0.85)
+        self.fig.canvas.draw_idle()
+
+    def update_labelled_MEPs(self, data_by_label, colors):
+        self._clear_labelled_artists()
+        if not data_by_label:
+            self.refresh_plot(which="MEPs")
+            return
+        self.fig.canvas.restore_region(self._background)
+        if hasattr(self, "_line"):
+            self._line.set_ydata(np.full(len(self._x), np.nan))
+
+        self._labelled_artists = []
+        for label, meps in data_by_label:
+            line, = self._ax.plot(self._x, self._fit_to_x(meps), lw=1.8, color=colors.get(label, "tab:blue"), label=label)
+            self._labelled_artists.append(line)
+        self._labelled_legend = self._ax.legend(loc="upper right", fontsize=8, framealpha=0.85)
+        self.fig.canvas.draw_idle()
+
+    def _clear_labelled_artists(self):
+        for artist in getattr(self, "_labelled_artists", []):
+            try:
+                artist.remove()
+            except ValueError:
+                pass
+        self._labelled_artists = []
+        legend = getattr(self, "_labelled_legend", None)
+        if legend is not None:
+            try:
+                legend.remove()
+            except ValueError:
+                pass
+        self._labelled_legend = None
+
     def redraw(self, which="TEPs", empty=False):
         
         if which=='TEPs':
@@ -239,7 +291,7 @@ class buttPlot(FigureCanvas):
             self.update_MEPs(meps, spread=spread)
 
     def _fit_to_x(self, data):
-        data = np.asarray(data)
+        data = self._as_float_array(data)
         target_len = len(self._x)
         if len(data) == target_len:
             return data
@@ -249,6 +301,15 @@ class buttPlot(FigureCanvas):
         result = np.full(target_len, np.nan)
         result[:len(data)] = data
         return result
+
+    @staticmethod
+    def _as_float_array(data):
+        data = np.asarray(data)
+        if data.dtype == object:
+            data = np.array([np.nan if value is None else value for value in data], dtype=float)
+        else:
+            data = data.astype(float, copy=False)
+        return data
 
 
     def draw_loaded_multiple_sessions(self, session_data, signal="TEP"):

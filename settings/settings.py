@@ -8,6 +8,12 @@ from typing import List
 class ProcessingSettings:
     use_eeg: bool = True
     do_averaging: bool = True
+    epoch_window_start_ms: int = -100
+    epoch_window_end_ms: int = 300
+    current_sampling_rate_Hz: int = 5000
+    do_resampling: bool = False
+    resample_freq_Hz: int = 2000
+    do_highpass_filtering: bool = False
     do_lowpass_filtering: bool = True
     do_rereferencing: bool = False
     do_CAR_filtering: bool = True
@@ -17,6 +23,7 @@ class ProcessingSettings:
     aver_methods: List[str] = field(default_factory=lambda: ["mean", "median", "trimmean"])
     curr_aver_method: str = "mean"
 
+    highpass_freq_Hz: float = 1
     lowpass_freq_Hz: int = 250
 
     rereference_channel: List[str] = field(default_factory=lambda: ["Fz"])
@@ -27,6 +34,16 @@ class ProcessingSettings:
     baseline_from_ms: int = -75
     baseline_to_ms: int = -20
 
+    do_emg_highpass_filtering: bool = True
+    emg_highpass_freq_Hz: float = 10
+    do_emg_lowpass_filtering: bool = True
+    emg_lowpass_freq_Hz: int = 1000
+    do_emg_resampling: bool = True
+    emg_resample_freq_Hz: int = 2000
+    do_emg_baseline_correction: bool = True
+    emg_baseline_from_ms: int = -75
+    emg_baseline_to_ms: int = -20
+
     ica_folder: str = r"D:/temp/ICA/Cleaned_epochs"
 
 
@@ -35,9 +52,11 @@ class ProcessingSettings:
 
 @dataclass
 class RecordSettings:
-    bat_file: str = "D:\Resonance\dist_2025\control.bat"
-    bat_file_home: str = "C:/Users/hodor/Documents/lab-MSU/Works/2025.10_TMS/dist_2024_11_13_imp/control.bat"
+    bat_file: str = "C:/Users/hodor/Documents/lab-MSU/Resonance2026/msvc64/control.bat"
+    bat_file_home: str = "C:/Users/hodor/Documents/lab-MSU/Resonance2026/msvc64/control.bat"
+    recorder_bat_file: str = "C:/Users/hodor/Documents/lab-MSU/Resonance2026/msvc64/recorderService_nvxstream.bat"
     activate_bat: bool = True
+    recorder_service_name: str = "Recorder"
     service_name: str = "nvx136"
     stream_name: str = "eeg"
     records_folder: str = "D:/2025 - TEP/data - raw/tests"
@@ -134,17 +153,19 @@ class LayoutSettings:
 
 @dataclass
 class SpeedSettings:
+    bit: int = 0
     window_start: int = -100
     window_end: int = 500
     artifact: bool = True
-    artifact_start: int = -5
-    artifact_end: int = 15
+    artifact_start: float = -5
+    artifact_end: float = 15
     notch: bool = False
     notch_fr: int = 50
+    notch_harmonics: bool = False
     highpass: bool = False
-    low_freq: int = 1
+    low_freq: float = 1
     lowpass: bool = True
-    high_freq: int = 2500
+    high_freq: float = 2500
     resampling: bool = True
     Fs_orig: int = 25000
     Fs: int = 5000
@@ -189,6 +210,7 @@ class Settings:
     speed: SpeedSettings = field(default_factory=SpeedSettings)
 
     SPEED_settings_path: str = "./SPEED_settings.json"
+    speed_settings_export_path: str = "C:/Users/hodor/Documents/lab-MSU/Resonance2026/msvc64/mulines/resources/SPEED_settings.json"
 
     channels: List[str] = field(default_factory=lambda: ['T7', 'TP9', 'P7', 'CP5', 'FT9', 'F7', 'FC5', 'F3', 'P3', 'C3', 'CP1', 'O1', 'Fp1',
                                                             'FC1', 'Fz', 'Fp2', 'Cz', 'FC2', 'CP2', 'Pz', 'O2', 'Oz', 'C4', 'P4', 'F4', 'FC6',
