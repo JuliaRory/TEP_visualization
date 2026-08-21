@@ -66,7 +66,7 @@ class TEPBlock:
     units: str = "uV"
     title: str = "Averaged TEP"
     round: int = 0
-    channels_nearest_n: List[int] = field(default_factory=lambda: [9, 36, 42, 38, 37])
+    channels_nearest_n: List[int] = field(default_factory=lambda: [11, 17, 19, 43, 51, 52]) #[9, 36, 42, 38, 37])
     n_channels: int = 64
     do_averaging: bool = True
 

@@ -265,7 +265,6 @@ class buttPlot(FigureCanvas):
             teps = np.asarray([self._fit_to_x(row) for row in np.asarray(teps)])
             line, = self._ax.plot(self._x, self._mean(teps), lw=1.8, color=self._labelled_colors.get(label, "tab:blue"), label=label)
             self._labelled_artists.append(line)
-        self._labelled_legend = self._ax.legend(loc="upper right", fontsize=8, framealpha=0.85)
         self.fig.canvas.draw_idle()
 
     def update_labelled_MEPs(self, data_by_label, colors):
@@ -285,7 +284,6 @@ class buttPlot(FigureCanvas):
         for label, meps in data_by_label:
             line, = self._ax.plot(self._x, self._fit_to_x(meps), lw=1.8, color=self._labelled_colors.get(label, "tab:blue"), label=label)
             self._labelled_artists.append(line)
-        self._labelled_legend = self._ax.legend(loc="upper right", fontsize=8, framealpha=0.85)
         self.fig.canvas.draw_idle()
 
     def _clear_labelled_artists(self):

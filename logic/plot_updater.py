@@ -117,7 +117,10 @@ class PlotUpdater:
     def update_avg_meps(self, processor):
         self._sync_plot_timebase(processor)
         if self._use_label_overlay(processor):
-            data_by_label, colors = self._labelled_mep_average_data(processor)
+            data_by_label, colors = self._labelled_mep_overview_data(
+                processor,
+                averaged=self.settings.overview_panel.butts_plot.MEP.do_averaging,
+            )
             self.overview_panel.figure_MEP.update_labelled_MEPs(data_by_label, colors)
             return
         if processor.get_other_epoch(-1, filter_by_label=True) is None:
@@ -125,12 +128,20 @@ class PlotUpdater:
 
         if not self._show_specific_epoch:
             if self.settings.overview_panel.butts_plot.MEP.do_averaging:
-                if not processor.average_mep_data:
-                    processor.update_avg_mep(True)
-                emg, emg_std = processor.calculate_avg_MEP_stats()
+                emg_epochs = self._mep_epochs(processor, filter_by_label=True)
+                if emg_epochs.size == 0:
+                    return
+                emg_epochs = processor._mep_average_window(emg_epochs)
+                ddof = 1 if emg_epochs.shape[0] > 1 else 0
+                emg = np.nanmean(emg_epochs, axis=0)
+                emg_std = np.nanstd(emg_epochs, axis=0, ddof=ddof)
 
             else:
-                emg = processor._emg_from_other_epoch(processor.get_other_epoch(-1, filter_by_label=True))
+                emg = self._mep_from_epoch(
+                    processor,
+                    processor.get_other_epoch(-1, filter_by_label=True),
+                    self.settings.single_meps,
+                )
                 emg_std = None
             
             #emg2plot = processor.cut_mep_epoch(emg, self.settings.single_meps.xmin_ms, self.settings.single_meps.xmax_ms)
@@ -238,15 +249,16 @@ class PlotUpdater:
             data_by_label.append((label, data))
         return data_by_label, colors
 
-    def _labelled_mep_average_data(self, processor):
+    def _labelled_mep_overview_data(self, processor, averaged=True):
         labels = list(getattr(processor, "epoch_label_filters", [LABEL_ALL]))
         colors = self._label_colors(labels)
         data_by_label = []
         for label in labels:
-            epochs = processor.get_emg_epochs(filter_by_label=True, labels=[label])
+            epochs = self._mep_epochs(processor, filter_by_label=True, labels=[label])
             if epochs.size == 0:
                 continue
-            data_by_label.append((label, np.nanmean(epochs, axis=0)))
+            data = np.nanmean(processor._mep_average_window(epochs), axis=0) if averaged else epochs[-1]
+            data_by_label.append((label, data))
         return data_by_label, colors
 
     def _labelled_mep_history(self, processor, settings):
@@ -257,10 +269,21 @@ class PlotUpdater:
         for label, epoch in zip(getattr(processor, "epoch_labels", []), getattr(processor, "_other_epochs", [])):
             if label not in selected:
                 continue
+            if int(np.asarray(epoch).shape[-1]) != int(getattr(processor, "_other_n_samples", 0) or 0):
+                continue
             emg = self._mep_from_epoch(processor, epoch, settings)
             emg = processor.cut_mep_epoch(emg, settings.xmin_ms, settings.xmax_ms)
             entries.append((label, emg))
         return entries, colors
+
+    def _mep_epochs(self, processor, filter_by_label=True, labels=None):
+        epochs = processor._current_length_other_epochs(filter_by_label=filter_by_label, labels=labels)
+        if not epochs:
+            return np.empty((0, int(getattr(processor, "_other_n_samples", 0) or 0)))
+        return np.stack([
+            self._mep_from_epoch(processor, epoch, self.settings.single_meps)
+            for epoch in epochs
+        ], axis=0)
 
     @staticmethod
     def _resolve_channel_index(index, n_channels):
@@ -393,7 +416,7 @@ class PlotUpdater:
         other_epoch = processor.get_other_epoch(n_epoch - 1)
         if other_epoch is None:
             return
-        emg = processor._emg_from_other_epoch(other_epoch)
+        emg = self._mep_from_epoch(processor, other_epoch, self.settings.single_meps)
         self.overview_panel.figure_MEP.update_MEPs(emg, spread=None)
     
     def set_show_epoch_mode(self, mode):

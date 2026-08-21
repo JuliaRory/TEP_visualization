@@ -312,7 +312,7 @@ class MainWindow(QWidget):
         self._meps_panel.deeperLookActivate.connect(lambda: self._plot_updater.add_mep_deeper_look(self._meps_panel._deeper_look_window))
         self._meps_panel.movementDetectionActivate.connect(self._on_mep_movement_detection_button_click)
         self._meps_panel.conditionAnalysisActivate.connect(self._on_mep_condition_analysis_button_click)
-        self._meps_panel.processingChanged.connect(lambda: self._plot_updater.update_meps(self._data_processor))
+        self._meps_panel.processingChanged.connect(self._on_mep_plot_settings_changed)
         self._meps_panel.emgProcessingApplyRequested.connect(self._on_emg_processing_apply_requested)
 
         # начальная замедленная инициализиация всех вычислений для уменьшения подтупливаний при запуске приложения
@@ -381,6 +381,12 @@ class MainWindow(QWidget):
         self._meps_panel.sync_emg_processing_settings_from_ui()
         self._data_processor.configure_emg_processing()
         self._plot_updater._sync_plot_timebase(self._data_processor)
+        self._plot_updater.update_meps(self._data_processor)
+        self._plot_updater.update_avg_meps(self._data_processor)
+        if getattr(self._plot_updater, "do_mep_deeper_look", False):
+            self._plot_updater.update_mep_deeper_look(self._data_processor)
+
+    def _on_mep_plot_settings_changed(self):
         self._plot_updater.update_meps(self._data_processor)
         self._plot_updater.update_avg_meps(self._data_processor)
         if getattr(self._plot_updater, "do_mep_deeper_look", False):
