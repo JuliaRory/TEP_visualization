@@ -13,6 +13,7 @@ from PyQt5.QtWidgets import (
 from types import SimpleNamespace
 
 from utils.ui_helpers import create_spin_box, create_button
+from utils.helpers import get_time_scale_step
 from utils.layout_utils import create_hbox
 from ui.widgets.mep_plot import MEPPlot
 
@@ -183,6 +184,7 @@ class MEPsDeeperLook(QWidget):
         label3 = QLabel("мс", self._frame_mep_settings)
         self._spinbox_max_time = create_spin_box(0, 500, self.settings.xmax_ms, parent=self._frame_mep_settings, w=50)
         self._time_range_max = create_hbox([label2, self._spinbox_max_time, label3])
+        self._sync_time_scale_spin_steps()
 
         label1 = QLabel("ампл. от:", self._frame_mep_settings)
         label3 = QLabel("мс", self._frame_mep_settings)
@@ -291,6 +293,8 @@ class MEPsDeeperLook(QWidget):
         self.spinbox_thr.valueChanged.connect(self._on_threshold_changed)
         self.spinbox_thr_n_plots.valueChanged.connect(self._on_threshold_changed)
         self._button_apply.clicked.connect(self._apply_mep_settings)
+        self._spinbox_min_time.valueChanged.connect(self._sync_time_scale_spin_steps)
+        self._spinbox_max_time.valueChanged.connect(self._sync_time_scale_spin_steps)
         self._check_remove_trend.stateChanged.connect(self._on_remove_trend_changed)
         self._check_feet_stim.stateChanged.connect(self._on_feet_stim_changed)
         for row, name_edit in enumerate(self._feet_name_edits):
@@ -330,6 +334,7 @@ class MEPsDeeperLook(QWidget):
         self.settingsChanged.emit()
 
     def _apply_mep_settings(self):
+        self._sync_time_scale_spin_steps()
         xmin = self._spinbox_min_time.value()
         xmax = self._spinbox_max_time.value()
         if xmax <= xmin:
@@ -363,6 +368,10 @@ class MEPsDeeperLook(QWidget):
             figure.titles_label = self._feet_titles(row)
         self.rebuild_from_settings(reset_history=True)
         self.settingsChanged.emit()
+
+    def _sync_time_scale_spin_steps(self, _value=None):
+        for spin_box in [self._spinbox_min_time, self._spinbox_max_time]:
+            spin_box.setSingleStep(get_time_scale_step(spin_box.value()))
 
     def is_feet_stim_mode(self):
         return bool(getattr(self.settings, "feet_mode", False))

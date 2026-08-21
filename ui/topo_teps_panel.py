@@ -6,6 +6,7 @@ import numpy as np
 import pandas as pd
 
 from utils.ui_helpers import create_shortcut_scale, create_spin_box, fit_font_to_width_spinbox, create_combo_box, create_checkable_combobox
+from utils.helpers import get_time_scale_step, get_voltage_scale_step
 from ui.widgets.teps_plot import TEPsPlot
 
 MICROVOLT = "\u03BC"+"V"
@@ -73,6 +74,7 @@ class TopoTEPsPanel(QFrame):
         self.spin_box_scale_ymax = create_spin_box(1, 10000, self.ymax, step=10, parent=self) 
         self.spin_box_scale_xmin = create_spin_box(-1000, 0, self.xmin, step=5, parent=self) 
         self.spin_box_scale_xmax = create_spin_box(1, 1000, self.xmax, step=5, parent=self) 
+        self._sync_scale_spin_steps()
 
         create_shortcut_scale(keyword="Alt+Up", spin1=self.spin_box_scale_ymax, spin2=self.spin_box_scale_ymin, action='more', parent=self) 
         create_shortcut_scale(keyword="Alt+Down", spin1=self.spin_box_scale_ymax, spin2=self.spin_box_scale_ymin, action='less', parent=self) 
@@ -141,6 +143,8 @@ class TopoTEPsPanel(QFrame):
         
     # --- Логика ---
     def _update_scale(self):
+        self._sync_scale_spin_steps()
+
         xmax = self.ms_to_sample(self.spin_box_scale_xmax.value())
         xmin = self.ms_to_sample(self.spin_box_scale_xmin.value())
         
@@ -150,6 +154,12 @@ class TopoTEPsPanel(QFrame):
         self.figure.update_axes([xmin, xmax, ymin, ymax])
 
         self.scale_changed.emit()
+
+    def _sync_scale_spin_steps(self):
+        for spin_box in [self.spin_box_scale_xmin, self.spin_box_scale_xmax]:
+            spin_box.setSingleStep(get_time_scale_step(spin_box.value()))
+        for spin_box in [self.spin_box_scale_ymin, self.spin_box_scale_ymax]:
+            spin_box.setSingleStep(get_voltage_scale_step(spin_box.value()))
 
     def adjust_y_scale(self, direction):
         """Change central plot vertical scale symmetrically around zero."""
