@@ -4,6 +4,36 @@ import QtQuick.Controls 1.4
 
 ApplicationWindow {
     id: root
+    property string current_record_filename: ""
+
+    function isRecorderService(serviceName) {
+        return serviceName === "Recorder"
+    }
+
+    function applyRecorderFilename(filename) {
+        if (!filename) {
+            print("--- recorder filename is empty ---")
+            return false
+        }
+
+        rec_filename.value = filename
+        root.current_record_filename = filename
+        recorder.hdfFileName = filename
+        print("--- recorder filename: " + filename)
+        return true
+    }
+
+    function startRecorder(command, filename) {
+        applyRecorderFilename(filename || root.current_record_filename || rec_filename.value)
+        recorder.start()
+
+        print("--- " + command + " the record --- ")
+    }
+
+    function stopRecorder() {
+        recorder.finish()
+        print("--- finish the record --- ")
+    }
     
     Component.onCompleted: {
         ResonanceApp.setServiceName('Resonance-control')    // сервис для для контроля резонансовых модулей
@@ -53,28 +83,32 @@ ApplicationWindow {
 
             print(text)
 
-            if (msg.type === "command") {
-                if (msg.command == "!terminate") {service.sendTransition(msg.command)};
+            if (msg.type === "parameter") {
+                let param = msg.param || msg.parameter
+                print(param, msg.value);
+                service.sendParameter(param, msg.value);
                 
-                if (msg.command == "start") {
-                    //rec_filename = "C:/Users/hodor/Documents/lab-MSU/Works/2025.10_TMS/TEP_visualization/data/records/rec-$$$.h5"; //msg.filename;
-                    //print(rec_filename.text);
-                    //service_name.value = msg.service
-                    //stream_name.value = msg.stream
-                    recorder.hdfFileName = msg.filename
-                    recorder.start();
-                    print("--- start the record --- ");
-                    };
+            }
+           
 
-                if (msg.command == "stop") {
-                    recorder.finish();
-                    print("--- finish the record --- ");
-                    };
+            if (msg.type === "command") {
+                if (isRecorderService(msg.service)) {
+                    if (msg.command == "start") {
+                        print("--- " + msg.command + " the record --- ");
+                        service.sendTransition(msg.command)
+                    }
+
+                    if (msg.command == "start_rec") {
+                        startRecorder("start_rec", msg.filename)
+                    }
+
+                    if (msg.command == "stop") {
+                       service.sendTransition(msg.command);
+                       print("--- finish the record --- ")
+                    }
+                } else {
+                    service.sendTransition(msg.command)
                 }
-
-            if (msg.type == "parameter") {
-                print("parameter"); 
-                service.sendParameter(msg.parameter, msg.value);
             }
 
             if (msg.type == "check") {

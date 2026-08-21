@@ -1,7 +1,7 @@
 from PyQt5.QtCore import Qt, QTimer, pyqtSignal,  QEvent
-from PyQt5.QtGui import QGuiApplication
+from PyQt5.QtGui import QGuiApplication, QKeySequence
 from PyQt5.QtGui import  QMouseEvent
-from PyQt5.QtWidgets import QWidget, qApp, QSizePolicy, QSplitter, QApplication, QHBoxLayout, QFileDialog, QMessageBox
+from PyQt5.QtWidgets import QWidget, qApp, QSizePolicy, QSplitter, QApplication, QHBoxLayout, QFileDialog, QMessageBox, QShortcut
                              
 import numpy as np
 import pandas as pd
@@ -10,13 +10,16 @@ import os
 import json
 import time
 import h5py
+from dataclasses import asdict, is_dataclass
+from types import SimpleNamespace
 
 from ui import (SettingsPanel, ProcessingPanel, NVXControlPanel, StimuliControlPanel, SurveyPanel,
                 TopoTEPsPanel, overviewPanel, MEPsPanel)
  
 from logic.sources.stream import StreamSource
+from logic.sources.message import EpochLabelMessageSource
 from logic.sources.file import load_record_epochs
-from logic.data_processor import DataProcessor
+from logic.data_processor import DataProcessor, LABEL_NOT_LABELED, LABEL_SOURCE_EXTERNAL, LABEL_SOURCE_STIMULUS
 from logic.epoch_record_buffer import EpochRecordBuffer
 from ui.widgets.mep_condition_analysis_window import MEPConditionAnalysisWindow
 from ui.widgets.mep_movement_detection_window import MEPMovementDetectionWindow
@@ -78,6 +81,7 @@ class MainWindow(QWidget):
         output_stream,
         filename_params,
         feet_stim_stream=None,
+        epoch_labels_stream=None,
         tension_wait_stream=None,
         tension_on_stream=None,
     ):
@@ -90,6 +94,7 @@ class MainWindow(QWidget):
         self._resonance = resonance                       # прокси для управления резонансными модулями
         self._output_stream = output_stream
         self._feet_stim_stream = feet_stim_stream
+        self._epoch_labels_stream = epoch_labels_stream
         self._tension_wait_stream = tension_wait_stream
         self._tension_on_stream = tension_on_stream
 
@@ -100,10 +105,11 @@ class MainWindow(QWidget):
         self.settings_plot = PlotSettings()                                        # Хранилище настроек для отрисовки графиков
 
         self._input_stream = StreamSource(input_stream)                              # Приёмник (онлайн) данных
+        self._epoch_label_stream = EpochLabelMessageSource(epoch_labels_stream) if epoch_labels_stream is not None else None
         #self._load_data = FileSource()                                              # Приёмник загружаемых данных
         
         self._data_processor = DataProcessor(self.settings)                                       # Обработчик данных (эпох)
-        self._epoch_record_buffer = EpochRecordBuffer(self.settings.speed)
+        self._epoch_record_buffer = EpochRecordBuffer(self.settings.processing_settings)
       
         self._settings_handler = SettingsHandler(self.settings, self._data_processor)                      # Обработчик настроек
         
@@ -120,7 +126,8 @@ class MainWindow(QWidget):
         self._setup_main_grid()                           # расположение виджетов на экране
         
         # == Взаимосвязи между элементами интерфейса ==
-        self._setup_connections()                         
+        self._setup_connections()
+        self._setup_shortcuts()
                 
         # == Показать окно ==
         self._post_init()
@@ -142,9 +149,15 @@ class MainWindow(QWidget):
         self._specific_epoch = False                         # флаг для отслеживания режима показа определенной эпохи или стандартного
         
         self.SPEED = self.params['SPEED']
-        self._ms_to_sample = lambda x: int(x / 1000 * self.SPEED["Fs"])                                  # функция для пересчёта мс в сэмплы
-        self._n_samples = self._ms_to_sample(self.SPEED["window_end"] - self.SPEED["window_start"])       # длина эпохи в сэмплах
-        self._time_shift = self._ms_to_sample(0 - self.SPEED["window_start"])                             # смещение относительно нуля для графиков в сэпмлах
+        processing = self.settings.processing_settings
+        processing_fs = (
+            processing.resample_freq_Hz
+            if processing.do_resampling
+            else processing.current_sampling_rate_Hz
+        )
+        self._ms_to_sample = lambda x: int(x / 1000 * processing_fs)                                      # функция для пересчёта мс в сэмплы
+        self._n_samples = self._ms_to_sample(processing.epoch_window_end_ms - processing.epoch_window_start_ms)
+        self._time_shift = self._ms_to_sample(0 - processing.epoch_window_start_ms)                       # смещение относительно нуля для графиков в сэпмлах
 
         hor_ratio = self.settings.layout.horizontal_ratios
         cen_ratio = self.settings.layout.center_ratio
@@ -192,23 +205,30 @@ class MainWindow(QWidget):
                                              channels=self.settings.channels)
         
         
+        processing_timebase = SimpleNamespace(
+            Fs=self.settings.processing_settings.current_sampling_rate_Hz,
+            window_start=self.settings.processing_settings.epoch_window_start_ms,
+            window_end=self.settings.processing_settings.epoch_window_end_ms,
+        )
+
         self._topo_teps_panel = TopoTEPsPanel(parent=self,
                                          settings=self.settings_plot.topo_teps, 
-                                         speed_settings=self.settings.speed,
+                                         speed_settings=processing_timebase,
                                          settings_handler=self._settings_handler,
                                          processing_ui=self._processing_panel,
                                          init_size=[self._center_plots_width, self._center_plots_height])
         
         self._meps_panel = MEPsPanel(parent=self,
-                                    Fs=self.settings.speed.Fs,
+                                    Fs=self.settings.processing_settings.current_sampling_rate_Hz,
                                     settings=self.settings_plot.single_meps,
                                     settings_dl=self.settings_plot.meps_deeper_look,
+                                    processing_settings=self.settings.processing_settings,
                                     init_size=[self._center_plots_width, self._center_meps_height])
         
         self.settings_plot.overview_panel.butts_plot.MEP.amp = self.settings_plot.single_meps.max_amp_mV
         self._overview_panel = overviewPanel(parent=self,
                                          settings=self.settings_plot.overview_panel, 
-                                         Fs=self.settings.speed.Fs,
+                                         Fs=self.settings.processing_settings.current_sampling_rate_Hz,
                                          init_size=[self._right_panel_width, HEIGHT_SET])
          
     # --- UI: Layout ---
@@ -271,6 +291,19 @@ class MainWindow(QWidget):
         self._input_stream.dataReady.connect(lambda epoch, ts: self._data_processor.add_epoch(epoch, ts))
         self._data_processor.newDataProcessed.connect(lambda: self._plot_updater.update_plots(self._data_processor))
         self._data_processor.newDataProcessed.connect(lambda: self._stimuli_control_panel.update_bci_mep_epoch(self._data_processor))
+        self._data_processor.labelsChanged.connect(self._sync_epoch_label_filter_options)
+        self._data_processor.labelWarning.connect(self._show_epoch_label_warning)
+
+        if self._epoch_label_stream is not None:
+            self._epoch_label_stream.labelReady.connect(
+                lambda label: self._on_epoch_label_received(label, LABEL_SOURCE_EXTERNAL)
+            )
+            self._epoch_label_stream.warning.connect(self._show_epoch_label_warning)
+        self._stimuli_control_panel.stimulusLabelReady.connect(
+            lambda label: self._on_epoch_label_received(label, LABEL_SOURCE_STIMULUS)
+        )
+        self._topo_teps_panel.epochLabelSourceChanged.connect(self._on_epoch_label_source_changed)
+        self._topo_teps_panel.epochLabelFilterChanged.connect(self._on_epoch_label_filter_changed)
 
         # отрисовка изменений в количестве эпох
         self._data_processor.updateCounter.connect(lambda n: self._update_label_counter(n))
@@ -279,7 +312,8 @@ class MainWindow(QWidget):
         self._meps_panel.deeperLookActivate.connect(lambda: self._plot_updater.add_mep_deeper_look(self._meps_panel._deeper_look_window))
         self._meps_panel.movementDetectionActivate.connect(self._on_mep_movement_detection_button_click)
         self._meps_panel.conditionAnalysisActivate.connect(self._on_mep_condition_analysis_button_click)
-        self._meps_panel.processingChanged.connect(lambda: self._plot_updater.update_meps(self._data_processor))
+        self._meps_panel.processingChanged.connect(self._on_mep_plot_settings_changed)
+        self._meps_panel.emgProcessingApplyRequested.connect(self._on_emg_processing_apply_requested)
 
         # начальная замедленная инициализиация всех вычислений для уменьшения подтупливаний при запуске приложения
         # self.start_calc_signal.connect(self._initial_calculations)
@@ -294,6 +328,7 @@ class MainWindow(QWidget):
         self._settings_panel.button_restart.clicked.connect(self._on_restart_button_click)
         self._settings_panel.button_remove_epoch.clicked.connect(self._on_remove_epoch_button_click)
         self._settings_panel.button_show_epoch.clicked.connect(self._on_show_epoch_button_click)
+        self._settings_panel.speedApplyRequested.connect(self._on_speed_apply_requested)
 
         # сигнал для обновления состояния надписи REC в центральных графиках
         self._nvx_control_panel.recording.connect(self._on_recording_status_changed_signal)
@@ -307,6 +342,22 @@ class MainWindow(QWidget):
         for spin_box in self._overview_panel.spinbox_ts:
             spin_box.valueChanged.connect(self._update_topoplots)
         self._topo_teps_panel.scale_changed.connect(self._on_change_main_scale)
+
+    def _setup_shortcuts(self):
+        self._shortcuts = []
+        shortcuts = [
+            ("Ctrl+Up", lambda: self._topo_teps_panel.adjust_y_scale(-1)),
+            ("Ctrl+Down", lambda: self._topo_teps_panel.adjust_y_scale(1)),
+            ("Ctrl+Left", lambda: self._topo_teps_panel.adjust_right_time_scale(-1)),
+            ("Ctrl+Right", lambda: self._topo_teps_panel.adjust_right_time_scale(1)),
+        ]
+
+        for key_sequence, callback in shortcuts:
+            shortcut = QShortcut(QKeySequence(key_sequence), self)
+            shortcut.setContext(Qt.ApplicationShortcut)
+            shortcut.setAutoRepeat(True)
+            shortcut.activated.connect(callback)
+            self._shortcuts.append(shortcut)
 
     def _on_stimuli_presenation_status_changed_signal(self, presentation_status):
         """связь между показом стимулов и записью nvx"""
@@ -325,6 +376,21 @@ class MainWindow(QWidget):
                 print(f"Saved TEP epochs to {saved_path}")
         except Exception as exc:
             print(f"Could not save TEP epochs to {record_path}: {exc}")
+
+    def _on_emg_processing_apply_requested(self):
+        self._meps_panel.sync_emg_processing_settings_from_ui()
+        self._data_processor.configure_emg_processing()
+        self._plot_updater._sync_plot_timebase(self._data_processor)
+        self._plot_updater.update_meps(self._data_processor)
+        self._plot_updater.update_avg_meps(self._data_processor)
+        if getattr(self._plot_updater, "do_mep_deeper_look", False):
+            self._plot_updater.update_mep_deeper_look(self._data_processor)
+
+    def _on_mep_plot_settings_changed(self):
+        self._plot_updater.update_meps(self._data_processor)
+        self._plot_updater.update_avg_meps(self._data_processor)
+        if getattr(self._plot_updater, "do_mep_deeper_look", False):
+            self._plot_updater.update_mep_deeper_look(self._data_processor)
 
     def _on_mep_movement_detection_button_click(self):
         epoch_record_path = self._epoch_record_path_from_record_line()
@@ -467,7 +533,8 @@ class MainWindow(QWidget):
         self._topo_teps_panel.label_record.setText(status_label)
     
     def _update_label_counter(self, n_epoch):
-        self._topo_teps_panel.label_n_epoch.setText('Количество эпох: {}. '.format(n_epoch))
+        n_displayed = self._data_processor.displayed_epoch_count()
+        self._topo_teps_panel.label_n_epoch.setText('Количество эпох: {}. '.format(n_displayed))
         
         qApp.processEvents()    # для обновления отображения в Qt-приложении
 
@@ -485,6 +552,41 @@ class MainWindow(QWidget):
         self._settings_panel.spin_box_show_epoch.setValue(n_epoch)
         self._settings_panel.spin_box_remove_epoch.setMaximum(n_epoch)
         self._settings_panel.spin_box_remove_epoch.setValue(n_epoch)
+
+    def _on_epoch_label_received(self, label, source):
+        self._data_processor.add_epoch_label(label, source=source)
+
+    def _on_epoch_label_source_changed(self, source):
+        self._data_processor.set_epoch_label_source(source)
+
+    def _on_epoch_label_filter_changed(self, label):
+        self._data_processor.set_epoch_label_filter(label)
+        self._update_label_counter(self._data_processor._n_epoch)
+        self._refresh_label_filtered_plots()
+
+    def _sync_epoch_label_filter_options(self):
+        labels = self._data_processor.available_epoch_labels()
+        current = list(getattr(self._data_processor, "epoch_label_filters", ["all"]))
+        if current != ["all"]:
+            current = [label for label in current if label in labels]
+        if not current:
+            current = ["all"]
+            self._data_processor.set_epoch_label_filter(current)
+        self._topo_teps_panel.set_epoch_label_options(
+            labels,
+            current=current,
+        )
+        self._topo_teps_panel.set_epoch_label_counts(self._data_processor.epoch_label_counts())
+        self._update_label_counter(self._data_processor._n_epoch)
+
+    def _refresh_label_filtered_plots(self):
+        self._plot_updater.clear_plots()
+        self._plot_updater.update_plots(self._data_processor)
+        if getattr(self._plot_updater, "do_mep_deeper_look", False):
+            self._plot_updater.update_mep_deeper_look(self._data_processor)
+
+    def _show_epoch_label_warning(self, message):
+        QMessageBox.warning(self, "Epoch labels", str(message))
 
     def _add_specific_epoch_on_label(self, n_epoch):
         new_label = f"Показана эпоха #{n_epoch}." if n_epoch is not None else ""
@@ -561,24 +663,326 @@ class MainWindow(QWidget):
             print("---> Сохранение отменено")
             return None 
         
-        epoch_records = self._data_processor._current_length_epoch_records()
-        epochs_to_save = [epoch for epoch, _ in epoch_records]
-        if len(epochs_to_save) == 0:
-            print("---> Нет эпох текущей длины для сохранения")
+        raw_epoch_records = self._data_processor.raw_epoch_records()
+        raw_epochs = [epoch for epoch, _ in raw_epoch_records]
+        if len(raw_epochs) == 0:
+            print("---> Нет эпох для сохранения")
             return None
+<<<<<<< HEAD
+=======
+
+        return self._save_epochs_export(file_path, raw_epoch_records, raw_epochs)
+
+        shape_counts = {}
+        for epoch in epochs_to_save:
+            shape = tuple(np.asarray(epoch).shape)
+            shape_counts[shape] = shape_counts.get(shape, 0) + 1
+        save_shape = max(shape_counts, key=shape_counts.get)
+        if len(shape_counts) > 1:
+            print(f"---> Эпохи имеют разные исходные формы {shape_counts}; сохраняю форму {save_shape}")
+            epoch_records = [
+                (epoch, ts)
+                for epoch, ts in epoch_records
+                if tuple(np.asarray(epoch).shape) == save_shape
+            ]
+            epochs_to_save = [epoch for epoch, _ in epoch_records]
+
+>>>>>>> 7c943763297424c899b81ab3ab47b7788a1bfff6
         n_channels = int(np.asarray(epochs_to_save[0]).shape[0])
         data2save = np.array(epochs_to_save).transpose(0, 2, 1).reshape(-1, n_channels)      # (n_samples, n_channels)
         ts2save = np.array([ts for _, ts in epoch_records])
         # если выбран файл
         with h5py.File(file_path, "w") as h5f:
+            h5f.create_dataset("processed_epochs", data=self._data_processor.processed_epoch_records(), dtype='float32')      # для эпох (64 EEG + 2 EMG)
+
             data = h5f.create_dataset("epochs", data=data2save, dtype='float32')      # для эпох (64 EEG + 2 EMG)
-            data.attrs["Fs"] = self.SPEED["Fs"]
-            data.attrs["n_samples"] = self._n_samples
+            data.attrs["Fs"] = self.settings.processing_settings.current_sampling_rate_Hz
+            data.attrs["source_Fs"] = self.settings.processing_settings.current_sampling_rate_Hz
+            data.attrs["effective_Fs"] = getattr(
+                self._data_processor,
+                "effective_sampling_rate_Hz",
+                getattr(
+                    self._data_processor,
+                    "_sampling_rate_Hz",
+                    self.settings.processing_settings.current_sampling_rate_Hz,
+                ),
+            )
+            data.attrs["resampled"] = False
+            data.attrs["n_samples"] = int(np.asarray(epochs_to_save[0]).shape[-1])
             data.attrs["n_epochs"] = len(epochs_to_save)
             data.attrs["n_channels"] = n_channels
             
             tdata = h5f.create_dataset("timestamps", data=ts2save, dtype='int64')      # для таймстемпов резонанса (в нс)
             tdata.attrs["units"] = "ns"
+
+    def _save_epochs_export(self, file_path, raw_epoch_records, raw_epochs):
+        raw_timestamps = np.asarray([ts for _, ts in raw_epoch_records], dtype=np.int64)
+        epoch_labels = list(getattr(self._data_processor, "epoch_labels", []))
+        processed_eeg_epochs = self._data_processor.get_eeg_epochs(filter_by_label=False)
+        processed_emg_epochs = self._data_processor.get_processed_emg_channel_epochs(filter_by_label=False)
+        processed_mep_epochs = self._data_processor.get_emg_epochs(filter_by_label=False)
+        processing_settings = self.settings.processing_settings
+
+        os.makedirs(os.path.dirname(file_path) or ".", exist_ok=True)
+
+        with h5py.File(file_path, "w") as h5f:
+            h5f.attrs["source"] = "TEP_visual"
+            h5f.attrs["created_at_unix"] = time.time()
+            h5f.attrs["format_version"] = "2"
+
+            self._write_epoch_group(
+                h5f,
+                "raw_epochs",
+                raw_epochs,
+                raw_timestamps,
+                epoch_labels,
+                {
+                    "description": "Unprocessed epochs as received from the input stream",
+                    "units": "V",
+                    "sampling_rate_Hz": float(getattr(processing_settings, "current_sampling_rate_Hz", 0) or 0),
+                    "window_start_ms": float(getattr(processing_settings, "epoch_window_start_ms", 0)),
+                    "window_end_ms": float(getattr(processing_settings, "epoch_window_end_ms", 0)),
+                },
+            )
+            self._write_epoch_group(
+                h5f,
+                "processed_eeg_epochs",
+                processed_eeg_epochs,
+                raw_timestamps[: len(processed_eeg_epochs)],
+                epoch_labels[: len(processed_eeg_epochs)],
+                {
+                    "description": "Processed EEG epochs after EEG pipeline",
+                    "units": "uV",
+                    "sampling_rate_Hz": float(getattr(self._data_processor, "effective_sampling_rate_Hz", 0) or 0),
+                    "n_channels": len(self.settings.channels),
+                },
+            )
+            self._write_epoch_group(
+                h5f,
+                "processed_emg_epochs",
+                processed_emg_epochs,
+                raw_timestamps[: len(processed_emg_epochs)],
+                epoch_labels[: len(processed_emg_epochs)],
+                {
+                    "description": "Processed EMG channel epochs after EMG pipeline",
+                    "units": "V",
+                    "sampling_rate_Hz": float(getattr(self._data_processor, "mep_sampling_rate_Hz", 0) or 0),
+                },
+            )
+            self._write_epoch_group(
+                h5f,
+                "processed_mep_epochs",
+                processed_mep_epochs,
+                raw_timestamps[: len(processed_mep_epochs)],
+                epoch_labels[: len(processed_mep_epochs)],
+                {
+                    "description": "Derived MEP epochs computed as channel difference from processed EMG channels",
+                    "units": "mV",
+                    "sampling_rate_Hz": float(getattr(self._data_processor, "mep_sampling_rate_Hz", 0) or 0),
+                },
+            )
+            self._write_json_group(h5f, "eeg_processing_metadata", self._eeg_processing_metadata())
+            self._write_json_group(h5f, "emg_processing_metadata", self._emg_processing_metadata())
+            self._write_legacy_epochs_dataset(h5f, raw_epoch_records)
+
+            tdata = h5f.create_dataset("timestamps", data=raw_timestamps, dtype="int64")
+            tdata.attrs["units"] = "ns"
+            h5f.create_dataset(
+                "epoch_labels",
+                data=np.asarray(epoch_labels, dtype=object),
+                dtype=h5py.string_dtype(encoding="utf-8"),
+            )
+
+        print(f"---> Р­РїРѕС…Рё СЃРѕС…СЂР°РЅРµРЅС‹: {file_path}")
+        return file_path
+
+    def _write_legacy_epochs_dataset(self, h5f, epoch_records):
+        epochs_to_save = [epoch for epoch, _ in epoch_records]
+        shape_counts = {}
+        for epoch in epochs_to_save:
+            shape = tuple(np.asarray(epoch).shape)
+            shape_counts[shape] = shape_counts.get(shape, 0) + 1
+        save_shape = max(shape_counts, key=shape_counts.get)
+        if len(shape_counts) > 1:
+            print(f"---> Epochs have different raw shapes {shape_counts}; legacy dataset keeps shape {save_shape}")
+            epoch_records = [
+                (epoch, ts)
+                for epoch, ts in epoch_records
+                if tuple(np.asarray(epoch).shape) == save_shape
+            ]
+            epochs_to_save = [epoch for epoch, _ in epoch_records]
+
+        n_channels = int(np.asarray(epochs_to_save[0]).shape[0])
+        data2save = np.asarray(epochs_to_save, dtype=np.float32).transpose(0, 2, 1).reshape(-1, n_channels)
+        data = h5f.create_dataset("epochs", data=data2save, dtype="float32")
+        data.attrs["Fs"] = self.settings.processing_settings.current_sampling_rate_Hz
+        data.attrs["source_Fs"] = self.settings.processing_settings.current_sampling_rate_Hz
+        data.attrs["effective_Fs"] = getattr(
+            self._data_processor,
+            "effective_sampling_rate_Hz",
+            getattr(
+                self._data_processor,
+                "_sampling_rate_Hz",
+                self.settings.processing_settings.current_sampling_rate_Hz,
+            ),
+        )
+        data.attrs["resampled"] = False
+        data.attrs["n_samples"] = int(np.asarray(epochs_to_save[0]).shape[-1])
+        data.attrs["n_epochs"] = len(epochs_to_save)
+        data.attrs["n_channels"] = n_channels
+        data.attrs["shape_original"] = "[n_epochs, n_channels, n_samples]"
+        data.attrs["shape_saved"] = "[n_epochs * n_samples, n_channels]"
+
+    def _write_epoch_group(self, h5f, name, epochs, timestamps, labels, attrs):
+        group = h5f.create_group(name)
+        group.attrs.update(attrs)
+
+        if isinstance(epochs, np.ndarray):
+            epoch_list = [epochs[i] for i in range(epochs.shape[0])] if epochs.ndim > 0 else []
+        else:
+            epoch_list = list(epochs)
+
+        timestamps = np.asarray(timestamps, dtype=np.int64)
+        group.create_dataset("timestamps", data=timestamps[: len(epoch_list)], dtype="int64").attrs["units"] = "ns"
+        label_list = list(labels)[: len(epoch_list)]
+        if len(label_list) < len(epoch_list):
+            label_list.extend([LABEL_NOT_LABELED] * (len(epoch_list) - len(label_list)))
+            self._show_epoch_label_warning(
+                f"Epoch labels count ({len(labels)}) does not match epochs count ({len(epoch_list)}) for {name}"
+            )
+        group.create_dataset(
+            "labels",
+            data=np.asarray(label_list, dtype=object),
+            dtype=h5py.string_dtype(encoding="utf-8"),
+        )
+        group.attrs["n_epochs"] = len(epoch_list)
+
+        if len(epoch_list) == 0:
+            data = group.create_dataset("data", shape=(0,), dtype="float32")
+            data.attrs["shape_original"] = "empty"
+            return
+
+        shapes = [tuple(np.asarray(epoch).shape) for epoch in epoch_list]
+        if len(set(shapes)) == 1:
+            data = np.asarray(epoch_list, dtype=np.float32)
+            dataset = group.create_dataset("data", data=data, dtype="float32")
+            dataset.attrs["shape_original"] = "[n_epochs, n_channels, n_samples]" if data.ndim == 3 else str(list(data.shape))
+            dataset.attrs["n_epochs"] = data.shape[0]
+            if data.ndim >= 2:
+                dataset.attrs["n_samples"] = data.shape[-1]
+            if data.ndim == 3:
+                dataset.attrs["n_channels"] = data.shape[1]
+            return
+
+        group.attrs["variable_shapes"] = True
+        group.attrs["epoch_shapes_json"] = json.dumps([list(shape) for shape in shapes])
+        for i, epoch in enumerate(epoch_list):
+            group.create_dataset(f"epoch_{i:06d}", data=np.asarray(epoch, dtype=np.float32), dtype="float32")
+
+    def _write_json_group(self, h5f, name, payload):
+        group = h5f.create_group(name)
+        text = json.dumps(payload, ensure_ascii=False, indent=2)
+        dtype = h5py.string_dtype(encoding="utf-8")
+        group.create_dataset("json", data=text, dtype=dtype)
+        for key, value in payload.items():
+            if isinstance(value, (str, int, float, bool, np.integer, np.floating)):
+                group.attrs[key] = value
+
+    def _eeg_processing_metadata(self):
+        s = self.settings.processing_settings
+        return {
+            "kind": "EEG",
+            "settings": self._settings_to_dict(s),
+            "channels": list(self.settings.channels),
+            "operations": [
+                {
+                    "name": "resampling",
+                    "enabled": bool(getattr(s, "do_resampling", False)),
+                    "source_Fs_Hz": float(getattr(s, "current_sampling_rate_Hz", 0) or 0),
+                    "target_Fs_Hz": float(getattr(s, "resample_freq_Hz", 0) or 0),
+                },
+                {
+                    "name": "highpass_filter",
+                    "enabled": bool(getattr(s, "do_highpass_filtering", False)),
+                    "freq_Hz": float(getattr(s, "highpass_freq_Hz", 0) or 0),
+                },
+                {
+                    "name": "lowpass_filter",
+                    "enabled": bool(getattr(s, "do_lowpass_filtering", False)),
+                    "freq_Hz": float(getattr(s, "lowpass_freq_Hz", 0) or 0),
+                },
+                {
+                    "name": "baseline_correction",
+                    "enabled": bool(getattr(s, "do_baseline_correction", False)),
+                    "from_ms": float(getattr(s, "baseline_from_ms", 0)),
+                    "to_ms": float(getattr(s, "baseline_to_ms", 0)),
+                    "method": getattr(s, "curr_baseline_method", "mean"),
+                },
+                {
+                    "name": "CAR",
+                    "enabled": bool(getattr(s, "do_CAR_filtering", False)),
+                    "except_channels": list(getattr(s, "car_except_channels", []) or []),
+                },
+                {
+                    "name": "rereference",
+                    "enabled": bool(getattr(s, "do_rereferencing", False)),
+                    "channels": list(getattr(s, "rereference_channel", []) or []),
+                },
+            ],
+            "effective_sampling_rate_Hz": float(getattr(self._data_processor, "effective_sampling_rate_Hz", 0) or 0),
+            "units": "uV",
+        }
+
+    def _emg_processing_metadata(self):
+        s = self.settings.processing_settings
+        return {
+            "kind": "EMG",
+            "settings": self._settings_to_dict(s),
+            "operations": [
+                {
+                    "name": "resampling",
+                    "enabled": bool(getattr(s, "do_emg_resampling", False)),
+                    "source_Fs_Hz": float(getattr(s, "current_sampling_rate_Hz", 0) or 0),
+                    "target_Fs_Hz": float(getattr(s, "emg_resample_freq_Hz", 0) or 0),
+                },
+                {
+                    "name": "highpass_filter",
+                    "enabled": bool(getattr(s, "do_emg_highpass_filtering", False)),
+                    "freq_Hz": float(getattr(s, "emg_highpass_freq_Hz", 0) or 0),
+                },
+                {
+                    "name": "lowpass_filter",
+                    "enabled": bool(getattr(s, "do_emg_lowpass_filtering", False)),
+                    "freq_Hz": float(getattr(s, "emg_lowpass_freq_Hz", 0) or 0),
+                },
+                {
+                    "name": "baseline_correction",
+                    "enabled": bool(getattr(s, "do_emg_baseline_correction", False)),
+                    "from_ms": float(getattr(s, "emg_baseline_from_ms", 0)),
+                    "to_ms": float(getattr(s, "emg_baseline_to_ms", 0)),
+                    "method": "mean",
+                },
+                {
+                    "name": "channel_difference",
+                    "enabled": False,
+                    "description": "Not part of processed_emg_epochs; saved separately as processed_mep_epochs",
+                },
+            ],
+            "effective_sampling_rate_Hz": float(getattr(self._data_processor, "mep_sampling_rate_Hz", 0) or 0),
+            "units": "V",
+        }
+
+    @staticmethod
+    def _settings_to_dict(settings):
+        if is_dataclass(settings):
+            return asdict(settings)
+        if hasattr(settings, "__dict__"):
+            return {
+                key: value
+                for key, value in vars(settings).items()
+                if not key.startswith("_")
+            }
+        return {}
 
     # def _on_button_load_click(self):
     #     # очистить стек подгруженных данных
@@ -640,21 +1044,27 @@ class MainWindow(QWidget):
 
     def _update_topoplots(self):
         plot = False
+        processor = self._data_processor
+        if not getattr(processor, "use_eeg", True):
+            return
+        epochs = getattr(processor, "_eeg_epochs", [])
         if self.params["TEP_suppl_plot"]["topoplot"]["draw"]:
+<<<<<<< HEAD
             if self._process_new_data:
                 plot = (len(self._epochs) != 0)
                 if not self._average_data:
                     data2plot = self._data_processor.transform_eeg_epoch(self._epochs[-1])
+=======
+            if processor.process_new_data:
+                plot = (len(epochs) != 0)
+                if not processor.average_data:
+                    data2plot = processor.transform_eeg_epoch(processor.get_eeg_epoch_by_index(-1))
+>>>>>>> 7c943763297424c899b81ab3ab47b7788a1bfff6
                 else:
-                    data_aver = []
-                    for i in range(len(CHANNELS)):
-                        average_TEPs = np.array([f.calculate() for f in self.average_functions[i]])  # усреднённые TEPs
-                        data_aver.append(average_TEPs)
-                    data2plot = np.array(data_aver)
+                    data2plot = processor.calculate_avg_TEP()
             else:
-                
-                function = self.aver_empty_func[self.aver_method]
                 data2plot = []
+<<<<<<< HEAD
                 plot = (len(self._data_loaded) != 0)
                 for data_raw in self._data_loaded:
                     if not self._average_data:
@@ -670,13 +1080,27 @@ class MainWindow(QWidget):
                             average_TEPs = np.array([f.calculate() for f in average_functions])  # усреднённые TEPs
                             data_aver.append(average_TEPs)
                         data2plot.append(np.array(data_aver))
+=======
+                data_loaded = getattr(self, "_data_loaded", [])
+                plot = (len(data_loaded) != 0)
+                for data_raw in data_loaded:
+                    if not processor.average_data:
+                        data2plot.append(processor.transform_eeg_epoch(data_raw[-1]))     # последняя эпоха
+                    else:
+                        data = np.array([processor.transform_eeg_epoch(TEPs) for TEPs in data_raw])
+                        data2plot.append(np.nanmean(data, axis=0))
+>>>>>>> 7c943763297424c899b81ab3ab47b7788a1bfff6
         if plot:
+            plot_data = data2plot[0] if isinstance(data2plot, list) else data2plot
+            plot_data = np.asarray(plot_data)
             for i in range(3):
                 ts = self._overview_panel.spinbox_ts[i].value()
-                t = self._ms_to_sample(ts)
+                t = processor._ms_to_sample(ts)
+                if plot_data.ndim != 2 or t < 0 or t >= plot_data.shape[-1]:
+                    continue
                 print(t, ts)
                 
-                self._overview_panel.figure_topo[i].plot_topomap(data2plot[0][:, t])
+                self._overview_panel.figure_topo[i].plot_topomap(plot_data[:, t])
 
     # --- Финализация ---
     def _post_init(self):
@@ -696,22 +1120,25 @@ class MainWindow(QWidget):
         self._settings_handler_record.load_from_json(default=True)
 
         self._settings_handler.load_from_json(default=True)
-        self._sync_speed_from_settings()
+        self._meps_panel.sync_emg_processing_ui_from_settings()
+        self._settings_panel.sync_speed_ui_from_settings()
         self._stimuli_control_panel.sync_ui_from_settings()
 
         self.show()
 
-    def _sync_speed_from_settings(self):
-        speed = self.settings.speed
-        self.SPEED = {
-            key: getattr(speed, key)
-            for key in getattr(speed, "__dataclass_fields__", {})
-        }
-        self._data_processor.configure_speed()
-        self._ms_to_sample = lambda x: int(x / 1000 * speed.Fs)
-        self._n_samples = self._ms_to_sample(speed.window_end - speed.window_start)
-        self._time_shift = self._ms_to_sample(0 - speed.window_start)
-        self._plot_updater._sync_plot_timebase(self._data_processor)
+    def _on_speed_apply_requested(self):
+        path = getattr(self.settings, "speed_settings_export_path", "")
+        if not path:
+            QMessageBox.warning(self, "SPEED", "Не задан путь для SPEED_settings.json")
+            return
+
+        try:
+            saved_path = self._settings_handler.save_speed_settings_to_json(path)
+        except OSError as exc:
+            QMessageBox.warning(self, "SPEED", f"Не удалось сохранить SPEED_settings.json:\n{exc}")
+            return
+
+        QMessageBox.information(self, "SPEED", f"SPEED_settings.json сохранен:\n{saved_path}")
 
    
     # --- События ---
@@ -771,6 +1198,7 @@ class MainWindow(QWidget):
     #         super().keyPressEvent(event)
              
     def closeEvent(self, event):
+        self._settings_panel.sync_speed_settings_from_ui()
         self._settings_handler_record.sync_settings_from_ui()
         self._settings_handler.save_to_json(default=True)
         self._settings_handler_record.save_to_json(default=True)
@@ -783,35 +1211,3 @@ class MainWindow(QWidget):
 
     # --- неприкаянные функции ---
     
-
-    
-    def launch_speed(self):
-        """сохранить настройки SPEED"""
-        self.SPEED = {}
-        self.SPEED["window_start"] = self.spin_box_window_start.value()
-        self.SPEED["window_end"] = self.spin_box_window_end.value()
-
-        self.SPEED["artifact"] = self.check_box_artifact.isChecked()
-        self.SPEED["artifact_start"] = self.spin_box_artifact_start.value()
-        self.SPEED["artifact_end"] = self.spin_box_artifact_end.value()
-
-        self.SPEED["notch"] = self.check_box_notch.isChecked()
-        self.SPEED["notch_fr"] = self.spin_box_notch_fr.value()
-        self.SPEED["highpass"] = self.check_box_highpass.isChecked()
-        self.SPEED["low_freq"] = self.spin_box_highpass.value()
-        self.SPEED["lowpass"] = self.check_box_lowpass.isChecked()
-        self.SPEED["high_freq"] = self.spin_box_lowpass.value()
-
-        self.SPEED["resampling"] = self.check_box_resampling.isChecked()
-        self.SPEED["Fs_orig"] = self.spin_box_fs.value()
-        self.SPEED["Fs"] = self.spin_box_resampling.value()
-
-        self._ms_to_sample = lambda x: int(x / 1000 * self.SPEED["Fs"])       # функция для пересчёта мс в сэмплы
-        self._n_samples = self._ms_to_sample(self.SPEED["window_end"] - self.SPEED["window_start"])    # длина эпохи в сэмплах
-        self._time_shift = self._ms_to_sample(0 - self.SPEED["window_start"])    # смещение относительно нуля для графиков в сэпмлах
-
-        with open(self.params["SPEED_settings_path"], 'w') as f:
-            json.dump(self.SPEED, f)
-    
-    
-

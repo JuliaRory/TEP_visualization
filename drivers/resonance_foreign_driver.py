@@ -3,17 +3,50 @@ import platform
 import os
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+DEFAULT_RESONANCE_DIR = "C:/Users/hodor/Documents/lab-MSU/Resonance2026/msvc64"
+
+
+def _candidate_resonance_dirs():
+    for env_name in ("RESONANCE_DIR",):
+        value = os.environ.get(env_name)
+        if value:
+            yield value
+
+    resonance_path = os.environ.get("RESONANCE_PATH", "")
+    for path in resonance_path.split(os.pathsep):
+        if path:
+            yield os.path.dirname(path) if os.path.basename(path).lower() == "bin" else path
+
+    yield DEFAULT_RESONANCE_DIR
+
+
+def _find_resonance_bin():
+    for resonance_dir in _candidate_resonance_dirs():
+        bin_dir = os.path.join(resonance_dir, "bin")
+        if os.path.exists(os.path.join(bin_dir, "ResonanceForeignDriver.dll")):
+            return os.path.normpath(bin_dir)
+    return BASE_DIR
 
 class Driver:
     def __init__(self, name):
         
         if platform.system() == "Windows":
-            try:
-                os.add_dll_directory(os.environ['RESONANCE_PATH'])
-            except:
-                pass
-            dll_path = os.path.join(BASE_DIR, "ResonanceForeignDriver.dll")
-            ctypes.windll.kernel32.LoadLibraryA(dll_path.encode('utf-8'))
+            bin_dir = _find_resonance_bin()
+            qt_bin_dir = os.path.abspath(os.path.join(bin_dir, "..", "qt", "bin"))
+
+            os.environ["RESONANCE_PATH"] = os.pathsep.join([bin_dir, qt_bin_dir])
+            os.environ["PATH"] = os.pathsep.join(
+                path for path in [bin_dir, qt_bin_dir, os.environ.get("PATH", "")] if path
+            )
+            for dll_dir in (bin_dir, qt_bin_dir, BASE_DIR):
+                if os.path.isdir(dll_dir):
+                    try:
+                        os.add_dll_directory(dll_dir)
+                    except (FileNotFoundError, OSError):
+                        pass
+
+            dll_path = os.path.join(bin_dir, "ResonanceForeignDriver.dll")
+            ctypes.windll.kernel32.LoadLibraryA(dll_path.encode("utf-8"))
             self._lib = ctypes.cdll.LoadLibrary(dll_path)
             
         else:

@@ -1,10 +1,16 @@
 {
     "bat_file": "D:/Resonance/distro-dual/msvc/control.bat",
     "bat_file_home": "C:/Users/hodor/Documents/lab-MSU/Works/2025.10_TMS/dist_2024_11_13_imp/control.bat",
+    "recorder_bat_file": "C:/Users/hodor/Documents/lab-MSU/Works/2025.10_TMS/msvc64/recorderService_nvxstream.bat",
     "activate_bat": true,
+    "recorder_service_name": "Recorder",
     "service_name": "nvx136",
     "stream_name": "eeg",
+<<<<<<< HEAD
     "records_folder": "D:\\2026 - feetStim\\test\\06TP_eeg_tms",
+=======
+    "records_folder": "C:\\Users\\hodor\\Documents\\lab-MSU\\Works\\2025.10_TMS\\TEP_visualization\\data",
+>>>>>>> 7c943763297424c899b81ab3ab47b7788a1bfff6
     "bat_nvx136_25Hz": "D:/Resonance/distro-dual/msvc/NVX136.bat",
     "bat_nvx136_impedance": "D:/Resonance/distro-dual/msvc/impedanceChecker_64_2.bat",
     "use_number": true,

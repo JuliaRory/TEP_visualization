@@ -1,0 +1,91 @@
+{
+    "presets": {
+        "TEP": {
+            "use_eeg": true,
+            "do_averaging": true,
+            "epoch_window_start_ms": -100,
+            "epoch_window_end_ms": 300,
+            "current_sampling_rate_Hz": 5000,
+            "do_resampling": false,
+            "resample_freq_Hz": 2000,
+            "do_highpass_filtering": false,
+            "do_lowpass_filtering": true,
+            "do_rereferencing": false,
+            "do_CAR_filtering": true,
+            "do_baseline_correction": true,
+            "curr_aver_method": "mean",
+            "highpass_freq_Hz": 1.0,
+            "lowpass_freq_Hz": 250,
+            "rereference_channel": [
+                "Fz"
+            ],
+            "car_except_channels": [
+                "FT9",
+                "FT10",
+                "TP9",
+                "TP10"
+            ],
+            "curr_baseline_method": "mean",
+            "baseline_from_ms": -75,
+            "baseline_to_ms": -20
+        },
+        "short-latency_EP": {
+            "use_eeg": true,
+            "do_averaging": true,
+            "epoch_window_start_ms": -300,
+            "epoch_window_end_ms": 600,
+            "current_sampling_rate_Hz": 5000,
+            "do_resampling": true,
+            "resample_freq_Hz": 2000,
+            "do_highpass_filtering": true,
+            "do_lowpass_filtering": true,
+            "do_rereferencing": false,
+            "do_CAR_filtering": true,
+            "do_baseline_correction": true,
+            "curr_aver_method": "mean",
+            "highpass_freq_Hz": 15.0,
+            "lowpass_freq_Hz": 750,
+            "rereference_channel": [
+                "Fz"
+            ],
+            "car_except_channels": [
+                "FT9",
+                "FT10",
+                "TP9",
+                "TP10"
+            ],
+            "curr_baseline_method": "mean",
+            "baseline_from_ms": -75,
+            "baseline_to_ms": -20
+        },
+        "long-latency_EP": {
+            "use_eeg": true,
+            "do_averaging": true,
+            "epoch_window_start_ms": -300,
+            "epoch_window_end_ms": 600,
+            "current_sampling_rate_Hz": 5000,
+            "do_resampling": true,
+            "resample_freq_Hz": 500,
+            "do_highpass_filtering": false,
+            "do_lowpass_filtering": true,
+            "do_rereferencing": false,
+            "do_CAR_filtering": true,
+            "do_baseline_correction": true,
+            "curr_aver_method": "mean",
+            "highpass_freq_Hz": 0.01, 
+            "lowpass_freq_Hz": 45,
+            "rereference_channel": [
+                "Fz"
+            ],
+            "car_except_channels": [
+                "FT9",
+                "FT10",
+                "TP9",
+                "TP10"
+            ],
+            "curr_baseline_method": "mean",
+            "baseline_from_ms": -75,
+            "baseline_to_ms": -20
+        }
+    }
+}

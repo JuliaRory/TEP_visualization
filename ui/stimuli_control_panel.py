@@ -34,6 +34,7 @@ class StimuliControlPanel(QFrame):
     """ --- UI для контроля за стимулами --- """
 
     stimuliPresentation = pyqtSignal(bool)
+    stimulusLabelReady = pyqtSignal(str)
 
     def __init__(
         self,
@@ -638,6 +639,8 @@ class StimuliControlPanel(QFrame):
         print(message)
         self.output_stream(json.dumps(message))
         pw = getattr(self, "_player_window", None)
+        if getattr(pw, "_sequence_started", False):
+            self.stimulusLabelReady.emit(str(filename))
         if isinstance(pw, StimuliPresentationFeetStim):
             self._send_udp_message(filename, after_send=pw.trigger_photomark_flash)
             return

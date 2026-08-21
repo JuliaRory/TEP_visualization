@@ -8,15 +8,15 @@ from typing import List
 class Scale:
     xmin: int = -10
     xmax: int = 100
-    ymin: int = -30
-    ymax: int = 30
+    ymin: int = -10
+    ymax: int = 10
 
 @dataclass
 class TopoTEPsPlot:
     xmin: int = -10
     xmax: int = 100
-    ymin: int = -30
-    ymax: int = 30
+    ymin: int = -10
+    ymax: int = 10
 
 @dataclass
 class SingleMEPsPlot:
@@ -62,11 +62,11 @@ class MEPBlock:
 
 @dataclass
 class TEPBlock:
-    amp: float = 30
+    amp: float = 10
     units: str = "uV"
     title: str = "Averaged TEP"
     round: int = 0
-    channels_nearest_n: List[int] = field(default_factory=lambda: [9, 36, 42, 38, 37])
+    channels_nearest_n: List[int] = field(default_factory=lambda: [11, 17, 19, 43, 51, 52]) #[9, 36, 42, 38, 37])
     n_channels: int = 64
     do_averaging: bool = True
 

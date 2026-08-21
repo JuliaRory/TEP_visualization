@@ -33,9 +33,11 @@ class SettingsHandler:
     # -- Configure data processor --
     def configure_data_processor(self):
         # configure data processor according to current settings
+        self.update_sampling(apply=False)
         self.update_use_eeg(apply=False)
         self.update_averaging(apply=False)
         self.update_baseline(apply=False)
+        self.update_highpass(apply=False)
         self.update_lowpass(apply=False)
         self.update_rereference(apply=False)
         self.update_CAR(apply=False)
@@ -91,6 +93,46 @@ class SettingsHandler:
 
         if apply:
             self._apply(topoteps_draw=True, avg_teps_draw=True, avg_meps_draw=True)
+
+    # --- Sampling ---
+
+    def update_sampling(self, apply=True):
+        s = self.settings.processing_settings
+        s.epoch_window_start_ms = self.ui.spin_box_epoch_window_start.value()
+        s.epoch_window_end_ms = self.ui.spin_box_epoch_window_end.value()
+        s.current_sampling_rate_Hz = self.ui.spin_box_current_sampling_rate.value()
+        s.do_resampling = self.ui.check_box_resampling.isChecked()
+        s.resample_freq_Hz = self.ui.spin_box_resampling.value()
+
+        self.data_processor.configure_sampling()
+        if self.plot_updater is not None and hasattr(self.plot_updater, "_sync_plot_timebase"):
+            self.plot_updater._sync_plot_timebase(self.data_processor)
+        self.update_baseline(apply=False)
+        self.update_highpass(apply=False)
+        self.update_lowpass(apply=False)
+
+        if apply:
+            self._apply(
+                topoteps_draw=True,
+                single_meps_draw=True,
+                avg_teps_draw=True,
+                avg_meps_draw=True,
+            )
+
+    # --- Highpass ---
+
+    def update_highpass(self, apply=True):
+        s = self.settings.processing_settings
+        s.do_highpass_filtering = self.ui.check_box_highpass.isChecked()
+        s.highpass_freq_Hz = self.ui.spin_box_highpass.value()
+
+        self.data_processor.configure_highpass(
+            enabled=s.do_highpass_filtering,
+            freq=s.highpass_freq_Hz,
+        )
+
+        if apply:
+            self._apply(topoteps_draw=True, avg_teps_draw=True)
 
     # --- Lowpass ---
 
@@ -191,14 +233,13 @@ class SettingsHandler:
             data = json.load(f)
 
         self._apply_dict_to_settings(self.settings, data)
-        self._load_speed_settings_json()
-        if hasattr(self.data_processor, "configure_speed"):
-            self.data_processor.configure_speed()
         self.sync_ui_from_settings()
 
+        self.update_sampling(apply=False)
         self.update_use_eeg(apply=False)
         self.update_averaging(apply=False)
         self.update_baseline(apply=False)
+        self.update_highpass(apply=False)
         self.update_lowpass(apply=False)
         self.update_rereference(apply=False)
         self.update_CAR(apply=False)
@@ -216,25 +257,22 @@ class SettingsHandler:
     
     def _apply_dict_to_settings(self, obj, data: dict):
         for key, value in data.items():
+            if not hasattr(obj, key):
+                continue
             attr = getattr(obj, key)
             if is_dataclass(attr):
                 self._apply_dict_to_settings(attr, value)
             else:
                 setattr(obj, key, value)
 
-    def _load_speed_settings_json(self):
-        path = Path(getattr(self.settings, "SPEED_settings_path", ""))
-        if not path:
-            return
+    def save_speed_settings_to_json(self, path):
+        path = Path(path)
         if not path.is_absolute():
             path = Path.cwd() / path
-        if not path.exists():
-            return
-
-        with path.open("r", encoding="utf-8") as f:
-            data = json.load(f)
-
-        self._apply_dict_to_settings(self.settings.speed, data)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        with path.open("w", encoding="utf-8") as f:
+            json.dump(asdict(self.settings.speed), f, indent=4, ensure_ascii=False)
+        return path
 
 
     def sync_ui_from_settings(self):
@@ -243,6 +281,13 @@ class SettingsHandler:
         self.ui.check_box_average.setChecked(s.do_averaging)
         self.ui.check_box_use_eeg.setChecked(getattr(s, "use_eeg", True))
         self.ui.combo_box_aver.setCurrentText(s.curr_aver_method)
+        self.ui.spin_box_epoch_window_start.setValue(getattr(s, "epoch_window_start_ms", -100))
+        self.ui.spin_box_epoch_window_end.setValue(getattr(s, "epoch_window_end_ms", 500))
+        self.ui.spin_box_current_sampling_rate.setValue(getattr(s, "current_sampling_rate_Hz", 5000))
+        self.ui.check_box_resampling.setChecked(getattr(s, "do_resampling", False))
+        self.ui.spin_box_resampling.setValue(getattr(s, "resample_freq_Hz", 2000))
+        self.ui.check_box_highpass.setChecked(getattr(s, "do_highpass_filtering", False))
+        self.ui.spin_box_highpass.setValue(getattr(s, "highpass_freq_Hz", 1))
         self.ui.check_box_lowpass.setChecked(s.do_lowpass_filtering)
         self.ui.spin_box_lowpass.setValue(s.lowpass_freq_Hz)
         

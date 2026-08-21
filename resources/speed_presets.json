@@ -1,0 +1,38 @@
+{
+    "TEPs": {	
+        "bit": 0,
+        "window_start": -100, 
+        "window_end": 300, 
+        "artifact": true, 
+        "artifact_start": -0.04, 
+        "artifact_end": 0.85, 
+        "notch": true, 
+        "notch_fr": 50, 
+        "notch_harmonics": true,
+        "highpass": true, 
+        "low_freq": 1, 
+        "lowpass": true, 
+        "high_freq": 2500, 
+        "resampling": true, 
+        "Fs_orig": 25000, 
+        "Fs": 5000
+    },
+    "EPs":{
+        "bit": 1,
+        "window_start": -300, 
+        "window_end": 600, 
+        "artifact": false, 
+        "artifact_start": -0.04, 
+        "artifact_end": 0.85, 
+        "notch": true, 
+        "notch_fr": 50, 
+        "notch_harmonics": true,
+        "highpass": true, 
+        "low_freq": 0.01, 
+        "lowpass": true, 
+        "high_freq": 1000, 
+        "resampling": false, 
+        "Fs_orig": 5000, 
+        "Fs": 2000
+    }
+}

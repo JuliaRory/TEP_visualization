@@ -34,11 +34,15 @@ class TEPsPlot(FigureCanvas):
        
         self._xdata = []
         self._ydata = None
+        self._labelled_data_by_label = None
+        self._labelled_colors = {}
 
         self._viridisBig = cm.get_cmap('jet')
     
     def refresh_plots(self, positions, single_w, single_h):
         # self.fig.canvas.restore_region(self.background) # восстанавливаем чистый фон
+        if hasattr(self, "ax"):
+            self._clear_labelled_artists()
 
         self.ticks = []
         self.lines = []       # список с линиями
@@ -126,7 +130,9 @@ class TEPsPlot(FigureCanvas):
         self.backgrounds = [self.fig.canvas.copy_from_bbox(ax.bbox) for ax in self.axes]
 
     def set_x_shift(self, x_shift, window_dur):
-        self._x = np.linspace(x_shift, window_dur+x_shift, window_dur)
+        self._x = np.linspace(x_shift, window_dur+x_shift, int(window_dur))
+        if self._last_xlim is not None:
+            self._xdata = self._visible_x_normalized(*self._last_xlim)
 
     def update_axes(self, limits):
         xmin, xmax, ymin, ymax = limits
@@ -136,9 +142,13 @@ class TEPsPlot(FigureCanvas):
 
         self._last_xlim = (xmin, xmax)
         self._last_ylim = (ymin, ymax)
+        labelled_data = self._labelled_data_by_label
+        labelled_colors = self._labelled_colors
+
+        self._clear_labelled_artists()
         
         if x_changed:
-            self._xdata = self._normalize(np.linspace(xmin, xmax, (xmax-xmin)), axis='x')  # новая ось абсцисс
+            self._xdata = self._visible_x_normalized(xmin, xmax)  # новая ось абсцисс
 
         axis_pos = (np.abs(xmin)/(xmax-xmin), np.abs(ymin)/(ymax-ymin))   # новые отнормированные позиции
         xticks_limits = [axis_pos[0]-0.02, axis_pos[0]+0.02]
@@ -173,11 +183,17 @@ class TEPsPlot(FigureCanvas):
         for line in self.lines:
             line.set_visible(True)
 
-        if self._ydata is not None:
+        if labelled_data is not None:
+            self.update_labelled_data(labelled_data, labelled_colors)
+        elif self._ydata is not None:
             self.update_data(self._ydata)
 
     def update_data(self, data):
         # data [MICROVOLT] - TEP
+
+        self._clear_labelled_artists()
+        self._labelled_data_by_label = None
+        self._labelled_colors = {}
 
         assert hasattr(self, "_x"), "не установлены смещение по оси абсцисс и длина окна"
 
@@ -187,15 +203,7 @@ class TEPsPlot(FigureCanvas):
         self.fig.canvas.restore_region(self.background_axes) # восстанавливаем чистый фон
 
         for i, y_new in enumerate(data):
-            y = deepcopy(y_new)
-            y = y[np.where((self._x > xmin) & (self._x < xmax))].tolist()
-
-            if self._x[0] > xmin:
-                y = [np.nan] * (self._x[0] - xmin) + y
-            if self._x[-1] < xmax:
-                y = y + [np.nan] * (xmax - self._x[-1])
-
-            y = np.array(y)
+            y = self._visible_y(y_new, xmin, xmax)
             y[np.where((y < ymin) | (y > ymax))] = np.nan
 
             assert len(self._xdata) == len(y), f"widgets/teps_plot: len(x_new) = {len(self._xdata)} !=  len(y_new) = {len(y)}"
@@ -210,6 +218,71 @@ class TEPsPlot(FigureCanvas):
 
         self._ydata = data
     
+    def update_labelled_data(self, data_by_label, colors):
+        data_by_label = list(data_by_label)
+        self._labelled_data_by_label = data_by_label if data_by_label else None
+        self._labelled_colors = dict(colors or {})
+        self._clear_labelled_artists()
+        if not data_by_label:
+            self.refresh_plot()
+            return
+
+        assert hasattr(self, "_x"), "x axis is not initialized"
+        xmin, xmax = self._last_xlim
+        ymin, ymax = self._last_ylim
+
+        background = getattr(self, "background_axes", getattr(self, "background", None))
+        if background is not None:
+            self.fig.canvas.restore_region(background)
+        for line in self.lines:
+            line.set_data([], [])
+
+        self._labelled_artists = []
+        for label, data in data_by_label:
+            color = colors.get(label, "tab:blue")
+            for i, y_new in enumerate(data):
+                y = self._visible_y(y_new, xmin, xmax)
+                y[np.where((y < ymin) | (y > ymax))] = np.nan
+                y = self._normalize(y, axis='y')
+                line, = self.ax.plot(
+                    self._xdata,
+                    y,
+                    lw=0.9,
+                    transform=self.transforms[i],
+                    color=color,
+                    alpha=0.95,
+                )
+                self._labelled_artists.append(line)
+
+        proxies = [
+            plt.Line2D([0], [0], color=self._labelled_colors.get(label, "tab:blue"), lw=2, label=label)
+            for label, _ in data_by_label
+        ]
+        self._labelled_legend = self.ax.legend(
+            handles=proxies,
+            loc="upper left",
+            fontsize=8,
+            frameon=True,
+            framealpha=0.85,
+        )
+        self.fig.canvas.draw_idle()
+        self._ydata = None
+
+    def _clear_labelled_artists(self):
+        for artist in getattr(self, "_labelled_artists", []):
+            try:
+                artist.remove()
+            except (ValueError, NotImplementedError):
+                pass
+        self._labelled_artists = []
+        legend = getattr(self, "_labelled_legend", None)
+        if legend is not None:
+            try:
+                legend.remove()
+            except (ValueError, NotImplementedError):
+                pass
+        self._labelled_legend = None
+
     def draw_loaded_TEPs(self, data_all, labels):
         # data_all : list of np.arrays [n_channels, n_samples]
 
@@ -223,15 +296,7 @@ class TEPsPlot(FigureCanvas):
 
         for i in range(64):    # для каждого канала
             for k, data in enumerate(data_all):
-                y = deepcopy(data[i])
-                y = y[np.where((self._x > xmin) & (self._x < xmax))].tolist()
-
-                if self._x[0] > xmin:
-                    y = [np.nan] * (self._x[0] - xmin) + y
-                if self._x[-1] < xmax:
-                    y = y + [np.nan] * (xmax - self._x[-1])
-
-                y = np.array(y)
+                y = self._visible_y(data[i], xmin, xmax)
                 y[np.where((y < ymin) | (y > ymax))] = np.nan
 
                 y = self._normalize(y, axis='y')
@@ -262,5 +327,45 @@ class TEPsPlot(FigureCanvas):
         assert hasattr(self, "_last_xlim"), f"Границы графика ещё не заданы -> невозможно нормализовать данные по оси {axis}."
         xmin, xmax = self._last_xlim if axis == 'x' else self._last_ylim
         return (x - xmin) / (xmax - xmin)
+
+    def _visible_mask(self, xmin, xmax):
+        x = self.__dict__.get("_x")
+        if x is None:
+            return np.array([], dtype=bool)
+        return (x > xmin) & (x < xmax)
+
+    def _visible_x_normalized(self, xmin, xmax):
+        x = self.__dict__.get("_x")
+        if x is None:
+            return np.array([])
+        return self._normalize(x[self._visible_mask(xmin, xmax)], axis='x')
+
+    def _fit_to_x(self, data):
+        x = self.__dict__.get("_x")
+        if x is None:
+            return self._as_float_array(data)
+        data = self._as_float_array(data)
+        target_len = len(x)
+        if len(data) == target_len:
+            return data
+        if len(data) > target_len:
+            return data[:target_len]
+
+        result = np.full(target_len, np.nan)
+        result[:len(data)] = data
+        return result
+
+    def _visible_y(self, data, xmin, xmax):
+        y = self._fit_to_x(deepcopy(data))
+        return y[self._visible_mask(xmin, xmax)]
+
+    @staticmethod
+    def _as_float_array(data):
+        data = np.asarray(data)
+        if data.dtype == object:
+            data = np.array([np.nan if value is None else value for value in data], dtype=float)
+        else:
+            data = data.astype(float, copy=False)
+        return data
         
     

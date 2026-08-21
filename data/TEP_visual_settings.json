@@ -38,7 +38,9 @@
         {
             "bat_file": "D:/Resonance/distro-dual/msvc/control.bat",
             "bat_file_home": "C:/Users/hodor/Documents/lab-MSU/Works/2025.10_TMS/dist_2024_11_13_imp/control.bat",
+            "recorder_bat_file": "C:/Users/hodor/Documents/lab-MSU/Works/2025.10_TMS/msvc64/recorderService_nvxstream.bat",
             "activate_bat": true,
+            "recorder_service_name": "Recorder",
             "service_name": "nvx136",
             "records_folder": "C:/Users/hodor/Documents/lab-MSU/Works/2025.10_TMS/TEP_visualization/data/records"
         },

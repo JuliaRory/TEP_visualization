@@ -306,7 +306,8 @@ class BCIMEPDelayWindow(QWidget):
         self._latest_processor = processor
         self.speed_settings = getattr(processor.settings, "speed", self.speed_settings)
         n_epoch = int(getattr(processor, "_n_epoch", len(getattr(processor, "_epochs", []))))
-        if n_epoch <= 0 or not getattr(processor, "_epochs", None):
+        epoch = processor.get_other_epoch(-1) if hasattr(processor, "get_other_epoch") else None
+        if n_epoch <= 0 or epoch is None:
             self._latest_epoch_index = 0
             self._latest_result = None
             self._label_epoch.setText("Epoch: -")
@@ -315,7 +316,7 @@ class BCIMEPDelayWindow(QWidget):
             self._plot_empty()
             return
 
-        epoch_id = id(processor._epochs[-1])
+        epoch_id = id(epoch)
         add_to_bins = epoch_id != self._last_added_epoch_id
         self._latest_epoch_index = n_epoch
         self._process_epoch(processor, n_epoch, add_to_bins=add_to_bins)
@@ -328,12 +329,12 @@ class BCIMEPDelayWindow(QWidget):
         self._update_bin_table()
 
     def _process_epoch(self, processor, n_epoch, add_to_bins):
-        epoch = np.asarray(processor._epochs[-1], dtype=float)
+        epoch = processor.get_other_epoch(-1) if hasattr(processor, "get_other_epoch") else None
+        epoch = np.asarray(epoch, dtype=float)
         if epoch.ndim != 2 or epoch.shape[0] < 2:
             return
 
-        emg = processor._baseline(epoch[-2:, :] * 1e3)
-        mep_mV = np.diff(emg, axis=0).flatten()
+        mep_mV = np.diff(epoch[-2:, :] * 1e3, axis=0).flatten()
         time_ms = self._time_axis(processor, mep_mV.size)
         mep_mV = self._prepare_mep_signal(mep_mV, time_ms)
         tkeo = self._calculate_tkeo(mep_mV * 1e-3)
@@ -362,7 +363,7 @@ class BCIMEPDelayWindow(QWidget):
             if add_to_bins:
                 self._all_delays.append(float(delay_ms))
                 self._last_added_epoch_index = n_epoch
-                self._last_added_epoch_id = id(processor._epochs[-1])
+                self._last_added_epoch_id = id(epoch)
                 self._rebuild_bins()
         else:
             self._label_delay.setText("delay: -")
@@ -370,19 +371,19 @@ class BCIMEPDelayWindow(QWidget):
         self._plot_result()
 
     def _time_axis(self, processor, n_samples):
-        speed = getattr(processor.settings, "speed", self.speed_settings)
-        self.speed_settings = speed
-        fs = float(getattr(speed, "Fs", 0) or 0)
-        start_ms = float(getattr(speed, "window_start", 0))
-        end_ms = float(getattr(speed, "window_end", start_ms))
+        fs = float(getattr(processor, "mep_sampling_rate_Hz", 0) or 0)
+        processing = getattr(processor.settings, "processing_settings", None)
+        start_ms = float(getattr(processing, "epoch_window_start_ms", 0))
+        end_ms = float(getattr(processing, "epoch_window_end_ms", start_ms))
         if fs > 0:
             return start_ms + np.arange(n_samples, dtype=float) * 1000.0 / fs
         return np.linspace(start_ms, end_ms, n_samples, endpoint=False)
 
     def _x_limits(self):
-        speed = self.speed_settings
-        start_ms = float(getattr(speed, "window_start", -300))
-        end_ms = float(getattr(speed, "window_end", 300))
+        processor = getattr(self, "_latest_processor", None)
+        processing = getattr(getattr(processor, "settings", None), "processing_settings", None)
+        start_ms = float(getattr(processing, "epoch_window_start_ms", -300))
+        end_ms = float(getattr(processing, "epoch_window_end_ms", 300))
         if end_ms <= start_ms:
             end_ms = start_ms + 1.0
         return start_ms, end_ms

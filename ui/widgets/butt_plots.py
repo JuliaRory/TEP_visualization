@@ -59,6 +59,9 @@ class buttPlot(FigureCanvas):
 
         self._last_xlim = None      # границы по оси х не заданы
         self._last_amp = None       # границы по оси y не заданы
+        self._labelled_kind = None
+        self._labelled_data_by_label = None
+        self._labelled_colors = {}
 
         self._viridisBig = cm.get_cmap('jet')       # палитра для разноцветных графиков
 
@@ -120,7 +123,13 @@ class buttPlot(FigureCanvas):
     def update_axes(self, xmax_ms=100, xmin_ms=-20, amp=100, which='TEPs'):
         # self.fig.canvas.restore_region(self._background)  # восстанавливаем чистый фон
         """Обновить масштаб"""
+        amp = max(abs(float(amp)), 1e-12)
         xmin, xmax = self._ms_to_sample(xmin_ms), self._ms_to_sample(xmax_ms)
+        labelled_kind = self._labelled_kind
+        labelled_data = self._labelled_data_by_label
+        labelled_colors = self._labelled_colors
+        if labelled_kind == which:
+            self._clear_labelled_artists()
 
         x_changed = not hasattr(self, "_last_xlim") or (self._last_xlim != (xmin, xmax))
         y_changed = not hasattr(self, "_last_amp") or (self._last_amp != amp)
@@ -160,10 +169,16 @@ class buttPlot(FigureCanvas):
         if hasattr(self, "_lines"):
             for line in self._lines:
                 line.set_visible(True)
-            self.redraw("TEPs")
+            if labelled_kind == "TEPs" and labelled_data is not None:
+                self.update_labelled_TEPs(labelled_data, labelled_colors)
+            else:
+                self.redraw("TEPs")
         if hasattr(self, "_line"):
             self._line.set_visible(True)
-            self.redraw("MEPs")
+            if labelled_kind == "MEPs" and labelled_data is not None:
+                self.update_labelled_MEPs(labelled_data, labelled_colors)
+            else:
+                self.redraw("MEPs")
     
     def draw_rectangle(self, xmin_ms, xmax_ms, ymin, ymax):
         """Нарисовать прямоугольник для синхронизации масштабов"""
@@ -181,8 +196,14 @@ class buttPlot(FigureCanvas):
         self.fig.canvas.blit()
 
         self._background = self.fig.canvas.copy_from_bbox(self._ax.bbox)
+        if self._labelled_kind == "TEPs" and self._labelled_data_by_label is not None:
+            self.update_labelled_TEPs(self._labelled_data_by_label, self._labelled_colors)
+        elif hasattr(self, "_lines"):
+            self.redraw("TEPs")
 
     def update_TEPs(self, teps):
+        self._clear_labelled_artists()
+        self._clear_labelled_cache()
         """Нарисовать новые TEPs"""
         self.fig.canvas.restore_region(self._background)  # восстанавливаем чистый фон
         teps = np.asarray([self._fit_to_x(row) for row in np.asarray(teps)])
@@ -197,6 +218,8 @@ class buttPlot(FigureCanvas):
         self.fig.canvas.blit(self._ax.bbox)
     
     def update_MEPs(self, meps, spread=None):
+        self._clear_labelled_artists()
+        self._clear_labelled_cache()
         """Нарисовать новые MEPs"""
         self.fig.canvas.restore_region(self._background)  # восстанавливаем чистый фон
 
@@ -223,6 +246,66 @@ class buttPlot(FigureCanvas):
 
         self.fig.canvas.blit(self._ax.bbox)
     
+    def update_labelled_TEPs(self, data_by_label, colors):
+        data_by_label = list(data_by_label)
+        self._labelled_kind = "TEPs" if data_by_label else None
+        self._labelled_data_by_label = data_by_label if data_by_label else None
+        self._labelled_colors = dict(colors or {})
+        self._clear_labelled_artists()
+        if not data_by_label:
+            self.refresh_plot(which="TEPs")
+            return
+        self.fig.canvas.restore_region(self._background)
+        if hasattr(self, "_lines"):
+            for line in self._lines:
+                line.set_ydata(np.full(len(self._x), np.nan))
+
+        self._labelled_artists = []
+        for label, teps in data_by_label:
+            teps = np.asarray([self._fit_to_x(row) for row in np.asarray(teps)])
+            line, = self._ax.plot(self._x, self._mean(teps), lw=1.8, color=self._labelled_colors.get(label, "tab:blue"), label=label)
+            self._labelled_artists.append(line)
+        self.fig.canvas.draw_idle()
+
+    def update_labelled_MEPs(self, data_by_label, colors):
+        data_by_label = list(data_by_label)
+        self._labelled_kind = "MEPs" if data_by_label else None
+        self._labelled_data_by_label = data_by_label if data_by_label else None
+        self._labelled_colors = dict(colors or {})
+        self._clear_labelled_artists()
+        if not data_by_label:
+            self.refresh_plot(which="MEPs")
+            return
+        self.fig.canvas.restore_region(self._background)
+        if hasattr(self, "_line"):
+            self._line.set_ydata(np.full(len(self._x), np.nan))
+
+        self._labelled_artists = []
+        for label, meps in data_by_label:
+            line, = self._ax.plot(self._x, self._fit_to_x(meps), lw=1.8, color=self._labelled_colors.get(label, "tab:blue"), label=label)
+            self._labelled_artists.append(line)
+        self.fig.canvas.draw_idle()
+
+    def _clear_labelled_artists(self):
+        for artist in getattr(self, "_labelled_artists", []):
+            try:
+                artist.remove()
+            except (ValueError, NotImplementedError):
+                pass
+        self._labelled_artists = []
+        legend = getattr(self, "_labelled_legend", None)
+        if legend is not None:
+            try:
+                legend.remove()
+            except (ValueError, NotImplementedError):
+                pass
+        self._labelled_legend = None
+
+    def _clear_labelled_cache(self):
+        self._labelled_kind = None
+        self._labelled_data_by_label = None
+        self._labelled_colors = {}
+
     def redraw(self, which="TEPs", empty=False):
         
         if which=='TEPs':
@@ -239,7 +322,7 @@ class buttPlot(FigureCanvas):
             self.update_MEPs(meps, spread=spread)
 
     def _fit_to_x(self, data):
-        data = np.asarray(data)
+        data = self._as_float_array(data)
         target_len = len(self._x)
         if len(data) == target_len:
             return data
@@ -249,6 +332,15 @@ class buttPlot(FigureCanvas):
         result = np.full(target_len, np.nan)
         result[:len(data)] = data
         return result
+
+    @staticmethod
+    def _as_float_array(data):
+        data = np.asarray(data)
+        if data.dtype == object:
+            data = np.array([np.nan if value is None else value for value in data], dtype=float)
+        else:
+            data = data.astype(float, copy=False)
+        return data
 
 
     def draw_loaded_multiple_sessions(self, session_data, signal="TEP"):

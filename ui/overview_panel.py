@@ -2,6 +2,7 @@ from PyQt5.QtWidgets import QFrame,  QLabel, QVBoxLayout
 from PyQt5.QtCore import Qt, QTimer
 
 from utils.ui_helpers import create_spin_box, create_button, create_check_box
+from utils.helpers import get_time_scale_step, get_voltage_scale_step
 from utils.layout_utils import create_hbox
 
 from ui.widgets.butt_plots import buttPlot
@@ -97,6 +98,7 @@ class overviewPanel(QFrame):
             w=60,
         )
         self.checkbox_average_meps = create_check_box(self.settings.butts_plot.MEP.do_averaging, text="Усреднение", parent=self)
+        self._sync_scale_spin_steps()
 
         # Для топоплотов
         if self.settings.topoplot.draw:   
@@ -164,6 +166,8 @@ class overviewPanel(QFrame):
     
     # --- Логика ---
     def _update_scale(self):
+        self._sync_scale_spin_steps()
+
         xmax = self._spinbox_max_time.value()
         xmin = self._spinbox_min_time.value()
         ymax = self._spinbox_max_amp_tep.value()
@@ -174,6 +178,11 @@ class overviewPanel(QFrame):
         self.figure_MEP.update_axes(xmax, xmin, ymax_mep, which='MEPs')
 
         
+    def _sync_scale_spin_steps(self):
+        for spin_box in [self._spinbox_min_time, self._spinbox_max_time]:
+            spin_box.setSingleStep(get_time_scale_step(spin_box.value()))
+        self._spinbox_max_amp_tep.setSingleStep(get_voltage_scale_step(self._spinbox_max_amp_tep.value()))
+
 
     def _on_interactive_plot_button_clicked(self):
         if False:

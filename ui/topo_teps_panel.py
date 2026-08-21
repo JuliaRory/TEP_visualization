@@ -1,17 +1,20 @@
 from PyQt5.QtWidgets import QFrame,  QLabel
 from PyQt5.QtGui import QFont, QFontMetrics
-from PyQt5.QtCore import Qt, QTimer, pyqtSignal
+from PyQt5.QtCore import Qt, QTimer, pyqtSignal, QSignalBlocker
 
 import numpy as np
 import pandas as pd
 
-from utils.ui_helpers import create_shortcut_scale, create_spin_box, fit_font_to_width_spinbox
+from utils.ui_helpers import create_shortcut_scale, create_spin_box, fit_font_to_width_spinbox, create_combo_box, create_checkable_combobox
+from utils.helpers import get_time_scale_step, get_voltage_scale_step
 from ui.widgets.teps_plot import TEPsPlot
 
 MICROVOLT = "\u03BC"+"V"
 
 class TopoTEPsPanel(QFrame):
     scale_changed = pyqtSignal()  
+    epochLabelSourceChanged = pyqtSignal(str)
+    epochLabelFilterChanged = pyqtSignal(list)
 
     def __init__(self, parent=None, settings=None, speed_settings=None, settings_handler=None, processing_ui=None, init_size=(600, 800)):
         super().__init__(parent)
@@ -71,6 +74,7 @@ class TopoTEPsPanel(QFrame):
         self.spin_box_scale_ymax = create_spin_box(1, 10000, self.ymax, step=10, parent=self) 
         self.spin_box_scale_xmin = create_spin_box(-1000, 0, self.xmin, step=5, parent=self) 
         self.spin_box_scale_xmax = create_spin_box(1, 1000, self.xmax, step=5, parent=self) 
+        self._sync_scale_spin_steps()
 
         create_shortcut_scale(keyword="Alt+Up", spin1=self.spin_box_scale_ymax, spin2=self.spin_box_scale_ymin, action='more', parent=self) 
         create_shortcut_scale(keyword="Alt+Down", spin1=self.spin_box_scale_ymax, spin2=self.spin_box_scale_ymin, action='less', parent=self) 
@@ -97,6 +101,20 @@ class TopoTEPsPanel(QFrame):
         self.label_record = QLabel("", parent=self)
         self.label_record.setObjectName("label_record")
         set_font(self.label_record, test_text='record in progress...')
+
+        self.combo_box_epoch_label_source = create_combo_box(
+            ["stimulus", "epoch_labels"],
+            curr_item="stimulus",
+            parent=self,
+        )
+        self.combo_box_epoch_label_filter = create_checkable_combobox(
+            ["all"],
+            ["all"],
+            status=True,
+            parent=self,
+        )
+        self.label_epoch_label_counts = QLabel("", parent=self)
+        set_font(self.label_epoch_label_counts, 10, False, 'stimulus_a: 100 | stimulus_b: 100 | stimulus_b: 100 | stimulus_b: 100 | stimulus_b: 100 | stimulus_b: 100 | stimulus_b: 100 | stimulus_b: 100 | stimulus_b: 100')
         
 
         """Создаём полотно для графиков"""
@@ -119,10 +137,14 @@ class TopoTEPsPanel(QFrame):
     def _setup_connections(self):
         for spin_box in [self.spin_box_scale_ymin, self.spin_box_scale_ymax, self.spin_box_scale_xmin, self.spin_box_scale_xmax]:
             spin_box.valueChanged.connect(self._update_scale)
+        self.combo_box_epoch_label_source.currentTextChanged[str].connect(self.epochLabelSourceChanged.emit)
+        self.combo_box_epoch_label_filter.textChanged.connect(self.epochLabelFilterChanged.emit)
         
         
     # --- Логика ---
     def _update_scale(self):
+        self._sync_scale_spin_steps()
+
         xmax = self.ms_to_sample(self.spin_box_scale_xmax.value())
         xmin = self.ms_to_sample(self.spin_box_scale_xmin.value())
         
@@ -132,6 +154,54 @@ class TopoTEPsPanel(QFrame):
         self.figure.update_axes([xmin, xmax, ymin, ymax])
 
         self.scale_changed.emit()
+
+    def _sync_scale_spin_steps(self):
+        for spin_box in [self.spin_box_scale_xmin, self.spin_box_scale_xmax]:
+            spin_box.setSingleStep(get_time_scale_step(spin_box.value()))
+        for spin_box in [self.spin_box_scale_ymin, self.spin_box_scale_ymax]:
+            spin_box.setSingleStep(get_voltage_scale_step(spin_box.value()))
+
+    def adjust_y_scale(self, direction):
+        """Change central plot vertical scale symmetrically around zero."""
+        step = max(1, int(self.spin_box_scale_ymax.singleStep()))
+        direction = 1 if direction > 0 else -1
+
+        current_amp = max(
+            abs(int(self.spin_box_scale_ymax.value())),
+            abs(int(self.spin_box_scale_ymin.value())),
+            step,
+        )
+        max_amp = min(
+            int(self.spin_box_scale_ymax.maximum()),
+            abs(int(self.spin_box_scale_ymin.minimum())),
+        )
+        new_amp = max(step, min(max_amp, current_amp + direction * step))
+
+        blocked_ymax = self.spin_box_scale_ymax.blockSignals(True)
+        blocked_ymin = self.spin_box_scale_ymin.blockSignals(True)
+        try:
+            self.spin_box_scale_ymax.setValue(new_amp)
+            self.spin_box_scale_ymin.setValue(-new_amp)
+        finally:
+            self.spin_box_scale_ymax.blockSignals(blocked_ymax)
+            self.spin_box_scale_ymin.blockSignals(blocked_ymin)
+
+        self._update_scale()
+
+    def adjust_right_time_scale(self, direction):
+        """Change only the right time border of the central plots."""
+        step = max(1, int(self.spin_box_scale_xmax.singleStep()))
+        direction = 1 if direction > 0 else -1
+
+        min_xmax = max(
+            int(self.spin_box_scale_xmax.minimum()),
+            int(self.spin_box_scale_xmin.value()) + step,
+        )
+        new_xmax = int(self.spin_box_scale_xmax.value()) + direction * step
+        new_xmax = max(min_xmax, min(int(self.spin_box_scale_xmax.maximum()), new_xmax))
+
+        if new_xmax != self.spin_box_scale_xmax.value():
+            self.spin_box_scale_xmax.setValue(new_xmax)
 
     def _calculate_positions(self):
         df = self.df_orig.copy()
@@ -228,7 +298,37 @@ class TopoTEPsPanel(QFrame):
         self.label_n_epoch.move(self.spin_box_scale_xmax.x()+width*2, self.top_pad//2)
         self.label_n_epoch_specific.move(self.spin_box_scale_xmax.x()+width*2+self.label_n_epoch.width()+5, self.top_pad//2)
 
+        label_control_width = max(120, min(180, panel_width // 6))
+        self.combo_box_epoch_label_source.resize(label_control_width, height + 6)
+        self.combo_box_epoch_label_filter.resize(label_control_width, height + 6)
+        hpad = 50
+        self.combo_box_epoch_label_source.move(10, panel_height - 32 - hpad)
+        self.combo_box_epoch_label_filter.move(10, panel_height - 32 + height + 10 - hpad)
+        self.label_epoch_label_counts.resize(max(220, panel_width // 3), height + 10)
+        self.label_epoch_label_counts.move(10, panel_height - 32 + 2 * (height + 10) - hpad)
+
         self.processing_ui.move(panel_width-self.processing_ui.width(), 0)
+
+    def set_epoch_label_options(self, labels, current=None):
+        current = current or ["all"]
+        if isinstance(current, str):
+            current = [current]
+        current = set(current)
+        if not current:
+            current = {"all"}
+        items = ["all"] + [label for label in labels if label != "all"]
+        blocker = QSignalBlocker(self.combo_box_epoch_label_filter)
+        self.combo_box_epoch_label_filter.model().clear()
+        for item in items:
+            self.combo_box_epoch_label_filter.addItem(item, checked=item in current)
+        del blocker
+
+    def set_epoch_label_counts(self, counts):
+        if not counts:
+            self.label_epoch_label_counts.setText("")
+            return
+        parts = [f"{label}: {counts[label]}" for label in sorted(counts)]
+        self.label_epoch_label_counts.setText(" | ".join(parts))
 
     # --- Финализация ---
     def _post_init(self):

@@ -35,12 +35,7 @@ class NVXControlPanel(QFrame):
 
         if self.settings.activate_bat:
             # Запуск батника с qml-файлом для управления резонансными модулями
-            try:
-                cwd = os.path.dirname(self.settings.bat_file) # cwd = папка с батником
-                subprocess.Popen([self.settings.bat_file], cwd=cwd)
-            except:
-                cwd = os.path.dirname(self.settings.bat_file_home) # cwd = папка с батником
-                subprocess.Popen([self.settings.bat_file_home], cwd=cwd)
+            self._launch_control_bat()
 
 
     # =======================
@@ -58,6 +53,7 @@ class NVXControlPanel(QFrame):
 
         self.lineedit_folder = create_lineedit(parent=self, w=200)
         self.lineedit_folder.setText(self.settings.records_folder)
+        self.button_recorder = create_button(text='recorder', disabled=False, parent=self)
         self.lineedit_record = create_lineedit(parent=self, w=250)                                  # record name
 
         self._create_filename_lineedits()
@@ -107,6 +103,7 @@ class NVXControlPanel(QFrame):
             layout_record.addLayout(layout_label)
 
         layout_folder = create_hbox([QLabel("Путь:"), self.lineedit_folder])
+        layout_folder.insertWidget(2, self.button_recorder)
         layout_record_final = create_hbox([self.lineedit_record, self.button_nvx_record])
 
                                                                 # Vertical layout
@@ -133,6 +130,7 @@ class NVXControlPanel(QFrame):
         self.button_nvx_kill.clicked.connect(self._on_nvx_kill_button_click)        # terminate nvx136
 
         self.button_nvx_record.clicked.connect(self._on_nvx_record_button_click)        # terminate nvx136
+        self.button_recorder.clicked.connect(self._on_recorder_button_click)
 
         autofilename = True
         if autofilename:
@@ -144,6 +142,31 @@ class NVXControlPanel(QFrame):
     # =======================
     # =====   Логика    =====
     # =======================
+
+    def _launch_control_bat(self):
+        candidates = [
+            getattr(self.settings, "bat_file", ""),
+            getattr(self.settings, "bat_file_home", ""),
+        ]
+        seen = set()
+
+        for bat_file in candidates:
+            if not bat_file or bat_file in seen:
+                continue
+            seen.add(bat_file)
+
+            if not os.path.exists(bat_file):
+                print(f"Control bat file does not exist: {bat_file}")
+                continue
+
+            try:
+                cwd = os.path.dirname(bat_file)
+                subprocess.Popen(["cmd.exe", "/c", bat_file], cwd=cwd)
+                return
+            except OSError as exc:
+                print(f"Failed to launch control bat file {bat_file}: {exc}")
+
+        print("Control service was not launched: no configured bat file could be started.")
 
     
     def change_filename(self, *_args):
@@ -225,50 +248,94 @@ class NVXControlPanel(QFrame):
         service = self.resonance.getService(self.settings.service_name)     # Берем сервис
         service.sendTransition("!terminate")
         
-    def _on_nvx_record_button_click(self):
-        
-        if not self.record_in_progress:    # если запись не была начата
-            print("START NVX136 RECORDING")
-            self.record_in_progress = True
-            self.update_next_record_number()
+    def _on_recorder_button_click(self):
+        recorder_bat_file = getattr(
+            self.settings,
+            "recorder_bat_file",
+            "C:/Users/hodor/Documents/lab-MSU/Works/2025.10_TMS/msvc64/recorderService_nvxstream.bat",
+        )
+        if not os.path.exists(recorder_bat_file):
+            print(f"Recorder bat file does not exist: {recorder_bat_file}")
+            return
 
-            comments = "true" if self._add_stimuli_stream else "false"
+        cwd = os.path.dirname(recorder_bat_file)
+        subprocess.Popen(["cmd.exe", "/c", recorder_bat_file], cwd=cwd)
 
-            filename = self.lineedit_record.text()
-            folder = self.lineedit_folder.text()
-            full_name = os.path.join(folder, filename)
+    def _on_nvx_record_button_click(self, *_args, command="start"):
+        if command == "start_rec":
+            self._toggle_legacy_recording()
+            return
 
-            if os.path.exists(full_name):
-                full_name = full_name[:-5] +"-$$$.hdf5"
-            self._current_record_path = full_name
-            self.change_filename()
-            self.recordingFileChanged.emit(True, self._current_record_path)
-            
-            self._service = self.resonance.getService(self.settings.service_name)     # Берем сервис
-            self._service.sendTransition('start', stream=self.settings.stream_name, add_stimuli=comments, filename=full_name)
+        self._toggle_recorder_recording()
 
-            # self._service_stimuli = self.resonance.getService("TEP_visual")     # Берем сервис
-            # self._service_stimuli.sendTransition('start', stream="stimuli")
+    def _prepare_recording_start(self):
+        self.record_in_progress = True
+        self.update_next_record_number()
 
-            self.recording.emit(True)
-            
-        else:                               # если запись уже идёт
-            print("FINISH NVX136 RECORDING")
-            self.record_in_progress = False
+        filename = self.lineedit_record.text()
+        folder = self.lineedit_folder.text()
+        full_name = os.path.join(folder, filename)
 
-            self._service.sendTransition('stop')
-            # self._service_stimuli.sendTransition('stop')
-            self.change_filename()
-            self.recording.emit(False)
-            self.recordingFileChanged.emit(False, self._current_record_path)
-            self.update_next_record_number()
-        
+        if os.path.exists(full_name):
+            full_name = full_name[:-5] + "-$$$.hdf5"
+
+        self._current_record_path = full_name
+        self.change_filename()
+        self.recordingFileChanged.emit(True, self._current_record_path)
+        self.recording.emit(True)
+        self._update_record_button_label()
+        return full_name
+
+    def _finish_recording(self):
+        self.record_in_progress = False
+        self.change_filename()
+        self.recording.emit(False)
+        self.recordingFileChanged.emit(False, self._current_record_path)
+        self.update_next_record_number()
+        self._update_record_button_label()
+
+    def _toggle_recorder_recording(self):
+        recorder_service_name = getattr(self.settings, "recorder_service_name", "Recorder")
+
+        if not self.record_in_progress:
+            print("START RECORDER RECORDING")
+            full_name = self._prepare_recording_start()
+            self._service = self.resonance.getService(recorder_service_name)
+            self._service.sendParameter("fileName", full_name)
+            self._service.sendTransition("start")
+            return
+
+        print("FINISH RECORDER RECORDING")
+        service = getattr(self, "_service", None) or self.resonance.getService(recorder_service_name)
+        service.sendTransition("stop")
+        self._finish_recording()
+
+    def _toggle_legacy_recording(self):
+        recorder_service_name = getattr(self.settings, "recorder_service_name", "Recorder")
+
+        if not self.record_in_progress:
+            print("START RECORDER RECORDING (start_rec)")
+            full_name = self._prepare_recording_start()
+            self._service = self.resonance.getService(recorder_service_name)
+            self._service.sendParameter("fileName", full_name)
+            self._service.sendTransition("start_rec")
+            return
+
+        print("FINISH RECORDER RECORDING (start_rec)")
+        service = getattr(self, "_service", None) or self.resonance.getService(recorder_service_name)
+        service.sendTransition("stop")
+        self._finish_recording()
+
+    def _update_record_button_label(self):
         button_label = "Остановить" if self.record_in_progress else "Начать запись"
         self.button_nvx_record.setText(button_label)
     
 
-    def change_record_status(self, stimuli=False):
+    def start_rec(self):
+        self._on_nvx_record_button_click(command="start_rec")
+
+    def change_record_status(self, stimuli=False, command="start"):
         self._add_stimuli_stream = stimuli
-        self._on_nvx_record_button_click()
+        self._on_nvx_record_button_click(command=command)
 
     
