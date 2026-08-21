@@ -302,7 +302,7 @@ class MEPPlot(FigureCanvas):
         if legend is not None:
             try:
                 legend.remove()
-            except ValueError:
+            except (ValueError, NotImplementedError):
                 pass
         self._labelled_legend = None
 

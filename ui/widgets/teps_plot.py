@@ -34,11 +34,15 @@ class TEPsPlot(FigureCanvas):
        
         self._xdata = []
         self._ydata = None
+        self._labelled_data_by_label = None
+        self._labelled_colors = {}
 
         self._viridisBig = cm.get_cmap('jet')
     
     def refresh_plots(self, positions, single_w, single_h):
         # self.fig.canvas.restore_region(self.background) # восстанавливаем чистый фон
+        if hasattr(self, "ax"):
+            self._clear_labelled_artists()
 
         self.ticks = []
         self.lines = []       # список с линиями
@@ -138,6 +142,10 @@ class TEPsPlot(FigureCanvas):
 
         self._last_xlim = (xmin, xmax)
         self._last_ylim = (ymin, ymax)
+        labelled_data = self._labelled_data_by_label
+        labelled_colors = self._labelled_colors
+
+        self._clear_labelled_artists()
         
         if x_changed:
             self._xdata = self._visible_x_normalized(xmin, xmax)  # новая ось абсцисс
@@ -175,13 +183,17 @@ class TEPsPlot(FigureCanvas):
         for line in self.lines:
             line.set_visible(True)
 
-        if self._ydata is not None:
+        if labelled_data is not None:
+            self.update_labelled_data(labelled_data, labelled_colors)
+        elif self._ydata is not None:
             self.update_data(self._ydata)
 
     def update_data(self, data):
         # data [MICROVOLT] - TEP
 
         self._clear_labelled_artists()
+        self._labelled_data_by_label = None
+        self._labelled_colors = {}
 
         assert hasattr(self, "_x"), "не установлены смещение по оси абсцисс и длина окна"
 
@@ -207,6 +219,9 @@ class TEPsPlot(FigureCanvas):
         self._ydata = data
     
     def update_labelled_data(self, data_by_label, colors):
+        data_by_label = list(data_by_label)
+        self._labelled_data_by_label = data_by_label if data_by_label else None
+        self._labelled_colors = dict(colors or {})
         self._clear_labelled_artists()
         if not data_by_label:
             self.refresh_plot()
@@ -216,7 +231,9 @@ class TEPsPlot(FigureCanvas):
         xmin, xmax = self._last_xlim
         ymin, ymax = self._last_ylim
 
-        self.fig.canvas.restore_region(self.background_axes)
+        background = getattr(self, "background_axes", getattr(self, "background", None))
+        if background is not None:
+            self.fig.canvas.restore_region(background)
         for line in self.lines:
             line.set_data([], [])
 
@@ -238,7 +255,7 @@ class TEPsPlot(FigureCanvas):
                 self._labelled_artists.append(line)
 
         proxies = [
-            plt.Line2D([0], [0], color=colors.get(label, "tab:blue"), lw=2, label=label)
+            plt.Line2D([0], [0], color=self._labelled_colors.get(label, "tab:blue"), lw=2, label=label)
             for label, _ in data_by_label
         ]
         self._labelled_legend = self.ax.legend(
@@ -255,14 +272,14 @@ class TEPsPlot(FigureCanvas):
         for artist in getattr(self, "_labelled_artists", []):
             try:
                 artist.remove()
-            except ValueError:
+            except (ValueError, NotImplementedError):
                 pass
         self._labelled_artists = []
         legend = getattr(self, "_labelled_legend", None)
         if legend is not None:
             try:
                 legend.remove()
-            except ValueError:
+            except (ValueError, NotImplementedError):
                 pass
         self._labelled_legend = None
 
