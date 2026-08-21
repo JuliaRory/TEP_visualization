@@ -566,7 +566,8 @@ class MainWindow(QWidget):
         if len(epochs_to_save) == 0:
             print("---> Нет эпох текущей длины для сохранения")
             return None
-        data2save = np.array(epochs_to_save).transpose(0, 2, 1).reshape(-1, 66)      # (n_samples, n_channels)
+        n_channels = int(np.asarray(epochs_to_save[0]).shape[0])
+        data2save = np.array(epochs_to_save).transpose(0, 2, 1).reshape(-1, n_channels)      # (n_samples, n_channels)
         ts2save = np.array([ts for _, ts in epoch_records])
         # если выбран файл
         with h5py.File(file_path, "w") as h5f:
@@ -574,6 +575,7 @@ class MainWindow(QWidget):
             data.attrs["Fs"] = self.SPEED["Fs"]
             data.attrs["n_samples"] = self._n_samples
             data.attrs["n_epochs"] = len(epochs_to_save)
+            data.attrs["n_channels"] = n_channels
             
             tdata = h5f.create_dataset("timestamps", data=ts2save, dtype='int64')      # для таймстемпов резонанса (в нс)
             tdata.attrs["units"] = "ns"
@@ -642,7 +644,7 @@ class MainWindow(QWidget):
             if self._process_new_data:
                 plot = (len(self._epochs) != 0)
                 if not self._average_data:
-                    data2plot = self._transform(self._epochs[-1, :-2]*10**6)
+                    data2plot = self._data_processor.transform_eeg_epoch(self._epochs[-1])
                 else:
                     data_aver = []
                     for i in range(len(CHANNELS)):
@@ -656,9 +658,9 @@ class MainWindow(QWidget):
                 plot = (len(self._data_loaded) != 0)
                 for data_raw in self._data_loaded:
                     if not self._average_data:
-                        data2plot.append(self._transform(data_raw[-1, :-2]*10**6))     # последняя эпоха
+                        data2plot.append(self._data_processor.transform_eeg_epoch(data_raw[-1]))     # последняя эпоха
                     else:
-                        data = np.array([self._transform(np.array(TEPs[:-2, :]*10**6, dtype=float)) for TEPs in data_raw])
+                        data = np.array([self._data_processor.transform_eeg_epoch(TEPs) for TEPs in data_raw])
                         data_aver = []
 
                         for i in range(len(CHANNELS)):

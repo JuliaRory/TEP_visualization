@@ -37,12 +37,7 @@ def _load_epochs_dataset(dataset, expected_channels, eeg_channels):
     attrs = dict(dataset.attrs)
 
     if data.ndim == 3:
-        if data.shape[1] in (expected_channels, eeg_channels):
-            epochs = data
-        elif data.shape[2] in (expected_channels, eeg_channels):
-            epochs = data.transpose(0, 2, 1)
-        else:
-            raise ValueError(f"Unsupported 3D epochs shape: {data.shape}")
+        epochs = _orient_3d_epochs(data, attrs, expected_channels, eeg_channels)
         return _fit_epoch_channels(epochs, expected_channels)
 
     if data.ndim == 2:
@@ -61,14 +56,40 @@ def _load_epochs_dataset(dataset, expected_channels, eeg_channels):
 
 
 def _fit_epoch_channels(epochs, expected_channels):
-    if epochs.shape[1] == expected_channels:
+    if expected_channels is None or epochs.shape[1] >= expected_channels:
         return epochs
-    if epochs.shape[1] > expected_channels:
-        return epochs[:, :expected_channels, :]
 
     pad_shape = (epochs.shape[0], expected_channels - epochs.shape[1], epochs.shape[2])
     padding = np.zeros(pad_shape, dtype=epochs.dtype)
     return np.concatenate([epochs, padding], axis=1)
+
+
+def _orient_3d_epochs(data, attrs, expected_channels, eeg_channels):
+    attr_n_channels = int(attrs.get("n_channels", 0) or 0)
+    if attr_n_channels:
+        if data.shape[1] == attr_n_channels:
+            return data
+        if data.shape[2] == attr_n_channels:
+            return data.transpose(0, 2, 1)
+
+    expected = [n for n in (expected_channels, eeg_channels) if n]
+    if data.shape[1] in expected:
+        return data
+    if data.shape[2] in expected:
+        return data.transpose(0, 2, 1)
+
+    candidate_axes = [
+        axis for axis in (1, 2)
+        if data.shape[axis] >= eeg_channels
+    ]
+    if len(candidate_axes) == 1:
+        channel_axis = candidate_axes[0]
+    elif len(candidate_axes) == 2:
+        channel_axis = min(candidate_axes, key=lambda axis: data.shape[axis])
+    else:
+        raise ValueError(f"Unsupported 3D epochs shape: {data.shape}")
+
+    return data if channel_axis == 1 else data.transpose(0, 2, 1)
 
 
 def _mep_epochs_to_processor_epochs(epochs_mV, expected_channels):

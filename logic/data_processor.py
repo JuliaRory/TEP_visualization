@@ -97,7 +97,7 @@ class DataProcessor(QObject):
 
             if self.use_eeg and (self.average_data or self.average_tep_data):
                 recreated = self._ensure_average_functions(which="TEPs")
-                TEPs2plot = self._transform(epoch[:-2, :] * 1e6)     # without emg channels
+                TEPs2plot = self.transform_eeg_epoch(epoch)
                 if not recreated:
                     self.update_average_functions(TEPs2plot)
             
@@ -233,9 +233,25 @@ class DataProcessor(QObject):
         if len(epochs) == 0:
             return np.empty((0, len(self.settings.channels), self._n_samples))
         return np.stack([
-            self._transform(np.array(TEPs[:-2, :] * 1e6, dtype=float))
+            self.transform_eeg_epoch(TEPs)
             for TEPs in epochs
         ], axis=0)
+
+    def get_eeg_epoch(self, epoch):
+        """Return the EEG part of an epoch in volts: the first configured EEG channels."""
+        epoch = np.asarray(epoch, dtype=float)
+        if epoch.ndim != 2:
+            raise ValueError(f"Expected epoch with shape [n_channels, n_samples], got {epoch.shape}")
+
+        n_eeg = len(self.settings.channels)
+        if epoch.shape[0] < n_eeg:
+            raise ValueError(f"Expected at least {n_eeg} EEG channels, got {epoch.shape[0]}")
+
+        return epoch[:n_eeg, :]
+
+    def transform_eeg_epoch(self, epoch):
+        """Extract configured EEG channels and apply the TEP processing pipeline."""
+        return self._transform(self.get_eeg_epoch(epoch) * 1e6)
     
     def get_emg_epochs(self):
         epochs = self._current_length_epochs()

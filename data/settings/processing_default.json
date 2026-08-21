@@ -32,7 +32,7 @@
         "Fz"
     ],
     "processing_settings": {
-        "use_eeg": false,
+        "use_eeg": true,
         "do_averaging": true,
         "do_lowpass_filtering": true,
         "do_rereferencing": false,
@@ -126,7 +126,7 @@
         "activate_bat": true,
         "service_name": "nvx136",
         "stream_name": "eeg",
-        "records_folder": "D:\\2026 - feetStim\\test\\05AV_eeg_tms",
+        "records_folder": "D:\\2026 - feetStim\\test\\06TP_eeg_tms",
         "bat_nvx136_25Hz": "D:/Resonance/distro-dual/msvc/NVX136.bat",
         "bat_nvx136_impedance": "D:/Resonance/distro-dual/msvc/impedanceChecker_64_2.bat",
         "use_number": true,
@@ -141,8 +141,8 @@
         "spot": "M1",
         "coil": "",
         "yaw_angle": "AP",
-        "power": "58",
-        "comments": "TMS_heel_+60_2"
+        "power": "48",
+        "comments": "force_MT1"
     },
     "stimuli_control": {
         "monitor": 3,
@@ -151,8 +151,8 @@
         "stimuli_filename": "resources/saved_stimuli.json",
         "video_folder": "resources/videoSamples",
         "stimuli_volume": 60,
-        "isi_min_s": 1.5,
-        "isi_max_s": 1.9999999999999991,
+        "isi_min_s": 1.5000000000000002,
+        "isi_max_s": 2.0000000000000004,
         "phases_delay_ms": 0,
         "antiponk_wait_tension": false,
         "antiponk_tension_timeout_ms": 1000,
