@@ -18,3 +18,21 @@ resonance.TcpStreamReceiver: Failed to connect to  QUrl("tcp-ip://192.168.1.94:6
 [0000022f9ec12940] wingdi vout display error: SetThumbNailClip failed: 0x800706f4
 
 нормальный сценарий: [0000018264e9fff0] avcodec decoder: Using D3D11VA (NVIDIA GeForce GTX 1060 3GB, vendor 10de(NVIDIA), device 1c02, revision a1) for hardware decoding
+
+
+Traceback (most recent call last):
+  File "c:\Users\hodor\Documents\lab-MSU\Works\2025.10_TMS\TEP_visualization\ui\main_window.py", line 559, in _on_epoch_label_filter_changed
+    self._refresh_label_filtered_plots()
+  File "c:\Users\hodor\Documents\lab-MSU\Works\2025.10_TMS\TEP_visualization\ui\main_window.py", line 577, in _refresh_label_filtered_plots
+    self._plot_updater.clear_plots()
+  File "c:\Users\hodor\Documents\lab-MSU\Works\2025.10_TMS\TEP_visualization\logic\plot_updater.py", line 374, in clear_plots
+    self.topo_panel.figure.refresh_plot()
+  File "c:\Users\hodor\Documents\lab-MSU\Works\2025.10_TMS\TEP_visualization\ui\widgets\teps_plot.py", line 307, in refresh_plot
+    self.update_data(empty_lines)
+  File "c:\Users\hodor\Documents\lab-MSU\Works\2025.10_TMS\TEP_visualization\ui\widgets\teps_plot.py", line 184, in update_data
+    self._clear_labelled_artists()
+  File "c:\Users\hodor\Documents\lab-MSU\Works\2025.10_TMS\TEP_visualization\ui\widgets\teps_plot.py", line 257, in _clear_labelled_artists
+    artist.remove()
+  File "C:\Users\hodor\Documents\lab-MSU\Works\2025.10_TMS\TEP_visualization\venv\Lib\site-packages\matplotlib\artist.py", line 256, in remove
+    raise NotImplementedError('cannot remove artist')
+NotImplementedError: cannot remove artist

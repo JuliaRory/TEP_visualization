@@ -112,7 +112,7 @@ class TopoTEPsPanel(QFrame):
             parent=self,
         )
         self.label_epoch_label_counts = QLabel("", parent=self)
-        set_font(self.label_epoch_label_counts, 10, False, 'stimulus_a: 100 | stimulus_b: 100')
+        set_font(self.label_epoch_label_counts, 10, False, 'stimulus_a: 100 | stimulus_b: 100 | stimulus_b: 100 | stimulus_b: 100 | stimulus_b: 100 | stimulus_b: 100 | stimulus_b: 100 | stimulus_b: 100 | stimulus_b: 100')
         
 
         """Создаём полотно для графиков"""
@@ -291,10 +291,11 @@ class TopoTEPsPanel(QFrame):
         label_control_width = max(120, min(180, panel_width // 6))
         self.combo_box_epoch_label_source.resize(label_control_width, height + 6)
         self.combo_box_epoch_label_filter.resize(label_control_width, height + 6)
-        self.combo_box_epoch_label_source.move(10, 32)
-        self.combo_box_epoch_label_filter.move(10, 32 + height + 10)
+        hpad = 50
+        self.combo_box_epoch_label_source.move(10, panel_height - 32 - hpad)
+        self.combo_box_epoch_label_filter.move(10, panel_height - 32 + height + 10 - hpad)
         self.label_epoch_label_counts.resize(max(220, panel_width // 3), height + 10)
-        self.label_epoch_label_counts.move(10, 32 + 2 * (height + 10))
+        self.label_epoch_label_counts.move(10, panel_height - 32 + 2 * (height + 10) - hpad)
 
         self.processing_ui.move(panel_width-self.processing_ui.width(), 0)
 
