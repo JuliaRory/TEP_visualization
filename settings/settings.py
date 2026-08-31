@@ -52,9 +52,9 @@ class ProcessingSettings:
 
 @dataclass
 class RecordSettings:
-    bat_file: str = "C:/Users/hodor/Documents/lab-MSU/Resonance2026/msvc64/control.bat"
+    bat_file: str = "D:/resonance_20260821/dist/msvc64/control.bat"
     bat_file_home: str = "C:/Users/hodor/Documents/lab-MSU/Resonance2026/msvc64/control.bat"
-    recorder_bat_file: str = "C:/Users/hodor/Documents/lab-MSU/Resonance2026/msvc64/recorderService_nvxstream.bat"
+    recorder_bat_file: str = "D:/resonance_20260821/dist/msvc64/recorderService_nvxStrean.bat"
     activate_bat: bool = True
     recorder_service_name: str = "Recorder"
     service_name: str = "nvx136"
@@ -91,8 +91,8 @@ class StimuliSettings:
     stimuli_filename: str = "resources/saved_stimuli.json"
     video_folder: str = "resources/videoSamples"
     stimuli_volume: int = 60
-    isi_min_s: float = 1.5
-    isi_max_s: float = 3.0
+    isi_min_s: float = 1.0
+    isi_max_s: float = 1.5
     phases_delay_ms: int = 0
     antiponk_wait_tension: bool = False
     antiponk_tension_timeout_ms: int = 1000
@@ -120,9 +120,9 @@ class StimuliSettings:
     hand_pic: str = r"resources/bci/FDI_r_style1_base.png"
     rest_pic: str = r"resources/bci/rest.png"
     background_pic: str = r"resources/bci/background.png"
-    stimuli_dur: int = 5000
-    bci_isi_min_ms: int = 500 
-    bci_isi_max_ms: int = 1000
+    stimuli_dur: int = 7000
+    bci_isi_min_ms: int = 1000 
+    bci_isi_max_ms: int = 1500
     bci_ponk_isi_max_ms: int = 500
     bci_ponk_isi_min_ms: int = 200
     bci_mep_bins: List[dict] = field(default_factory=lambda: [
@@ -210,7 +210,7 @@ class Settings:
     speed: SpeedSettings = field(default_factory=SpeedSettings)
 
     SPEED_settings_path: str = "./SPEED_settings.json"
-    speed_settings_export_path: str = "C:/Users/hodor/Documents/lab-MSU/Resonance2026/msvc64/mulines/resources/SPEED_settings.json"
+    speed_settings_export_path: str = "D:\\resonance_20260821\\dist\\msvc64\\mulines\\resources\\SPEED_settings.json"
 
     channels: List[str] = field(default_factory=lambda: ['T7', 'TP9', 'P7', 'CP5', 'FT9', 'F7', 'FC5', 'F3', 'P3', 'C3', 'CP1', 'O1', 'Fp1',
                                                             'FC1', 'Fz', 'Fp2', 'Cz', 'FC2', 'CP2', 'Pz', 'O2', 'Oz', 'C4', 'P4', 'F4', 'FC6',

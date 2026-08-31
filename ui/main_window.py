@@ -668,52 +668,49 @@ class MainWindow(QWidget):
         if len(raw_epochs) == 0:
             print("---> Нет эпох для сохранения")
             return None
-<<<<<<< HEAD
-=======
 
         return self._save_epochs_export(file_path, raw_epoch_records, raw_epochs)
 
-        shape_counts = {}
-        for epoch in epochs_to_save:
-            shape = tuple(np.asarray(epoch).shape)
-            shape_counts[shape] = shape_counts.get(shape, 0) + 1
-        save_shape = max(shape_counts, key=shape_counts.get)
-        if len(shape_counts) > 1:
-            print(f"---> Эпохи имеют разные исходные формы {shape_counts}; сохраняю форму {save_shape}")
-            epoch_records = [
-                (epoch, ts)
-                for epoch, ts in epoch_records
-                if tuple(np.asarray(epoch).shape) == save_shape
-            ]
-            epochs_to_save = [epoch for epoch, _ in epoch_records]
+        # shape_counts = {}
+        # for epoch in epochs_to_save:
+        #     shape = tuple(np.asarray(epoch).shape)
+        #     shape_counts[shape] = shape_counts.get(shape, 0) + 1
+        # save_shape = max(shape_counts, key=shape_counts.get)
+        # if len(shape_counts) > 1:
+        #     print(f"---> Эпохи имеют разные исходные формы {shape_counts}; сохраняю форму {save_shape}")
+        #     epoch_records = [
+        #         (epoch, ts)
+        #         for epoch, ts in epoch_records
+        #         if tuple(np.asarray(epoch).shape) == save_shape
+        #     ]
+        #     epochs_to_save = [epoch for epoch, _ in epoch_records]
 
->>>>>>> 7c943763297424c899b81ab3ab47b7788a1bfff6
-        n_channels = int(np.asarray(epochs_to_save[0]).shape[0])
-        data2save = np.array(epochs_to_save).transpose(0, 2, 1).reshape(-1, n_channels)      # (n_samples, n_channels)
-        ts2save = np.array([ts for _, ts in epoch_records])
-        # если выбран файл
-        with h5py.File(file_path, "w") as h5f:
-            h5f.create_dataset("processed_epochs", data=self._data_processor.processed_epoch_records(), dtype='float32')      # для эпох (64 EEG + 2 EMG)
+        # n_channels = int(np.asarray(epochs_to_save[0]).shape[0])
+        # data2save = np.array(epochs_to_save).transpose(0, 2, 1).reshape(-1, n_channels)      # (n_samples, n_channels)
+        # ts2save = np.array([ts for _, ts in epoch_records])
+        # # если выбран файл
+        # with h5py.File(file_path, "w") as h5f:
+        #     h5f.create_dataset("processed_epochs", data=self._data_processor.processed_epoch_records(), dtype='float32')      # для эпох (64 EEG + 2 EMG)
 
-            data = h5f.create_dataset("epochs", data=data2save, dtype='float32')      # для эпох (64 EEG + 2 EMG)
-            data.attrs["Fs"] = self.settings.processing_settings.current_sampling_rate_Hz
-            data.attrs["source_Fs"] = self.settings.processing_settings.current_sampling_rate_Hz
-            data.attrs["effective_Fs"] = getattr(
-                self._data_processor,
-                "effective_sampling_rate_Hz",
-                getattr(
-                    self._data_processor,
-                    "_sampling_rate_Hz",
-                    self.settings.processing_settings.current_sampling_rate_Hz,
-                ),
-            )
-            data.attrs["resampled"] = False
-            data.attrs["n_samples"] = int(np.asarray(epochs_to_save[0]).shape[-1])
-            data.attrs["n_epochs"] = len(epochs_to_save)
-            data.attrs["n_channels"] = n_channels
+        #     data = h5f.create_dataset("epochs", data=data2save, dtype='float32')      # для эпох (64 EEG + 2 EMG)
+        #     data.attrs["Fs"] = self.settings.processing_settings.current_sampling_rate_Hz
+        #     data.attrs["source_Fs"] = self.settings.processing_settings.current_sampling_rate_Hz
+        #     data.attrs["effective_Fs"] = getattr(
+        #         self._data_processor,
+        #         "effective_sampling_rate_Hz",
+        #         getattr(
+        #             self._data_processor,
+        #             "_sampling_rate_Hz",
+        #             self.settings.processing_settings.current_sampling_rate_Hz,
+        #         ),
+        #     )
+        #     data.attrs["resampled"] = False
+        #     data.attrs["n_samples"] = int(np.asarray(epochs_to_save[0]).shape[-1])
+        #     data.attrs["n_epochs"] = len(epochs_to_save)
+        #     data.attrs["n_channels"] = n_channels
             
-            tdata = h5f.create_dataset("timestamps", data=ts2save, dtype='int64')      # для таймстемпов резонанса (в нс)
-            tdata.attrs["units"] = "ns"
+        #     tdata = h5f.create_dataset("timestamps", data=ts2save, dtype='int64')      # для таймстемпов резонанса (в нс)
+        #     tdata.attrs["units"] = "ns"
 
     def _save_epochs_export(self, file_path, raw_epoch_records, raw_epochs):
         raw_timestamps = np.asarray([ts for _, ts in raw_epoch_records], dtype=np.int64)
@@ -1049,38 +1046,14 @@ class MainWindow(QWidget):
             return
         epochs = getattr(processor, "_eeg_epochs", [])
         if self.params["TEP_suppl_plot"]["topoplot"]["draw"]:
-<<<<<<< HEAD
-            if self._process_new_data:
-                plot = (len(self._epochs) != 0)
-                if not self._average_data:
-                    data2plot = self._data_processor.transform_eeg_epoch(self._epochs[-1])
-=======
             if processor.process_new_data:
                 plot = (len(epochs) != 0)
                 if not processor.average_data:
                     data2plot = processor.transform_eeg_epoch(processor.get_eeg_epoch_by_index(-1))
->>>>>>> 7c943763297424c899b81ab3ab47b7788a1bfff6
                 else:
                     data2plot = processor.calculate_avg_TEP()
             else:
                 data2plot = []
-<<<<<<< HEAD
-                plot = (len(self._data_loaded) != 0)
-                for data_raw in self._data_loaded:
-                    if not self._average_data:
-                        data2plot.append(self._data_processor.transform_eeg_epoch(data_raw[-1]))     # последняя эпоха
-                    else:
-                        data = np.array([self._data_processor.transform_eeg_epoch(TEPs) for TEPs in data_raw])
-                        data_aver = []
-
-                        for i in range(len(CHANNELS)):
-                            average_functions = [function(data[:, i, j], self.n_aver_max, self.aver_all)
-                                for j in range(self._n_samples)
-                            ]
-                            average_TEPs = np.array([f.calculate() for f in average_functions])  # усреднённые TEPs
-                            data_aver.append(average_TEPs)
-                        data2plot.append(np.array(data_aver))
-=======
                 data_loaded = getattr(self, "_data_loaded", [])
                 plot = (len(data_loaded) != 0)
                 for data_raw in data_loaded:
@@ -1089,7 +1062,6 @@ class MainWindow(QWidget):
                     else:
                         data = np.array([processor.transform_eeg_epoch(TEPs) for TEPs in data_raw])
                         data2plot.append(np.nanmean(data, axis=0))
->>>>>>> 7c943763297424c899b81ab3ab47b7788a1bfff6
         if plot:
             plot_data = data2plot[0] if isinstance(data2plot, list) else data2plot
             plot_data = np.asarray(plot_data)

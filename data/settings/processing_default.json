@@ -34,11 +34,11 @@
     "processing_settings": {
         "use_eeg": true,
         "do_averaging": true,
-        "epoch_window_start_ms": -300,
-        "epoch_window_end_ms": 600,
+        "epoch_window_start_ms": -100,
+        "epoch_window_end_ms": 300,
         "current_sampling_rate_Hz": 5000,
-        "do_resampling": true,
-        "resample_freq_Hz": 500,
+        "do_resampling": false,
+        "resample_freq_Hz": 2000,
         "do_highpass_filtering": false,
         "do_lowpass_filtering": true,
         "do_rereferencing": false,
@@ -51,8 +51,8 @@
             "trimmean"
         ],
         "curr_aver_method": "mean",
-        "highpass_freq_Hz": 0.01,
-        "lowpass_freq_Hz": 45,
+        "highpass_freq_Hz": 1.0,
+        "lowpass_freq_Hz": 250,
         "rereference_channel": [
             "Fz"
         ],
@@ -88,11 +88,7 @@
         "recorder_service_name": "Recorder",
         "service_name": "nvx136",
         "stream_name": "eeg",
-<<<<<<< HEAD
-        "records_folder": "D:\\2026 - feetStim\\test\\06TP_eeg_tms",
-=======
-        "records_folder": "C:\\Users\\hodor\\Documents\\lab-MSU\\Works\\2025.10_TMS\\TEP_visualization\\data",
->>>>>>> 7c943763297424c899b81ab3ab47b7788a1bfff6
+        "records_folder": "D:\\2026 - feetStim\\test\\07TP_eeg_tms 2",
         "bat_nvx136_25Hz": "D:/Resonance/distro-dual/msvc/NVX136.bat",
         "bat_nvx136_impedance": "D:/Resonance/distro-dual/msvc/impedanceChecker_64_2.bat",
         "use_number": true,
@@ -100,15 +96,15 @@
         "use_spot": false,
         "use_coil": false,
         "use_yaw_angle": false,
-        "use_power": false,
+        "use_power": true,
         "use_comments": true,
-        "number": "14",
+        "number": "21",
         "subject": "01TP",
         "spot": "M1",
         "coil": "",
         "yaw_angle": "AP",
-        "power": "48",
-        "comments": "force_MT1"
+        "power": "52",
+        "comments": "TMS_heel6"
     },
     "stimuli_control": {
         "monitor": 3,
@@ -117,8 +113,8 @@
         "stimuli_filename": "resources/saved_stimuli.json",
         "video_folder": "resources/videoSamples",
         "stimuli_volume": 60,
-        "isi_min_s": 1.5000000000000002,
-        "isi_max_s": 2.0000000000000004,
+        "isi_min_s": 1.5,
+        "isi_max_s": 1.9999999999999991,
         "phases_delay_ms": 0,
         "antiponk_wait_tension": false,
         "antiponk_tension_timeout_ms": 1000,
@@ -158,7 +154,7 @@
         "stimuli_dur": 5000,
         "bci_isi_min_ms": 500,
         "bci_isi_max_ms": 1000,
-        "bci_ponk_isi_max_ms": 500,
+        "bci_ponk_isi_max_ms": 400,
         "bci_ponk_isi_min_ms": 200,
         "bci_mep_bins": [
             {
@@ -225,25 +221,25 @@
         "right_ratio": 0.5
     },
     "speed": {
-        "bit": 2,
-        "window_start": -300,
-        "window_end": 600,
-        "artifact": false,
+        "bit": 0,
+        "window_start": -100,
+        "window_end": 300,
+        "artifact": true,
         "artifact_start": -0.04,
         "artifact_end": 0.85,
         "notch": true,
         "notch_fr": 50,
         "notch_harmonics": true,
         "highpass": true,
-        "low_freq": 0.01,
+        "low_freq": 1.0,
         "lowpass": true,
-        "high_freq": 1000.0,
-        "resampling": false,
-        "Fs_orig": 5000,
-        "Fs": 2000
+        "high_freq": 2500.0,
+        "resampling": true,
+        "Fs_orig": 25000,
+        "Fs": 5000
     },
     "SPEED_settings_path": "./SPEED_settings.json",
-    "speed_settings_export_path": "C:/Users/hodor/Documents/lab-MSU/Resonance2026/msvc64/mulines/resources/SPEED_settings.json",
+    "speed_settings_export_path": "D:/resonance_20260821/dist/msvc64/mulines/resources/SPEED_settings.json",
     "channels": [
         "T7",
         "TP9",

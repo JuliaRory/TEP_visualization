@@ -6,11 +6,7 @@
     "recorder_service_name": "Recorder",
     "service_name": "nvx136",
     "stream_name": "eeg",
-<<<<<<< HEAD
-    "records_folder": "D:\\2026 - feetStim\\test\\06TP_eeg_tms",
-=======
-    "records_folder": "C:\\Users\\hodor\\Documents\\lab-MSU\\Works\\2025.10_TMS\\TEP_visualization\\data",
->>>>>>> 7c943763297424c899b81ab3ab47b7788a1bfff6
+    "records_folder": "D:\\2026 - feetStim\\test\\07TP_eeg_tms 2",
     "bat_nvx136_25Hz": "D:/Resonance/distro-dual/msvc/NVX136.bat",
     "bat_nvx136_impedance": "D:/Resonance/distro-dual/msvc/impedanceChecker_64_2.bat",
     "use_number": true,
@@ -18,13 +14,13 @@
     "use_spot": false,
     "use_coil": false,
     "use_yaw_angle": false,
-    "use_power": false,
+    "use_power": true,
     "use_comments": true,
-    "number": "14",
+    "number": "21",
     "subject": "01TP",
     "spot": "M1",
     "coil": "",
     "yaw_angle": "AP",
-    "power": "48",
-    "comments": "force_MT1"
+    "power": "52",
+    "comments": "TMS_heel6"
 }

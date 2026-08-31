@@ -60,12 +60,7 @@ class PlotUpdater:
             if processor.average_data:
                 TEPs2plot = processor.calculate_avg_TEP() # взять все сохранённые эпохи и вернуть усреднённые ТЕР
             else:
-<<<<<<< HEAD
-                TEPs2plot = processor.transform_eeg_epoch(processor._epochs[-1])    # взять последнюю преобразованную эпоху
-                # TEPs2plot = processor.apply_transform(processor._epochs[-1][:-1, :])    # взять последнюю преобразованную эпоху
-=======
                 TEPs2plot = processor.transform_eeg_epoch(eeg_epoch)    # взять последнюю преобразованную эпоху
->>>>>>> 7c943763297424c899b81ab3ab47b7788a1bfff6
             
             self.topo_panel.figure.update_data(TEPs2plot)
 
@@ -89,12 +84,7 @@ class PlotUpdater:
                 processor._ensure_average_functions(which="TEPs")
                 TEPs2plot = processor.calculate_avg_TEP() # взять все сохранённые эпохи и вернуть усреднённые ТЕР
             else:
-<<<<<<< HEAD
-                TEPs2plot = processor.transform_eeg_epoch(processor._epochs[-1])    # взять последнюю преобразованную эпоху
-                # TEPs2plot = processor.apply_transform(processor._epochs[-1][:-1, :])    # взять последнюю преобразованную эпоху
-=======
                 TEPs2plot = processor.transform_eeg_epoch(eeg_epoch)    # взять последнюю преобразованную эпоху
->>>>>>> 7c943763297424c899b81ab3ab47b7788a1bfff6
 
             self.overview_panel.figure_TEP.update_TEPs(TEPs2plot)
 
@@ -417,14 +407,9 @@ class PlotUpdater:
         if n_epoch < 1 or n_epoch > processor._n_epoch:
             return
 
-<<<<<<< HEAD
-        if getattr(processor, "use_eeg", True):
-            TEPs2plot = processor.transform_eeg_epoch(processor._epochs[n_epoch-1])
-=======
         eeg_epoch = processor.get_eeg_epoch_by_index(n_epoch - 1)
         if getattr(processor, "use_eeg", True) and eeg_epoch is not None:
             TEPs2plot = processor.transform_eeg_epoch(eeg_epoch)
->>>>>>> 7c943763297424c899b81ab3ab47b7788a1bfff6
             self.topo_panel.figure.update_data(TEPs2plot)
             self.overview_panel.figure_TEP.update_TEPs(TEPs2plot)
 

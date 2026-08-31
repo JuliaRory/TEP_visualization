@@ -169,11 +169,7 @@ class DataProcessor(QObject):
 
             if self.use_eeg and (self.average_data or self.average_tep_data):
                 recreated = self._ensure_average_functions(which="TEPs")
-<<<<<<< HEAD
-                TEPs2plot = self.transform_eeg_epoch(epoch)
-=======
                 TEPs2plot = self.transform_eeg_epoch(eeg_epoch)
->>>>>>> 7c943763297424c899b81ab3ab47b7788a1bfff6
                 if not recreated:
                     self.update_average_functions(TEPs2plot)
             
@@ -582,11 +578,8 @@ class DataProcessor(QObject):
 
     def get_eeg_epoch(self, epoch):
         """Return the EEG part of an epoch in volts: the first configured EEG channels."""
-<<<<<<< HEAD
-=======
         if epoch is None:
             raise ValueError("Expected EEG epoch, got None")
->>>>>>> 7c943763297424c899b81ab3ab47b7788a1bfff6
         epoch = np.asarray(epoch, dtype=float)
         if epoch.ndim != 2:
             raise ValueError(f"Expected epoch with shape [n_channels, n_samples], got {epoch.shape}")
