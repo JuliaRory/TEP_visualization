@@ -26,6 +26,9 @@ class StimuliPresentation_onefile(QWidget):
         stimuliFinished (pyqtSignal): срабатывает после окончания всего воспроизведения
     """
     stimuliFinished = pyqtSignal()
+    stimulusStarted = pyqtSignal(str)
+    stimulusFinished = pyqtSignal(str)
+    stimulus = pyqtSignal(str)
 
     def __init__(self, stimuli_sequence, save=True, sequence_name=None, monitor=1):
         super().__init__()
@@ -43,6 +46,7 @@ class StimuliPresentation_onefile(QWidget):
         # self._stimuli_files = [os.path.abspath(f) for f in stimuli_files]
         # self._order = order
         self._current_video_index = 0
+        self._current_stimulus = None
         try: 
             self._temp_file = stimuli_sequence["filename"]
         except:
@@ -146,7 +150,9 @@ class StimuliPresentation_onefile(QWidget):
         return temp_file
 
     def _play_current_video(self):
-        self._player.set_media(self._instance.media_new(self._playlist[self._current_video_index]))
+        stimulus = self._playlist[self._current_video_index]
+        self._player.set_media(self._instance.media_new(stimulus))
+        self._emit_stimulus_started(stimulus)
         self._player.play()
         self._timer.start()
 
@@ -154,6 +160,7 @@ class StimuliPresentation_onefile(QWidget):
         state = self._player.get_state()
         if state in (vlc.State.Ended, vlc.State.Stopped, vlc.State.Error):
             self._timer.stop()
+            self._emit_stimulus_finished()
             self._current_video_index += 1
             if self._current_video_index < len(self._playlist):
                 self._play_current_video()
@@ -163,6 +170,7 @@ class StimuliPresentation_onefile(QWidget):
 
     def _cleanup(self):
         """Остановить плеер и удалить временный файл"""
+        self._emit_stimulus_finished()
         if self._player is not None:
             self._player.stop()
             self._player.set_media(None)
@@ -177,6 +185,20 @@ class StimuliPresentation_onefile(QWidget):
                 print(f"Не удалось удалить временный файл: {self._temp_file}")
 
         self.close()
+
+    def _emit_stimulus_started(self, stimulus):
+        self._emit_stimulus_finished()
+        self._current_stimulus = str(stimulus)
+        self.stimulusStarted.emit(self._current_stimulus)
+        self.stimulus.emit(self._current_stimulus)
+
+    def _emit_stimulus_finished(self):
+        if self._current_stimulus is None:
+            return
+
+        stimulus = self._current_stimulus
+        self._current_stimulus = None
+        self.stimulusFinished.emit(stimulus)
 
     def keyPressEvent(self, event):
         """Esc для остановки воспроизведения"""

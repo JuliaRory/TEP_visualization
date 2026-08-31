@@ -81,7 +81,6 @@ class StimuliPresentationPhases(StimuliPresentation_one_by_one):
 
         self._current_index = 0
         self.currIdxChanged.emit(self._current_index)
-        self.stimulus.emit(self.video_names[self._current_index])
 
         self._prepare_next_video()
         print("[VLC player Phases]: press Space to start.")
@@ -147,7 +146,7 @@ class StimuliPresentationPhases(StimuliPresentation_one_by_one):
         stimulus_number = int(self.order[self._current_index])
         base_filename = self.video_names_by_number[stimulus_number]
         filename, media = self._resolve_media(stimulus_number, base_filename)
-        self.stimulus.emit(filename)
+        self._emit_stimulus_started(filename)
 
         if self._current_index == 0:
             self._show_marker()

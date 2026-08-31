@@ -26,6 +26,8 @@ class StimuliPresentation_one_by_one(QWidget):
     _videoEnded = pyqtSignal()
     _videoFrameReady = pyqtSignal(int)
 
+    stimulusStarted = pyqtSignal(str)
+    stimulusFinished = pyqtSignal(str)
     stimulus = pyqtSignal(str)
 
     def __init__(self, monitor=1, volume=80, rest_stimulus_variants=None):
@@ -50,6 +52,7 @@ class StimuliPresentation_one_by_one(QWidget):
         self._is_paused = False
         self._playback_token = 0
         self._waiting_for_first_frame = False
+        self._current_stimulus = None
         self._cross_started_at = None
         self._cross_remaining_ms = 0
         self._isi_min_s = 1.5
@@ -140,7 +143,6 @@ class StimuliPresentation_one_by_one(QWidget):
 
         self._current_index = 0
         self.currIdxChanged.emit(self._current_index)
-        self.stimulus.emit(self.video_names[self._current_index])
 
         self._prepare_next_video()
         print("[VLC player]: press Space to start.")
@@ -196,7 +198,7 @@ class StimuliPresentation_one_by_one(QWidget):
             self._placeholder_widget.setPixmap(self._main_cross_pic)
 
         self._placeholder_widget.show()
-        self.stimulus.emit(self.video_names[self._current_index])
+        self._emit_stimulus_started(self.video_names[self._current_index])
 
         if self._current_index == 0:
             self._show_marker()
@@ -231,10 +233,25 @@ class StimuliPresentation_one_by_one(QWidget):
         if self._stopped:
             return
 
+        self._emit_stimulus_finished()
         self._waiting_for_first_frame = False
         self._placeholder_widget.show()
         self._show_marker()
         self._start_cross_interval(self._get_random_isi_ms())
+
+    def _emit_stimulus_started(self, stimulus):
+        self._emit_stimulus_finished()
+        self._current_stimulus = str(stimulus)
+        self.stimulusStarted.emit(self._current_stimulus)
+        self.stimulus.emit(self._current_stimulus)
+
+    def _emit_stimulus_finished(self):
+        if self._current_stimulus is None:
+            return
+
+        stimulus = self._current_stimulus
+        self._current_stimulus = None
+        self.stimulusFinished.emit(stimulus)
 
     def set_isi_range(self, min_s, max_s):
         min_s = float(min_s)
@@ -345,6 +362,7 @@ class StimuliPresentation_one_by_one(QWidget):
         self._finished = False
         self._playback_token += 1
         self._waiting_for_first_frame = False
+        self._emit_stimulus_finished()
         self._cross_timer.stop()
         self._cross_started_at = None
         self._cross_remaining_ms = 0
@@ -362,6 +380,7 @@ class StimuliPresentation_one_by_one(QWidget):
         self._stopped = True
         self._playback_token += 1
         self._waiting_for_first_frame = False
+        self._emit_stimulus_finished()
         self._cross_timer.stop()
         self._cross_started_at = None
         self._cross_remaining_ms = 0

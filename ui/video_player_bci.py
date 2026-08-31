@@ -29,6 +29,8 @@ class StimuliPresentation_BCI(QWidget):
     _videoEnded = pyqtSignal()
     _videoFrameReady = pyqtSignal(int)
 
+    stimulusStarted = pyqtSignal(str)
+    stimulusFinished = pyqtSignal(str)
     stimulus = pyqtSignal(str)
 
     def __init__(self, monitor=1, volume=80, rest_stimulus_variants=None, settings=None):
@@ -55,6 +57,7 @@ class StimuliPresentation_BCI(QWidget):
         self._is_paused = False
         self._playback_token = 0
         self._waiting_for_first_frame = False
+        self._current_stimulus = None
         self._countdown_running = False
         self._ponk_started = False
         self._cross_started_at = None
@@ -179,7 +182,6 @@ class StimuliPresentation_BCI(QWidget):
 
         self._current_index = 0
         self.currIdxChanged.emit(self._current_index)
-        self.stimulus.emit(self._decipher[str(self.order[self._current_index])])
 
         # self._prepare_next_video()
         print("[VLC player]: press Space to start.")
@@ -237,7 +239,7 @@ class StimuliPresentation_BCI(QWidget):
         self._placeholder_widget.setPixmap(next_stimuli)
         self._placeholder_widget.show()
 
-        self.stimulus.emit(self._decipher[str(self.order[self._current_index])])
+        self._emit_stimulus_started(self._decipher[str(self.order[self._current_index])])
         
         self._current_index += 1
         self.currIdxChanged.emit(self._current_index)
@@ -250,11 +252,26 @@ class StimuliPresentation_BCI(QWidget):
         self._stimuli_timer.stop()
         self._stimuli_started_at = None
         self._stimuli_remaining_ms = 0
+        self._emit_stimulus_finished()
 
         self._placeholder_widget.setPixmap(self._intro_pic)
         self._placeholder_widget.show()
 
         self._start_cross_interval(self._get_random_isi_ms())
+
+    def _emit_stimulus_started(self, stimulus):
+        self._emit_stimulus_finished()
+        self._current_stimulus = str(stimulus)
+        self.stimulusStarted.emit(self._current_stimulus)
+        self.stimulus.emit(self._current_stimulus)
+
+    def _emit_stimulus_finished(self):
+        if self._current_stimulus is None:
+            return
+
+        stimulus = self._current_stimulus
+        self._current_stimulus = None
+        self.stimulusFinished.emit(stimulus)
 
 
     def _handle_video_frame_ready(self, playback_token):
@@ -543,6 +560,7 @@ class StimuliPresentation_BCI(QWidget):
         self._finished = False
         self._playback_token += 1
         self._waiting_for_first_frame = False
+        self._emit_stimulus_finished()
         self._countdown_running = False
         self._ponk_started = False
         self._cross_timer.stop()
@@ -570,6 +588,7 @@ class StimuliPresentation_BCI(QWidget):
         self._stopped = True
         self._playback_token += 1
         self._waiting_for_first_frame = False
+        self._emit_stimulus_finished()
         self._countdown_running = False
         self._cross_timer.stop()
         self._cross_started_at = None

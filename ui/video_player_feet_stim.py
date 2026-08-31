@@ -29,6 +29,8 @@ class StimuliPresentationFeetStim(QWidget):
     _videoEnded = pyqtSignal()
     _videoFrameReady = pyqtSignal(int)
 
+    stimulusStarted = pyqtSignal(str)
+    stimulusFinished = pyqtSignal(str)
     stimulus = pyqtSignal(str)
 
     def __init__(self, monitor=1, volume=80):
@@ -51,6 +53,7 @@ class StimuliPresentationFeetStim(QWidget):
         self._is_paused = False
         self._playback_token = 0
         self._waiting_for_first_frame = False
+        self._current_stimulus = None
         self._countdown_running = False
         self._command_started_at = None
         self._command_remaining_ms = 0
@@ -94,6 +97,11 @@ class StimuliPresentationFeetStim(QWidget):
         self._final_picture_timer = QTimer(self)
         self._final_picture_timer.setSingleShot(True)
         self._final_picture_timer.timeout.connect(self._show_final_picture)
+
+        self._stimulus_finish_timer = QTimer(self)
+        self._stimulus_finish_timer.setSingleShot(True)
+        self._stimulus_finish_timer.setTimerType(Qt.PreciseTimer)
+        self._stimulus_finish_timer.timeout.connect(self._emit_stimulus_finished)
 
         self._photomark_delay_timer = QTimer(self)
         self._photomark_delay_timer.setSingleShot(True)
@@ -245,8 +253,9 @@ class StimuliPresentationFeetStim(QWidget):
 
         command = self._commands[self._current_index]
         self._last_photomark_duration_ms = 0
-        self.stimulus.emit(command)
+        self._emit_stimulus_started(command)
         photomark_duration_ms = self._last_photomark_duration_ms
+        self._finish_active_stimulus_after(photomark_duration_ms)
         self._current_index += 1
         self.currIdxChanged.emit(self._current_index)
 
@@ -261,6 +270,7 @@ class StimuliPresentationFeetStim(QWidget):
 
         self._final_picture_timer.stop()
         print("[VLC player feetStim]: stimuli sequence has ended.")
+        self._emit_stimulus_finished()
         self._finished = True
         self._stop_photomark_sequence()
         self._set_placeholder_pixmap(self.final_pic_path)
@@ -273,6 +283,28 @@ class StimuliPresentationFeetStim(QWidget):
             self._show_final_picture()
         else:
             self._final_picture_timer.start(delay_ms)
+
+    def _emit_stimulus_started(self, stimulus):
+        self._emit_stimulus_finished()
+        self._current_stimulus = str(stimulus)
+        self.stimulusStarted.emit(self._current_stimulus)
+        self.stimulus.emit(self._current_stimulus)
+
+    def _emit_stimulus_finished(self):
+        self._stimulus_finish_timer.stop()
+        if self._current_stimulus is None:
+            return
+
+        stimulus = self._current_stimulus
+        self._current_stimulus = None
+        self.stimulusFinished.emit(stimulus)
+
+    def _finish_active_stimulus_after(self, delay_ms):
+        delay_ms = max(0, int(delay_ms))
+        if delay_ms == 0:
+            self._emit_stimulus_finished()
+        else:
+            self._stimulus_finish_timer.start(delay_ms)
 
     def _start_command_interval(self, duration_ms):
         self._command_remaining_ms = max(0, int(duration_ms))
@@ -426,6 +458,7 @@ class StimuliPresentationFeetStim(QWidget):
         self._finished = False
         self._playback_token += 1
         self._waiting_for_first_frame = False
+        self._emit_stimulus_finished()
         self._countdown_running = False
         self._command_timer.stop()
         self._final_picture_timer.stop()
@@ -443,6 +476,7 @@ class StimuliPresentationFeetStim(QWidget):
         self._stopped = True
         self._playback_token += 1
         self._waiting_for_first_frame = False
+        self._emit_stimulus_finished()
         self._countdown_running = False
         self._command_timer.stop()
         self._final_picture_timer.stop()

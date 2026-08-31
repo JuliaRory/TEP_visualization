@@ -27,6 +27,10 @@ class EpochLabelMessageSource(QObject):
             self.warning.emit(f"Invalid epoch label message ignored: {exc}")
             return
 
+        event = str(payload.get("event", "")).strip().lower()
+        if event in {"end", "stimulus_end", "finished", "finish", "stop", "stopped"}:
+            return
+
         label = payload.get("stimulus")
         if label is None:
             self.warning.emit("Invalid epoch label message ignored: missing 'stimulus'")

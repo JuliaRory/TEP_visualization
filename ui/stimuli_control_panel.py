@@ -10,7 +10,7 @@ from utils.ui_helpers import create_button, create_spin_box, create_check_box, c
 from utils.layout_utils import create_hbox, create_vbox
 
 from .video_player import StimuliPresentation_one_by_one
-# from .video_player_antiponk import StimuliPresentationAntiponk
+from .video_player_antiponk import StimuliPresentationAntiponk
 from .video_player_phases import StimuliPresentationPhases
 from .video_player_bci import StimuliPresentation_BCI
 from .video_player_feet_stim import StimuliPresentationFeetStim
@@ -374,7 +374,8 @@ class StimuliControlPanel(QFrame):
         self._player_window.stimuliFinished.connect(self._on_finish_stimuli)
 
         self._player_window.currIdxChanged.connect(self._on_stimuli_idx_changed)
-        self._player_window.stimulus.connect(self._on_stimuli_order_changed)
+        self._player_window.stimulusStarted.connect(self._on_stimuli_order_changed)
+        self._player_window.stimulusFinished.connect(self._on_stimuli_order_finished)
 
         self._player_window.volumeChanged.connect(self._on_player_volume_changed)
         self._player_window.playerIsMuted.connect(self._on_player_muted)
@@ -635,9 +636,7 @@ class StimuliControlPanel(QFrame):
         self.label_stimuli_idx.setText(f"#{idx}")
 
     def _on_stimuli_order_changed(self, filename):
-        message = {"stimulus": filename}
-        print(message)
-        self.output_stream(json.dumps(message))
+        self._send_stimulus_stream_message(filename, "start")
         pw = getattr(self, "_player_window", None)
         if getattr(pw, "_sequence_started", False):
             self.stimulusLabelReady.emit(str(filename))
@@ -645,6 +644,17 @@ class StimuliControlPanel(QFrame):
             self._send_udp_message(filename, after_send=pw.trigger_photomark_flash)
             return
         self._send_udp_for_current_stimulus()
+
+    def _on_stimuli_order_finished(self, filename):
+        self._send_stimulus_stream_message(filename, "end")
+
+    def _send_stimulus_stream_message(self, filename, event):
+        message = {
+            "stimulus": str(filename),
+            "event": str(event),
+        }
+        print(message)
+        self.output_stream(json.dumps(message))
 
     def _on_send_udp_message_button_click(self):
         self._send_udp_message(self.line_edit_udp_single.text().strip())
