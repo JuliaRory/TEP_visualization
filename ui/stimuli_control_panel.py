@@ -12,7 +12,7 @@ from utils.layout_utils import create_hbox, create_vbox
 from .video_player import StimuliPresentation_one_by_one
 from .video_player_antiponk import StimuliPresentationAntiponk
 from .video_player_phases import StimuliPresentationPhases
-from .video_player_bci import StimuliPresentation_BCI
+from .video_player_bci import BCI_STIMULUS_HAND, BCI_STIMULUS_LEG, StimuliPresentation_BCI
 from .video_player_feet_stim import StimuliPresentationFeetStim
 from .stimuli_window import StimuliCreation
 from .widgets.bci_mep_bins_window import BCIMEPDelayWindow
@@ -29,6 +29,14 @@ class _TensionOnRelay(QObject):
 
 UDP_HOST = "127.0.0.1"
 UDP_PORT = 5005
+BCI_STIMULUS_DISPLAY_TO_VALUE = {
+    "рука": BCI_STIMULUS_HAND,
+    "нога": BCI_STIMULUS_LEG,
+}
+BCI_STIMULUS_VALUE_TO_DISPLAY = {
+    value: display
+    for display, value in BCI_STIMULUS_DISPLAY_TO_VALUE.items()
+}
 
 class StimuliControlPanel(QFrame):
     """ --- UI для контроля за стимулами --- """
@@ -93,6 +101,11 @@ class StimuliControlPanel(QFrame):
 
         self.combo_box_stimuli = create_combo_box([], parent=self, tooltips=True)
         self.combo_box_bci_stimuli = create_combo_box([], parent=self, tooltips=True)
+        self.combo_box_bci_stimulus_type = create_combo_box(
+            list(BCI_STIMULUS_DISPLAY_TO_VALUE.keys()),
+            curr_item=self._bci_stimulus_display_text(),
+            parent=self,
+        )
         self.combo_box_feet_stimuli = create_combo_box([], parent=self, tooltips=True)
         self._button_update_stimuli = create_button(text="⟳", disabled=False, parent=self, w=30)
 
@@ -206,6 +219,7 @@ class StimuliControlPanel(QFrame):
         layout_stimuli_creation = create_vbox([QLabel("СТИМУЛЫ", self), self.button_create_stimuli])
         layout_stimuli = create_hbox([self.combo_box_stimuli, self._button_update_stimuli])
         layout_bci_stimuli = create_hbox([QLabel("offBCI seq", self), self.combo_box_bci_stimuli])
+        layout_bci_stimulus_type = create_hbox([QLabel("BCI target", self), self.combo_box_bci_stimulus_type])
         layout_feet_stimuli = create_hbox(
             [QLabel("feetStim seq", self), self.combo_box_feet_stimuli, self._button_update_feet_stimuli]
         )
@@ -310,6 +324,7 @@ class StimuliControlPanel(QFrame):
         layout.addWidget(QLabel("BCI MODE"))
 
         layout.addLayout(layout_bci_stimuli)
+        layout.addLayout(layout_bci_stimulus_type)
         layout.addLayout(layout_bci_stimuli_dur)
         layout.addLayout(layout_bci_isi)
         layout.addLayout(layout_bci_ponk_isi)
@@ -350,6 +365,7 @@ class StimuliControlPanel(QFrame):
         self.spin_box_bci_isi_max.valueChanged.connect(self._on_change_bci_timing)
         self.spin_box_bci_ponk_isi_min.valueChanged.connect(self._on_change_bci_timing)
         self.spin_box_bci_ponk_isi_max.valueChanged.connect(self._on_change_bci_timing)
+        self.combo_box_bci_stimulus_type.currentTextChanged[str].connect(self._on_change_bci_stimulus_type)
         self.spin_box_feet_photomark_delay.valueChanged.connect(self._on_change_feet_photomark_settings)
         self.combo_box_feet_photomark_signal.currentTextChanged[str].connect(self._on_change_feet_photomark_settings)
         self.check_box_feet_photomark_no_blink.stateChanged.connect(self._on_change_feet_photomark_settings)
@@ -410,6 +426,7 @@ class StimuliControlPanel(QFrame):
             self._update_connections()
 
             self._player_window.set_rest_stimulus_variants(self.settings.rest_video_selected)
+            self._player_window.set_bci_stimulus_type(self.settings.bci_stimulus_type)
             self._set_udp_stimulus_commands(None)
             self._player_window.set_sequence(sequence, seq_name)
 
@@ -855,6 +872,18 @@ class StimuliControlPanel(QFrame):
                 ponk_isi_max_ms=ponk_isi_max_ms,
             )
 
+    def _on_change_bci_stimulus_type(self, display_text):
+        stimulus_type = BCI_STIMULUS_DISPLAY_TO_VALUE.get(str(display_text), BCI_STIMULUS_HAND)
+        self.settings.bci_stimulus_type = stimulus_type
+
+        pw = getattr(self, "_player_window", None)
+        if isinstance(pw, StimuliPresentation_BCI) and not pw.isHidden():
+            pw.set_bci_stimulus_type(stimulus_type)
+
+    def _bci_stimulus_display_text(self):
+        stimulus_type = getattr(self.settings, "bci_stimulus_type", BCI_STIMULUS_HAND)
+        return BCI_STIMULUS_VALUE_TO_DISPLAY.get(stimulus_type, "рука")
+
     def _on_change_feet_photomark_settings(self, _value=None):
         self.settings.feet_stim_photomark_delay_ms = int(self.spin_box_feet_photomark_delay.value())
         self.settings.feet_stim_photomark_signal_color = self.combo_box_feet_photomark_signal.currentText()
@@ -1039,6 +1068,9 @@ class StimuliControlPanel(QFrame):
         self.settings.rest_video_selected = selected
         self._set_rest_video_checked_items(selected)
         self._set_bci_timing_spinbox_values()
+        self.combo_box_bci_stimulus_type.blockSignals(True)
+        self.combo_box_bci_stimulus_type.setCurrentText(self._bci_stimulus_display_text())
+        self.combo_box_bci_stimulus_type.blockSignals(False)
         self.check_box_wait_tension.blockSignals(True)
         self.check_box_wait_tension.setChecked(getattr(self.settings, "antiponk_wait_tension", False))
         self.check_box_wait_tension.blockSignals(False)

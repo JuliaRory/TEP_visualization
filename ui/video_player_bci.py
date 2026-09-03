@@ -17,6 +17,9 @@ REST_STIMULUS_VARIANTS = (
 START_COUNTDOWN_VIDEO = r"resources/videoSamples/audio_countdown_3.mkv"
 INTRO_AFTER_COUNTDOWN_MS = 2000
 FIRST_PONK_AFTER_COUNTDOWN_MS = 500
+BCI_STIMULUS_HAND = "hand"
+BCI_STIMULUS_LEG = "leg"
+BCI_STIMULUS_TYPES = {BCI_STIMULUS_HAND, BCI_STIMULUS_LEG}
 
 
 class StimuliPresentation_BCI(QWidget):
@@ -76,7 +79,10 @@ class StimuliPresentation_BCI(QWidget):
 
         self._photomark_status = "white"
 
-        self._decipher = {"1": "hand", "2": "rest"}
+        self._bci_stimulus_type = self._normalize_bci_stimulus_type(
+            getattr(self._settings, "bci_stimulus_type", BCI_STIMULUS_HAND)
+        )
+        self._decipher = {"1": self._bci_stimulus_type, "2": "rest"}
 
         self.intro_pic_path = os.path.join(
             r"resources\crossFigures", "cross_image_black_photomark.png"
@@ -139,7 +145,7 @@ class StimuliPresentation_BCI(QWidget):
         self._placeholder_widget = QLabel(self)     # здесь мы будем менять стимулы
         self._marker_widget = QLabel(self)
 
-        self._hand_pic_path = self._settings.hand_pic
+        self._hand_pic_path = self._bci_stimulus_pic_path()
         self._rest_pic_path = self._settings.rest_pic
 
         self._final_pic = QPixmap(self.final_pic_path).scaled(
@@ -156,7 +162,7 @@ class StimuliPresentation_BCI(QWidget):
         )
         print(
             "[VLC player BCI]: loaded stimuli images:",
-            {"hand": self._hand_pic_path, "rest": self._rest_pic_path},
+            {self._bci_stimulus_type: self._hand_pic_path, "rest": self._rest_pic_path},
         )
 
         self._placeholder_widget.setPixmap(self._intro_pic)
@@ -191,6 +197,29 @@ class StimuliPresentation_BCI(QWidget):
         variants = [self._normalize_video_filename(name) for name in (filenames or [])]
         variants = [name for name in variants if name in REST_STIMULUS_VARIANTS]
         self._rest_stimulus_variants = variants or [REST_STIMULUS]
+
+    def set_bci_stimulus_type(self, stimulus_type):
+        stimulus_type = self._normalize_bci_stimulus_type(stimulus_type)
+        self._bci_stimulus_type = stimulus_type
+        self._settings.bci_stimulus_type = stimulus_type
+        self._decipher["1"] = stimulus_type
+        self._hand_pic_path = self._bci_stimulus_pic_path()
+        self._hand_pic = QPixmap(self._hand_pic_path).scaled(
+            self.size(), Qt.KeepAspectRatio, Qt.SmoothTransformation
+        )
+        if self._current_stimulus in BCI_STIMULUS_TYPES:
+            self._current_stimulus = stimulus_type
+            self._placeholder_widget.setPixmap(self._hand_pic)
+
+    def _bci_stimulus_pic_path(self):
+        if self._bci_stimulus_type == BCI_STIMULUS_LEG:
+            return getattr(self._settings, "leg_pic", r"resources/bci/leg_base.png")
+        return getattr(self._settings, "hand_pic", r"resources/bci/FDI_r_style1_base.png")
+
+    @staticmethod
+    def _normalize_bci_stimulus_type(stimulus_type):
+        stimulus_type = str(stimulus_type or "").strip().lower()
+        return stimulus_type if stimulus_type in BCI_STIMULUS_TYPES else BCI_STIMULUS_HAND
 
     @staticmethod
     def _normalize_video_filename(name):

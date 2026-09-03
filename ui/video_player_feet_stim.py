@@ -57,6 +57,8 @@ class StimuliPresentationFeetStim(QWidget):
         self._countdown_running = False
         self._command_started_at = None
         self._command_remaining_ms = 0
+        self._isi_sequence_ms = []
+        self._isi_index = 0
         self._isi_min_s = 1.5
         self._isi_max_s = 3.0
         self._photomark_delay_ms = 0
@@ -92,6 +94,7 @@ class StimuliPresentationFeetStim(QWidget):
 
         self._command_timer = QTimer(self)
         self._command_timer.setSingleShot(True)
+        self._command_timer.setTimerType(Qt.PreciseTimer)
         self._command_timer.timeout.connect(self._send_next_command)
 
         self._final_picture_timer = QTimer(self)
@@ -143,6 +146,7 @@ class StimuliPresentationFeetStim(QWidget):
 
         self._commands = self._make_command_sequence(stimuli_sequence)
         self._current_index = 0
+        self._generate_isi_sequence()
         self.currIdxChanged.emit(self._current_index)
         self._set_placeholder_pixmap(CROSS_IMAGE)
         self._placeholder_widget.show()
@@ -173,6 +177,8 @@ class StimuliPresentationFeetStim(QWidget):
 
         self._isi_min_s = min_s
         self._isi_max_s = max_s
+        if not self._sequence_started:
+            self._generate_isi_sequence()
 
     def set_photomark_settings(self, delay_ms=None, signal_color=None, no_blink=None):
         if delay_ms is not None:
@@ -197,6 +203,23 @@ class StimuliPresentationFeetStim(QWidget):
 
     def _get_random_isi_ms(self):
         return int(random.uniform(self._isi_min_s, self._isi_max_s) * 1000)
+
+    def _generate_isi_sequence(self):
+        self._isi_sequence_ms = [
+            self._get_random_isi_ms()
+            for _ in range(len(self._commands))
+        ]
+        self._isi_index = 0
+        print("[VLC player feetStim]: ISI sequence, ms:", self._isi_sequence_ms)
+
+    def _next_isi_ms(self):
+        if self._isi_index >= len(self._isi_sequence_ms):
+            print("[VLC player feetStim]: ISI sequence is exhausted.")
+            return 0
+
+        isi_ms = self._isi_sequence_ms[self._isi_index]
+        self._isi_index += 1
+        return isi_ms
 
     def _play_countdown_video(self):
         if self._stopped:
@@ -235,7 +258,7 @@ class StimuliPresentationFeetStim(QWidget):
             self._set_placeholder_pixmap(CROSS_IMAGE)
             self._placeholder_widget.show()
             self._start_photomark_sequence()
-            self._start_command_interval(self._get_random_isi_ms())
+            self._start_command_interval(self._next_isi_ms())
 
     def _send_next_command(self):
         if self._stopped:
@@ -252,17 +275,21 @@ class StimuliPresentationFeetStim(QWidget):
             return
 
         command = self._commands[self._current_index]
+        has_next_command = self._current_index + 1 < len(self._commands)
+        next_isi_ms = self._next_isi_ms() if has_next_command else None
+
+        self._current_index += 1
+        self.currIdxChanged.emit(self._current_index)
+        if has_next_command:
+            self._start_command_interval(next_isi_ms)
+
         self._last_photomark_duration_ms = 0
         self._emit_stimulus_started(command)
         photomark_duration_ms = self._last_photomark_duration_ms
         self._finish_active_stimulus_after(photomark_duration_ms)
-        self._current_index += 1
-        self.currIdxChanged.emit(self._current_index)
 
-        if self._current_index >= len(self._commands):
+        if not has_next_command:
             self._start_final_picture_after(photomark_duration_ms)
-        else:
-            self._start_command_interval(self._get_random_isi_ms())
 
     def _show_final_picture(self):
         if self._stopped:
@@ -421,6 +448,7 @@ class StimuliPresentationFeetStim(QWidget):
                 print("[VLC player feetStim]: stimuli sequence is empty.")
                 return
             print("[VLC player feetStim]: start the stimuli presentation.")
+            self._generate_isi_sequence()
             self._sequence_started = True
             self.stimuliStarted.emit()
             self._is_paused = False
@@ -467,6 +495,7 @@ class StimuliPresentationFeetStim(QWidget):
         self._command_remaining_ms = 0
 
         self._current_index = 0
+        self._generate_isi_sequence()
         self.currIdxChanged.emit(self._current_index)
         self._set_placeholder_pixmap(CROSS_IMAGE)
         self._placeholder_widget.show()

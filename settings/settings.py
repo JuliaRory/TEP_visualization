@@ -117,7 +117,9 @@ class StimuliSettings:
     feet_stim_photomark_delay_ms: int = 0
     feet_stim_photomark_signal_color: str = "white"
     feet_stim_photomark_no_blink: bool = False
+    bci_stimulus_type: str = "hand"
     hand_pic: str = r"resources/bci/FDI_r_style1_base.png"
+    leg_pic: str = r"resources/bci/leg_base.png"
     rest_pic: str = r"resources/bci/rest.png"
     background_pic: str = r"resources/bci/background.png"
     stimuli_dur: int = 7000
