@@ -1067,7 +1067,7 @@ class MainWindow(QWidget):
             plot_data = np.asarray(plot_data)
             for i in range(3):
                 ts = self._overview_panel.spinbox_ts[i].value()
-                t = processor._ms_to_sample(ts)
+                t = processor._time_shift + processor._ms_to_sample(ts)
                 if plot_data.ndim != 2 or t < 0 or t >= plot_data.shape[-1]:
                     continue
                 print(t, ts)

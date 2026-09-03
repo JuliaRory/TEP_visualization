@@ -394,6 +394,7 @@ class DataProcessor(QObject):
             Fs=Fs,
             btype="highpass",
             warning_key="highpass",
+            zero_phase=True,
         )
 
     def configure_lowpass(self, enabled=True, freq=250, Fs=None):
@@ -403,6 +404,7 @@ class DataProcessor(QObject):
             Fs=Fs,
             btype="lowpass",
             warning_key="lowpass",
+            zero_phase=True,
         )
 
     def configure_emg_processing(self, rebuild=True):
@@ -458,7 +460,7 @@ class DataProcessor(QObject):
         if rebuild:
             self._rebuild_processed_epochs_from_raw()
 
-    def _make_filter(self, enabled=True, freq=250, Fs=None, btype="lowpass", warning_key="filter"):
+    def _make_filter(self, enabled=True, freq=250, Fs=None, btype="lowpass", warning_key="filter", zero_phase=False):
         if not enabled:
             return lambda x: x
 
@@ -489,6 +491,19 @@ class DataProcessor(QObject):
         else:
             normalized_freq = freq / nyquist
         sos = signal.butter(2, normalized_freq, btype=btype, output='sos')
+
+        if zero_phase:
+            def apply_filter(x):
+                try:
+                    return signal.sosfiltfilt(sos, x, axis=1)
+                except ValueError as exc:
+                    self._warn_once(
+                        f"{warning_key}_zero_phase_{np.asarray(x).shape}",
+                        f"{btype} zero-phase filter failed ({exc}); falling back to causal filter",
+                    )
+                    return signal.sosfilt(sos, x, axis=1)
+            return apply_filter
+
         return lambda x: signal.sosfilt(sos, x, axis=1)
 
     def _make_baseline(self, enabled=True, t_from=-75, t_to=-20, Fs=None, n_samples=None, time_shift=None, method="mean", warning_key="baseline"):
@@ -555,13 +570,40 @@ class DataProcessor(QObject):
     def create_full_transform(self):
         self._transform = lambda x: self._referef(
             self._car(
-                self._baseline(
-                    self._lowpass_filter(
-                        self._highpass_filter(x)
+                self._lowpass_filter(
+                    self._highpass_filter(
+                        self._baseline(
+                            self._remove_eeg_artifact(x)
+                        )
                     )
                 )
             )
         )
+
+    def _remove_eeg_artifact(self, epoch):
+        speed = getattr(self.settings, "speed", None)
+        if speed is None or not bool(getattr(speed, "artifact", False)):
+            return epoch
+
+        epoch = np.asarray(epoch, dtype=float)
+        n_samples = int(epoch.shape[-1]) if epoch.ndim == 2 else 0
+        if n_samples < 3:
+            return epoch
+
+        start_ms = float(getattr(speed, "artifact_start", -5))
+        end_ms = float(getattr(speed, "artifact_end", 15))
+        left = self._time_shift + self._ms_to_sample(start_ms)
+        right = self._time_shift + self._ms_to_sample(end_ms)
+        left = max(1, min(n_samples - 2, int(left)))
+        right = max(left + 1, min(n_samples - 1, int(right)))
+
+        cleaned = epoch.copy()
+        y0 = cleaned[:, left - 1]
+        y1 = cleaned[:, right]
+        n_artifact = right - left
+        weights = np.linspace(0.0, 1.0, n_artifact + 2, dtype=float)[1:-1]
+        cleaned[:, left:right] = y0[:, None] + (y1 - y0)[:, None] * weights[None, :]
+        return cleaned
     
     
     # --- Усреднение ---
