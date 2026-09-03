@@ -1,6 +1,5 @@
 from .base import DataSource
 import numpy as np
-import json
 
 class StreamSource(DataSource):
     """
@@ -31,9 +30,23 @@ class StreamSource(DataSource):
         self.n_epoch += 1
 
         # data = np.array(json.loads(msg)["epoch"]).T  # [n_channels x n_samples]
-        data = np.array(msg).T #* 5000
+        data = self._as_channels_by_samples(msg)
 
         self.dataReady.emit(data, timestamp)  
+
+    @staticmethod
+    def _as_channels_by_samples(msg):
+        data = np.asarray(msg)
+        if data.ndim != 2:
+            return data
+
+        n_rows, n_cols = data.shape
+
+        # Resonance can send raw windows as [samples, channels] and TEP epochs
+        # as [channels, samples]. Downstream code expects [channels, samples].
+        if n_rows > n_cols:
+            return data.T
+        return data
 
     # добавить сохранение эпох в файл
     

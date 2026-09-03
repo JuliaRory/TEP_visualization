@@ -36,3 +36,6 @@ Traceback (most recent call last):
   File "C:\Users\hodor\Documents\lab-MSU\Works\2025.10_TMS\TEP_visualization\venv\Lib\site-packages\matplotlib\artist.py", line 256, in remove
     raise NotImplementedError('cannot remove artist')
 NotImplementedError: cannot remove artist
+
+Не могу отловить ошибку  в обработке приходящих ЭЭГ эпох. 
+Когда настройки SPEED на формате TEP и ЭЭГ обработки тоже TEP, почему-то ЭМГ правильно вырезается эпохи и визуализируются, а для ЭЭГ происходит какая-то дичь. В чём может быть причина?
