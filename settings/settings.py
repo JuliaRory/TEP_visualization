@@ -210,7 +210,7 @@ class Settings:
     speed: SpeedSettings = field(default_factory=SpeedSettings)
 
     SPEED_settings_path: str = "./SPEED_settings.json"
-    speed_settings_export_path: str = "D:\\resonance_20260821\\dist\\msvc64\\mulines\\resources\\SPEED_settings.json"
+    speed_settings_export_path: str = "D:\\Resonance_Sep26\\dist_Qt6\\mulines\\resources\\SPEED_settings.json"
 
     channels: List[str] = field(default_factory=lambda: ['T7', 'TP9', 'P7', 'CP5', 'FT9', 'F7', 'FC5', 'F3', 'P3', 'C3', 'CP1', 'O1', 'Fp1',
                                                             'FC1', 'Fz', 'Fp2', 'Cz', 'FC2', 'CP2', 'Pz', 'O2', 'Oz', 'C4', 'P4', 'F4', 'FC6',
